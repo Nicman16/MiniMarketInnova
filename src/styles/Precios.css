@@ -1,0 +1,59 @@
+.precios-section {
+  padding: 20px 0;
+}
+
+.price-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.price-table th,
+.price-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.price-table th {
+  background: #667eea;
+  color: white;
+  font-weight: bold;
+}
+
+.price-table tr:hover {
+  background: #f8f9fa;
+}
+
+.price-input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 100px;
+}
+
+.category-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.category-verduras {
+  background: #d4edda;
+  color: #155724;
+}
+
+.category-carnes {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.category-papas {
+  background: #fff3cd;
+  color: #856404;
+}
