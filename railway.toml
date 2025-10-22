@@ -1,19 +1,16 @@
 [build]
 builder = "nixpacks"
+buildCommand = "npm install --production=false && npm run build"
 
 [deploy]
+startCommand = "npm start"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 3
 
 [[deploy.environmentVariables]]
 name = "NODE_ENV"
 value = "production"
-
-[[deploy.environmentVariables]]
-name = "PORT"
-value = "${{ PORT }}"
 
 [[deploy.environmentVariables]]
 name = "NPM_CONFIG_PRODUCTION"
