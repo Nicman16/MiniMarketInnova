@@ -127,6 +127,52 @@ class SyncService {
     this.socket.on('pong', () => {
       console.log('🏓 Pong recibido');
     });
+
+    // Nuevos listeners para ventas y empleados
+    this.socket.on('venta-registrada', (venta: any) => {
+      console.log('💰 Venta registrada remotamente:', venta);
+      this.notifyListeners('venta-registrada', venta);
+    });
+
+    this.socket.on('caja-abierta', (sesion: any) => {
+      console.log('🔓 Caja abierta remotamente:', sesion);
+      this.notifyListeners('caja-abierta', sesion);
+    });
+
+    this.socket.on('caja-cerrada', (sesion: any) => {
+      console.log('🔒 Caja cerrada remotamente:', sesion);
+      this.notifyListeners('caja-cerrada', sesion);
+    });
+
+    this.socket.on('movimiento-caja', (movimiento: any) => {
+      console.log('💵 Movimiento de caja remoto:', movimiento);
+      this.notifyListeners('movimiento-caja', movimiento);
+    });
+
+    this.socket.on('empleado-login', (empleado: any) => {
+      console.log('👨‍💼 Empleado logueado:', empleado);
+      this.notifyListeners('empleado-login', empleado);
+    });
+
+    this.socket.on('empleado-logout', (empleado: any) => {
+      console.log('👨‍💼 Empleado desconectado:', empleado);
+      this.notifyListeners('empleado-logout', empleado);
+    });
+
+    this.socket.on('empleado-creado', (empleado: any) => {
+      console.log('👨‍💼 Nuevo empleado registrado:', empleado);
+      this.notifyListeners('empleado-creado', empleado);
+    });
+
+    this.socket.on('empleado-actualizado', (empleado: any) => {
+      console.log('👨‍💼 Empleado actualizado:', empleado);
+      this.notifyListeners('empleado-actualizado', empleado);
+    });
+
+    this.socket.on('empleado-eliminado', (empleadoId: string) => {
+      console.log('👨‍💼 Empleado eliminado:', empleadoId);
+      this.notifyListeners('empleado-eliminado', empleadoId);
+    });
   }
 
   // Suscribirse a cambios
@@ -211,6 +257,61 @@ class SyncService {
   disconnect() {
     if (this.socket) {
       this.socket.disconnect();
+    }
+  }
+
+  // Nuevos métodos para registrar eventos
+  registrarVenta(venta: any) {
+    if (this.socket?.connected) {
+      this.socket.emit('venta-registrada', venta);
+    }
+  }
+
+  notificarAperturaCaja(sesion: any) {
+    if (this.socket?.connected) {
+      this.socket.emit('caja-abierta', sesion);
+    }
+  }
+
+  notificarCierreCaja(sesion: any) {
+    if (this.socket?.connected) {
+      this.socket.emit('caja-cerrada', sesion);
+    }
+  }
+
+  notificarMovimientoCaja(movimiento: any) {
+    if (this.socket?.connected) {
+      this.socket.emit('movimiento-caja', movimiento);
+    }
+  }
+
+  notificarLogin(empleado: any) {
+    if (this.socket?.connected) {
+      this.socket.emit('empleado-login', empleado);
+    }
+  }
+
+  notificarLogout(empleado: any) {
+    if (this.socket?.connected) {
+      this.socket.emit('empleado-logout', empleado);
+    }
+  }
+
+  notificarNuevoEmpleado(empleado: any) {
+    if (this.socket?.connected) {
+      this.socket.emit('empleado-creado', empleado);
+    }
+  }
+
+  notificarEmpleadoActualizado(empleado: any) {
+    if (this.socket?.connected) {
+      this.socket.emit('empleado-actualizado', empleado);
+    }
+  }
+
+  notificarEmpleadoEliminado(empleadoId: string) {
+    if (this.socket?.connected) {
+      this.socket.emit('empleado-eliminado', empleadoId);
     }
   }
 }

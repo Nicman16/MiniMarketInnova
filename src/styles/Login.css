@@ -1,0 +1,354 @@
+/* src/styles/Login.css */
+.login-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 1rem;
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 450px;
+  overflow: hidden;
+  animation: loginSlideIn 0.6s ease;
+}
+
+@keyframes loginSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.login-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+.login-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+}
+
+.login-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 400;
+  opacity: 0.9;
+  position: relative;
+  z-index: 1;
+}
+
+.login-body {
+  padding: 2rem;
+}
+
+.login-body h3 {
+  margin: 0 0 1.5rem 0;
+  color: #2d3748;
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.empleados-login {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.empleado-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.empleado-btn:hover:not(:disabled) {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+  transform: translateY(-1px);
+}
+
+.empleado-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.empleado-avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.empleado-info {
+  flex: 1;
+}
+
+.nombre {
+  display: block;
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.rol {
+  font-size: 0.8rem;
+  color: #718096;
+  font-weight: 500;
+}
+
+.pin-section h4 {
+  margin: 0 0 1rem 0;
+  color: #2d3748;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.pin-display {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.pin-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.pin-dot.filled {
+  background: #667eea;
+  color: white;
+  transform: scale(1.1);
+}
+
+.teclado-numerico {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.tecla-numero {
+  aspect-ratio: 1;
+  background: #f7fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2d3748;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+}
+
+.tecla-numero:hover:not(:disabled) {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.tecla-numero:active {
+  transform: translateY(0);
+}
+
+.tecla-numero:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.error-message {
+  background: rgba(229, 62, 62, 0.1);
+  color: #c53030;
+  padding: 0.75rem;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 500;
+  border-left: 4px solid #e53e3e;
+  animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.loading-message {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+  padding: 0.75rem;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 500;
+  border-left: 4px solid #667eea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.login-footer p {
+  margin: 0.25rem 0;
+  color: #718096;
+  font-size: 0.85rem;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 0.5rem;
+  }
+  
+  .login-card {
+    max-width: 100%;
+  }
+  
+  .login-header {
+    padding: 1.5rem;
+  }
+  
+  .login-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .login-body {
+    padding: 1.5rem;
+  }
+  
+  .teclado-numerico {
+    gap: 0.5rem;
+  }
+  
+  .tecla-numero {
+    min-height: 45px;
+    font-size: 1.1rem;
+  }
+  
+  .pin-display {
+    gap: 0.75rem;
+  }
+  
+  .pin-dot {
+    width: 18px;
+    height: 18px;
+    font-size: 1rem;
+  }
+}
+
+/* Animaciones adicionales */
+.empleado-btn {
+  animation: fadeInUp 0.4s ease forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.empleado-btn:nth-child(1) { animation-delay: 0.1s; }
+.empleado-btn:nth-child(2) { animation-delay: 0.2s; }
+.empleado-btn:nth-child(3) { animation-delay: 0.3s; }
+.empleado-btn:nth-child(4) { animation-delay: 0.4s; }
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tecla-numero {
+  animation: fadeIn 0.3s ease forwards;
+  opacity: 0;
+}
+
+.tecla-numero:nth-child(1) { animation-delay: 0.1s; }
+.tecla-numero:nth-child(2) { animation-delay: 0.15s; }
+.tecla-numero:nth-child(3) { animation-delay: 0.2s; }
+.tecla-numero:nth-child(4) { animation-delay: 0.25s; }
+.tecla-numero:nth-child(5) { animation-delay: 0.3s; }
+.tecla-numero:nth-child(6) { animation-delay: 0.35s; }
+.tecla-numero:nth-child(7) { animation-delay: 0.4s; }
+.tecla-numero:nth-child(8) { animation-delay: 0.45s; }
+.tecla-numero:nth-child(9) { animation-delay: 0.5s; }
+.tecla-numero:nth-child(10) { animation-delay: 0.55s; }
+.tecla-numero:nth-child(11) { animation-delay: 0.6s; }
+.tecla-numero:nth-child(12) { animation-delay: 0.65s; }
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
