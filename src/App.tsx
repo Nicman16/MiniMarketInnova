@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './styles/App.css';
-import './styles/Global.css';
 import Login from './componentes/Login';
 import PuntoVenta from './componentes/PuntoVenta';
 import ControlCaja from './componentes/ControlCaja';
-import Reportes from './componentes/Reportes';
-import Empleados from './componentes/Empleados';
 import Inventario from './componentes/Inventario';
 import { authService } from './services/authService';
 import { Empleado } from './types/pos.types';
@@ -16,6 +13,9 @@ function App() {
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
+    // FORZAR LOGOUT AL INICIO (temporal para debugging)
+    localStorage.clear();
+    
     verificarAutenticacion();
   }, []);
 
@@ -24,13 +24,15 @@ function App() {
       const empleado = await authService.obtenerEmpleadoActual();
       setEmpleadoActual(empleado);
     } catch (error) {
-      console.log('No hay empleado autenticado');
+      console.log('No hay empleado autenticado - mostrando login');
+      setEmpleadoActual(null); // Forzar null para mostrar login
     } finally {
       setCargando(false);
     }
   };
 
   const manejarLogin = (empleado: Empleado) => {
+    console.log('Login exitoso:', empleado);
     setEmpleadoActual(empleado);
     setPaginaActual('pos');
   };
@@ -47,30 +49,36 @@ function App() {
     const permisos = {
       pos: ['admin', 'supervisor', 'vendedor'],
       inventario: ['admin', 'supervisor'],
-      caja: ['admin', 'supervisor'],
-      reportes: ['admin', 'supervisor'],
-      empleados: ['admin']
+      caja: ['admin', 'supervisor']
     };
 
     return permisos[pagina as keyof typeof permisos]?.includes(empleadoActual.rol) || false;
   };
 
-  // Loading screen
+  // DEBUG: Mostrar estado actual
+  console.log('🔍 Estado actual:', {
+    cargando,
+    empleadoActual,
+    paginaActual
+  });
+
+  // LOADING
   if (cargando) {
     return (
       <div className="loading-screen">
         <div className="loading-spinner"></div>
-        <p>🏪 Cargando MiniMarket Innova...</p>
+        <p className="loading-text">🏪 Cargando MiniMarket Innova...</p>
       </div>
     );
   }
 
-  // Si no hay empleado autenticado, mostrar login
+  // LOGIN (FORZADO)
   if (!empleadoActual) {
+    console.log('✅ Mostrando LOGIN - sin empleado autenticado');
     return <Login onLogin={manejarLogin} />;
   }
 
-  // Si hay empleado autenticado, mostrar el sistema POS
+  // RENDERIZAR PÁGINAS
   const renderPagina = () => {
     switch (paginaActual) {
       case 'pos':
@@ -79,21 +87,18 @@ function App() {
         return puedeAcceder('inventario') ? <Inventario /> : <SinPermisos />;
       case 'caja':
         return puedeAcceder('caja') ? <ControlCaja /> : <SinPermisos />;
-      case 'reportes':
-        return puedeAcceder('reportes') ? <Reportes /> : <SinPermisos />;
-      case 'empleados':
-        return puedeAcceder('empleados') ? <Empleados /> : <SinPermisos />;
       default:
         return <PuntoVenta />;
     }
   };
 
+  console.log('✅ Mostrando SISTEMA PRINCIPAL');
   return (
     <div className="app">
       <nav className="navbar">
         <div className="navbar-brand">
-          <h1>🏪 MiniMarket Innova</h1>
-          <span className="version">POS v2.0</span>
+          <h1 className="app-title">🏪 MiniMarket Innova</h1>
+          <span className="version-badge">POS v2.0</span>
         </div>
 
         <div className="navbar-menu">
@@ -118,22 +123,6 @@ function App() {
             disabled={!puedeAcceder('caja')}
           >
             💵 Caja
-          </button>
-
-          <button 
-            className={`nav-item ${paginaActual === 'reportes' ? 'active' : ''} ${!puedeAcceder('reportes') ? 'disabled' : ''}`}
-            onClick={() => puedeAcceder('reportes') && setPaginaActual('reportes')}
-            disabled={!puedeAcceder('reportes')}
-          >
-            📊 Reportes
-          </button>
-
-          <button 
-            className={`nav-item ${paginaActual === 'empleados' ? 'active' : ''} ${!puedeAcceder('empleados') ? 'disabled' : ''}`}
-            onClick={() => puedeAcceder('empleados') && setPaginaActual('empleados')}
-            disabled={!puedeAcceder('empleados')}
-          >
-            👨‍💼 Empleados
           </button>
         </div>
 
@@ -163,12 +152,11 @@ function App() {
   );
 }
 
-// Componente para mostrar cuando no hay permisos
 const SinPermisos = () => (
   <div className="sin-permisos">
-    <h2>🚫 Acceso Denegado</h2>
-    <p>No tienes permisos para acceder a esta sección.</p>
-    <p>Contacta a tu administrador si necesitas acceso.</p>
+    <h2 className="sin-permisos-title">🚫 Acceso Denegado</h2>
+    <p className="sin-permisos-text">No tienes permisos para acceder a esta sección.</p>
+    <p className="sin-permisos-text">Contacta a tu administrador si necesitas acceso.</p>
   </div>
 );
 

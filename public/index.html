@@ -1,33 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MiniMarket Innova</title>
-    
-    <!-- PWA Meta tags -->
-    <link rel="manifest" href="/manifest.json" />
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#667eea" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="MiniMarket" />
-    
-    <!-- Permite acceso a cámara -->
-    <meta http-equiv="Permissions-Policy" content="camera=*" />
+    <meta name="description" content="Sistema de gestión para minimarket" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <title>MiniMarket Innova</title>
   </head>
   <body>
+    <noscript>Necesitas habilitar JavaScript para usar esta app.</noscript>
     <div id="root"></div>
-    
-    <!-- Service Worker para PWA -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(() => console.log('SW registered'))
-            .catch(() => console.log('SW registration failed'));
-        });
-      }
-    </script>
   </body>
 </html>
