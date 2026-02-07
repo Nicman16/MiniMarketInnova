@@ -23,9 +23,36 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Servir archivos estáticos de React en producción
+// Servir archivos estáticos en producción o proxyear al dev server en desarrollo
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'build')));
+  // Ruta catch-all para React Router (debe ir al final)
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  });
+} else {
+  // En desarrollo, proxyear peticiones al dev server de React (hot-reload)
+  let proxyInstalled = false;
+  try {
+    const { createProxyMiddleware } = require('http-proxy-middleware');
+    app.use('/', createProxyMiddleware({
+      target: 'http://localhost:3002',
+      changeOrigin: true,
+      ws: true,
+      logLevel: 'silent'
+    }));
+    proxyInstalled = true;
+    console.log('Proxy activo: / -> http://localhost:3002');
+  } catch (err) {
+    console.warn('http-proxy-middleware no está instalado; si quieres usar proxy en dev, instala http-proxy-middleware');
+  }
+
+  // Fallback: si el proxy no está disponible, redirigir la raíz al dev server
+  if (!proxyInstalled) {
+    app.get('/', (req, res) => {
+      res.redirect('http://localhost:3002');
+    });
+  }
 }
 
 // Base de datos en memoria (productos sincronizados)
@@ -197,24 +224,43 @@ io.on('connection', (socket) => {
   });
 });
 
-// Ruta catch-all para React Router (debe ir al final)
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+// Nota: las rutas estáticas / catch-all se manejan arriba según NODE_ENV
+
+const DEFAULT_PORT = parseInt(process.env.PORT, 10) || 3001;
+let currentPort = DEFAULT_PORT;
+let attempts = 0;
+const MAX_ATTEMPTS = 10;
+
+function tryListen() {
+  server.listen(currentPort, '0.0.0.0', () => {
+    console.log(`🚀 Servidor MiniMarket Innova corriendo en puerto ${currentPort}`);
+    console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📱 WebSocket habilitado para tiempo real`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`🔗 Local: http://localhost:${currentPort}`);
+    }
   });
 }
 
-const PORT = process.env.PORT || 3001;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor MiniMarket Innova corriendo en puerto ${PORT}`);
-  console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📱 WebSocket habilitado para tiempo real`);
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`🔗 Local: http://localhost:${PORT}`);
+server.on('error', (error) => {
+  if (error && error.code === 'EADDRINUSE') {
+    console.warn(`Puerto ${currentPort} ocupado.`);
+    if (attempts < MAX_ATTEMPTS) {
+      attempts += 1;
+      currentPort += 1;
+      console.log(`Intentando puerto ${currentPort} (intento ${attempts}/${MAX_ATTEMPTS})...`);
+      setTimeout(tryListen, 500);
+    } else {
+      console.error('No se pudo bindear puerto después de varios intentos.');
+      process.exit(1);
+    }
+  } else {
+    console.error('Error no manejado en el servidor:', error);
+    process.exit(1);
   }
 });
 
-// Manejo de errores
+// Manejo de errores globales
 process.on('uncaughtException', (error) => {
   console.error('Error no manejado:', error);
 });
@@ -222,3 +268,6 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Promesa rechazada no manejada:', reason);
 });
+
+// Iniciar intento de escucha
+tryListen();
