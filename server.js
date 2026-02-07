@@ -221,6 +221,16 @@ io.on('connection', (socket) => {
     
     // Notificar a todos sobre desconexión
     io.emit('dispositivo-desconectado', dispositivosConectados.length);
+    
+    // Auto-cerrar el servidor si no hay dispositivos conectados en desarrollo
+    if (process.env.NODE_ENV !== 'production' && dispositivosConectados.length === 0) {
+      console.log('👋 Sin conexiones activas. Cerrando servidor automáticamente.');
+      setTimeout(() => {
+        if (dispositivosConectados.length === 0) {
+          process.exit(0);
+        }
+      }, 1000);
+    }
   });
 });
 
@@ -230,9 +240,13 @@ const DEFAULT_PORT = parseInt(process.env.PORT, 10) || 3001;
 let currentPort = DEFAULT_PORT;
 let attempts = 0;
 const MAX_ATTEMPTS = 10;
+let isListening = false;
 
 function tryListen() {
+  if (isListening) return;
+  
   server.listen(currentPort, '0.0.0.0', () => {
+    isListening = true;
     console.log(`🚀 Servidor MiniMarket Innova corriendo en puerto ${currentPort}`);
     console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
     console.log(`📱 WebSocket habilitado para tiempo real`);
@@ -242,7 +256,7 @@ function tryListen() {
   });
 }
 
-server.on('error', (error) => {
+server.once('error', (error) => {
   if (error && error.code === 'EADDRINUSE') {
     console.warn(`Puerto ${currentPort} ocupado.`);
     if (attempts < MAX_ATTEMPTS) {
