@@ -3,7 +3,7 @@ import { BrowserMultiFormatReader, Result } from "@zxing/library";
 import "../styles/EscanerZXing.css";
 
 interface Producto {
-  id: number;
+  id: number | string;
   nombre: string;
   codigoBarras: string;
   categoria: string;
