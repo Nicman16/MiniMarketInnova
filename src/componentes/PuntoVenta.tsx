@@ -5,7 +5,7 @@ import '../styles/PuntoVenta.css';
 
 // Interfaces
 interface Producto {
-  id: number | string;
+  id: number;
   nombre: string;
   codigo: string;
   codigoBarras?: string;
@@ -16,7 +16,7 @@ interface Producto {
 }
 
 interface ProductoInventario {
-  id: number | string;
+  id: number;
   nombre: string;
   codigoBarras: string;
   categoria: string;
@@ -37,7 +37,7 @@ interface ProductoInventario {
 }
 
 interface ItemVenta {
-  id: number | string;
+  id: number;
   nombre: string;
   precio: number;
   cantidad: number;
@@ -258,12 +258,12 @@ function PuntoVenta() {
   }, [manejarCodigoEscaneado]);
 
   // Función para remover del carrito
-  const removerDelCarrito = useCallback((id: number | string) => {
+  const removerDelCarrito = useCallback((id: number) => {
     setCarrito(carritoActual => carritoActual.filter(item => item.id !== id));
   }, []);
 
   // Función para actualizar cantidad
-  const actualizarCantidad = useCallback((id: number | string, nuevaCantidad: number) => {
+  const actualizarCantidad = useCallback((id: number, nuevaCantidad: number) => {
     if (nuevaCantidad <= 0) {
       removerDelCarrito(id);
       return;
