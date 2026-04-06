@@ -13,12 +13,22 @@ const server = http.createServer(app);
 
 // Conexi�n a MongoDB
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/minimarket';
-mongoose.connect(MONGO_URI)
+console.log('🔍 Intentando conectar a MongoDB:', MONGO_URI.replace(/\/\/.*@/, '//***:***@')); // Oculta credenciales en logs
+
+mongoose.connect(MONGO_URI, {
+  serverSelectionTimeoutMS: 5000, // Timeout de 5 segundos
+  socketTimeoutMS: 45000,
+})
   .then(() => {
-    console.log('✅ MongoDB conectado');
-    inicializarProductosBD();    inicializarUsuariosDemoer();  })
+    console.log('✅ MongoDB conectado exitosamente');
+    inicializarProductosBD();
+    inicializarUsuariosDemoer();
+  })
   .catch(err => {
     console.warn('⚠️ No se pudo conectar a MongoDB (se mantiene in-memory):', err.message);
+    console.warn('💡 Asegúrate de que MongoDB esté corriendo o configura MONGO_URI correctamente');
+    console.warn('💡 Para desarrollo local: instala MongoDB o usa MongoDB Atlas');
+    console.warn('💡 Para Railway: verifica que el servicio MongoDB esté configurado');
   });
 
 const productoSchema = new mongoose.Schema({
