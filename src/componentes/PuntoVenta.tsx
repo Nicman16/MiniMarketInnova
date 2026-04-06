@@ -16,7 +16,7 @@ interface Producto {
 }
 
 interface ProductoInventario {
-  id: number;
+  id: number | string;
   nombre: string;
   codigoBarras: string;
   categoria: string;
@@ -238,7 +238,7 @@ function PuntoVenta() {
     
     // Convertir formato de inventario a formato de venta
     const productoVenta: Producto = {
-      id: producto.id,
+      id: Number(producto.id),
       nombre: producto.nombre,
       codigo: producto.codigoBarras.slice(-6),
       codigoBarras: producto.codigoBarras,
