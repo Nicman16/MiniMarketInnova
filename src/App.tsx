@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './componentes/Login';
 import PuntoVenta from './componentes/PuntoVenta';
 import Inventario from './componentes/Inventario';
+import Fiado from './componentes/Fiado';
 
 function DashboardContent() {
   const { usuario, logout, isJefe } = useAuth();
@@ -16,7 +17,7 @@ function DashboardContent() {
       case 'inventario':
         return isJefe ? <Inventario /> : <div className="sin-permiso">❌ Solo jefes pueden acceder al inventario</div>;
       case 'fiado':
-        return <div className="seccion-no-implementada">🔄 Sistema de Fiado (en desarrollo)</div>;
+        return isJefe ? <Fiado /> : <div className="sin-permiso">❌ Solo jefes pueden acceder a Fiado</div>;
       default:
         return <PuntoVenta />;
     }

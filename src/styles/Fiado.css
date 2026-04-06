@@ -1,0 +1,515 @@
+/* src/styles/Fiado.css */
+
+.fiado-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.fiado-header {
+  margin-bottom: 32px;
+}
+
+.fiado-header h1 {
+  font-size: 32px;
+  font-weight: bold;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.fiado-header .subtitulo {
+  color: #666;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Estadísticas */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card h3 {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #2196F3;
+  margin: 0;
+}
+
+/* Controles */
+.controles {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filtros {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filtros select {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}
+
+.filtros select:hover {
+  border-color: #2196F3;
+}
+
+/* Botones */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-primary {
+  background: #2196F3;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #1976D2;
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.btn-secondary {
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.btn-secondary:hover {
+  background: #efefef;
+}
+
+.btn-info {
+  background: #4CAF50;
+  color: white;
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.btn-info:hover {
+  background: #45a049;
+}
+
+/* Deudas Grid */
+.deudas-container {
+  min-height: 200px;
+}
+
+.deudas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.deuda-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.deuda-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border-color: #2196F3;
+}
+
+.deuda-header {
+  padding: 16px;
+  background: #f9f9f9;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.deuda-tipo-icon {
+  font-size: 32px;
+}
+
+.deuda-info {
+  flex: 1;
+}
+
+.deuda-info h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.deuda-tipo {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: #999;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.deuda-body {
+  padding: 16px;
+}
+
+.deuda-body > div {
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.deuda-body > div:last-child {
+  margin-bottom: 0;
+}
+
+.deuda-body .label {
+  font-size: 12px;
+  color: #999;
+  text-transform: uppercase;
+}
+
+.deuda-body .valor {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.deuda-monto .valor,
+.deuda-saldo .valor {
+  font-size: 16px;
+  color: #2196F3;
+}
+
+.deuda-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #f0f0f0;
+  text-align: center;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty-state p {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: #666;
+}
+
+/* Error Banner */
+.error-banner {
+  background: #ffebee;
+  border: 1px solid #ef5350;
+  color: #c62828;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+/* Modales */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal.modal-transacciones {
+  max-width: 600px;
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #333;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #2196F3;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+.modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* Resumen de deuda */
+.deuda-resumen {
+  background: #f5f5f5;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.resumen-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.resumen-item span {
+  font-size: 14px;
+  color: #666;
+}
+
+.resumen-item strong {
+  font-size: 16px;
+  color: #2196F3;
+}
+
+/* Transacciones lista */
+.transacciones-lista h3,
+.nueva-transaccion h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-top: 20px;
+  margin-bottom: 12px;
+}
+
+.transacciones-lista ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.txn {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.txn.cargo {
+  background: #fff3cd;
+  border-color: #ffc107;
+}
+
+.txn.abono {
+  background: #d4edda;
+  border-color: #28a745;
+}
+
+.txn-tipo {
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 80px;
+  text-transform: uppercase;
+}
+
+.txn-info {
+  flex: 1;
+  margin: 0 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.txn-razon {
+  font-size: 14px;
+  color: #333;
+  font-weight: 600;
+}
+
+.txn-fecha {
+  font-size: 12px;
+  color: #999;
+}
+
+.txn-monto {
+  font-size: 14px;
+  font-weight: bold;
+  min-width: 100px;
+  text-align: right;
+}
+
+.txn-monto.cargo {
+  color: #f57c00;
+}
+
+.txn-monto.abono {
+  color: #4caf50;
+}
+
+.sin-transacciones {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+  font-size: 14px;
+}
+
+.nueva-transaccion {
+  border-top: 1px solid #e0e0e0;
+  padding-top: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .fiado-container {
+    padding: 16px;
+  }
+
+  .fiado-header h1 {
+    font-size: 24px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .controles {
+    flex-direction: column;
+  }
+
+  .controles .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .deudas-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal {
+    width: 95%;
+    max-height: 95vh;
+  }
+}
