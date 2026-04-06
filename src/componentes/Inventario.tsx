@@ -1,29 +1,9 @@
 // src/componentes/Inventario.tsx - Sistema completo
 import React, { useState, useEffect } from 'react';
 import '../styles/Inventario.css';
+import { Producto } from '../types/pos.types';
 import EscanerZXing from './EscanerZXing';
 import EstadisticasAvanzadas from './EstadisticasAvanzadas';
-
-interface Producto {
-  id: number | string;
-  nombre: string;
-  codigoBarras: string;
-  categoria: string;
-  stock: number;
-  stockMinimo: number;
-  precioCompra: number;
-  precioVenta: number;
-  margen: number;
-  proveedor: string;
-  proveedorId: number;
-  fechaVencimiento?: string;
-  ubicacion: string;
-  imagen?: string;
-  descripcion?: string;
-  estado: 'activo' | 'descontinuado' | 'agotado';
-  fechaCreacion: string;
-  ultimaActualizacion: string;
-}
 
 interface Proveedor {
   id: number;
@@ -282,9 +262,9 @@ function Inventario() {
   const estadisticas = {
     totalProductos: productos.length,
     productosActivos: productos.filter(p => p.estado === 'activo').length,
-    productosAgotados: productos.filter(p => p.stock <= p.stockMinimo).length,
-    valorInventario: productos.reduce((total, p) => total + (p.stock * p.precioVenta), 0),
-    margenPromedio: productos.reduce((total, p) => total + p.margen, 0) / productos.length
+    productosAgotados: productos.filter(p => (p.stock ?? 0) <= (p.stockMinimo ?? 0)).length,
+    valorInventario: productos.reduce((total, p) => total + ((p.stock ?? 0) * (p.precioVenta ?? 0)), 0),
+    margenPromedio: productos.length > 0 ? productos.reduce((total, p) => total + (p.margen ?? 0), 0) / productos.length : 0
   };
 
   const manejarEscaneo = (codigo: string) => {
@@ -547,8 +527,10 @@ function Inventario() {
 
 // Componente para tarjeta de producto
 const ProductCard: React.FC<{producto: Producto, onEdit: () => void}> = ({producto, onEdit}) => {
-  const stockStatus = producto.stock <= producto.stockMinimo ? 'danger' : 
-                     producto.stock <= producto.stockMinimo * 2 ? 'warning' : 'good';
+  const stock = producto.stock ?? 0;
+  const stockMinimo = producto.stockMinimo ?? 0;
+  const stockStatus = stock <= stockMinimo ? 'danger' : 
+                     stock <= stockMinimo * 2 ? 'warning' : 'good';
 
   return (
     <div className={`product-card ${producto.estado}`} onDoubleClick={onEdit} style={{ cursor: 'pointer' }}>
@@ -559,7 +541,7 @@ const ProductCard: React.FC<{producto: Producto, onEdit: () => void}> = ({produc
           <div className="image-placeholder">📦</div>
         )}
         <span className={`stock-badge ${stockStatus}`}>
-          {producto.stock} und
+          {stock} und
         </span>
       </div>
       
@@ -570,11 +552,11 @@ const ProductCard: React.FC<{producto: Producto, onEdit: () => void}> = ({produc
         
         <div className="product-pricing">
           <div className="price-row">
-            <span>Compra: ${producto.precioCompra.toLocaleString()}</span>
-            <span>Venta: ${producto.precioVenta.toLocaleString()}</span>
+            <span>Compra: ${(producto.precioCompra || 0).toLocaleString()}</span>
+            <span>Venta: ${(producto.precioVenta || 0).toLocaleString()}</span>
           </div>
           <div className="margin-info">
-            Margen: <strong>{producto.margen.toFixed(1)}%</strong>
+            Margen: <strong>{(producto.margen || 0).toFixed(1)}%</strong>
           </div>
         </div>
         

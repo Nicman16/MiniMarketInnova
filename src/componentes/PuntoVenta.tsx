@@ -1,50 +1,8 @@
 // src/componentes/PuntoVenta.tsx
 import React, { useState, useCallback, useMemo } from 'react';
+import { Producto, ItemVenta } from '../types/pos.types';
 import EscanerZXing from './EscanerZXing';
 import '../styles/PuntoVenta.css';
-
-// Interfaces
-interface Producto {
-  id: number;
-  nombre: string;
-  codigo: string;
-  codigoBarras?: string;
-  categoria: string;
-  precio: number;
-  stock?: number;
-  imagen?: string;
-}
-
-interface ProductoInventario {
-  id: number | string;
-  nombre: string;
-  codigoBarras: string;
-  categoria: string;
-  stock: number;
-  stockMinimo: number;
-  precioCompra: number;
-  precioVenta: number;
-  margen: number;
-  proveedor: string;
-  proveedorId: number;
-  ubicacion: string;
-  imagen?: string;
-  descripcion?: string;
-  estado: 'activo' | 'descontinuado' | 'agotado';
-  fechaCreacion: string;
-  ultimaActualizacion: string;
-  fechaVencimiento?: string;
-}
-
-interface ItemVenta {
-  id: number;
-  nombre: string;
-  precio: number;
-  cantidad: number;
-  subtotal: number;
-  categoria: string;
-  codigoBarras?: string;
-}
 
 function PuntoVenta() {
   // Estados
@@ -57,7 +15,6 @@ function PuntoVenta() {
     {
       id: 1,
       nombre: 'Arroz Diana Premium 500g',
-      codigo: 'ARZ001',
       codigoBarras: '7702001001234',
       categoria: 'Granos y Cereales',
       precio: 2500,
@@ -67,7 +24,6 @@ function PuntoVenta() {
     {
       id: 2,
       nombre: 'Aceite Gourmet 1L',
-      codigo: 'ACT001',
       codigoBarras: '7702002001235',
       categoria: 'Aceites',
       precio: 4500,
@@ -77,7 +33,6 @@ function PuntoVenta() {
     {
       id: 3,
       nombre: 'Azúcar Incauca 1kg',
-      codigo: 'AZU001',
       codigoBarras: '7702003001236',
       categoria: 'Endulzantes',
       precio: 3200,
@@ -87,7 +42,6 @@ function PuntoVenta() {
     {
       id: 4,
       nombre: 'Coca Cola 2L',
-      codigo: 'BEB001',
       codigoBarras: '7894900011517',
       categoria: 'Bebidas',
       precio: 4000,
@@ -97,7 +51,6 @@ function PuntoVenta() {
     {
       id: 5,
       nombre: 'Leche Alpina 1L',
-      codigo: 'LAC001',
       codigoBarras: '7891000100103',
       categoria: 'Lácteos',
       precio: 3000,
@@ -107,7 +60,6 @@ function PuntoVenta() {
     {
       id: 6,
       nombre: 'Pan Bimbo Grande',
-      codigo: 'PAN001',
       codigoBarras: '7702001234567',
       categoria: 'Panadería',
       precio: 2200,
@@ -116,25 +68,21 @@ function PuntoVenta() {
     }
   ];
 
-  // Productos para el inventario (formato del escáner)
-  const productosInventario: ProductoInventario[] = productos.map(p => ({
-    id: p.id,
-    nombre: p.nombre,
-    codigoBarras: p.codigoBarras || '',
-    categoria: p.categoria,
+  // Enriquecer productos con datos de inventario
+  const productosEnriquecidos: Producto[] = productos.map(p => ({
+    ...p,
     stock: p.stock || 0,
-    stockMinimo: 5,
-    precioCompra: Math.round(p.precio * 0.7),
+    stockMinimo: p.stock ? 5 : 0,
+    precioCompra: p.precio ? Math.round(p.precio * 0.7) : 0,
     precioVenta: p.precio,
     margen: 30,
-    proveedor: 'Distribuidora Central',
-    proveedorId: 1,
-    ubicacion: 'Pasillo A',
-    imagen: p.imagen,
-    descripcion: `Producto ${p.nombre}`,
-    estado: 'activo' as const,
-    fechaCreacion: new Date().toISOString(),
-    ultimaActualizacion: new Date().toISOString()
+    proveedor: p.proveedor || 'Distribuidora Central',
+    proveedorId: p.proveedorId || 1,
+    ubicacion: p.ubicacion || 'Pasillo A',
+    descripcion: p.descripcion || `Producto ${p.nombre}`,
+    estado: p.estado || ('activo' as const),
+    fechaCreacion: p.fechaCreacion || new Date().toISOString(),
+    ultimaActualizacion: p.ultimaActualizacion || new Date().toISOString()
   }));
 
   // Filtrar productos
@@ -144,7 +92,6 @@ function PuntoVenta() {
     return productos.filter(producto =>
       producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
       producto.categoria.toLowerCase().includes(busqueda.toLowerCase()) ||
-      producto.codigo.toLowerCase().includes(busqueda.toLowerCase()) ||
       (producto.codigoBarras && producto.codigoBarras.includes(busqueda))
     );
   }, [busqueda, productos]);
@@ -152,30 +99,28 @@ function PuntoVenta() {
   // Función para agregar al carrito
   const agregarAlCarrito = useCallback((producto: Producto) => {
     setCarrito(carritoActual => {
-      const itemExistente = carritoActual.find(item => item.id === producto.id);
-      
+      const itemExistente = carritoActual.find(item => item.producto.id === producto.id);
+
       if (itemExistente) {
         return carritoActual.map(item =>
-          item.id === producto.id
-            ? { 
-                ...item, 
+          item.producto.id === producto.id
+            ? {
+                ...item,
                 cantidad: item.cantidad + 1,
-                subtotal: (item.cantidad + 1) * item.precio
+                subtotal: (item.cantidad + 1) * item.precioUnitario
               }
             : item
         );
       }
-      
+
       const nuevoItem: ItemVenta = {
-        id: producto.id,
-        nombre: producto.nombre,
-        precio: producto.precio,
+        id: Number(producto.id),
+        producto: producto,
+        precioUnitario: producto.precio || 0,
         cantidad: 1,
-        subtotal: producto.precio,
-        categoria: producto.categoria,
-        codigoBarras: producto.codigoBarras
+        subtotal: producto.precio || 0
       };
-      
+
       return [...carritoActual, nuevoItem];
     });
   }, []);
@@ -216,7 +161,6 @@ function PuntoVenta() {
             const productoManual: Producto = {
               id: Date.now(),
               nombre: nombre.trim(),
-              codigo: codigo.slice(-6),
               codigoBarras: codigo,
               categoria: 'Sin Categoría',
               precio: precioNumerico
@@ -233,22 +177,19 @@ function PuntoVenta() {
   }, [productos, agregarAlCarrito]);
 
   // Callbacks para el escáner
-  const manejarProductoEncontrado = useCallback((producto: ProductoInventario) => {
+  const manejarProductoEncontrado = useCallback((producto: Producto) => {
     console.log('✅ Producto identificado por escáner:', producto.nombre);
-    
-    // Convertir formato de inventario a formato de venta
-    const productoVenta: Producto = {
+
+    // Crear item de venta desde el producto
+    const itemVenta: ItemVenta = {
       id: Number(producto.id),
-      nombre: producto.nombre,
-      codigo: producto.codigoBarras.slice(-6),
-      codigoBarras: producto.codigoBarras,
-      categoria: producto.categoria,
-      precio: producto.precioVenta,
-      stock: producto.stock,
-      imagen: producto.imagen
+      producto: producto,
+      precioUnitario: producto.precioVenta || producto.precio || 0,
+      cantidad: 1,
+      subtotal: producto.precioVenta || producto.precio || 0
     };
-    
-    agregarAlCarrito(productoVenta);
+
+    agregarAlCarrito(producto);
     setEscanerActivo(false);
   }, [agregarAlCarrito]);
 
@@ -268,14 +209,14 @@ function PuntoVenta() {
       removerDelCarrito(id);
       return;
     }
-    
+
     setCarrito(carritoActual =>
       carritoActual.map(item =>
         item.id === id
-          ? { 
-              ...item, 
+          ? {
+              ...item,
               cantidad: nuevaCantidad,
-              subtotal: nuevaCantidad * item.precio
+              subtotal: nuevaCantidad * item.precioUnitario
             }
           : item
       )
@@ -354,7 +295,7 @@ function PuntoVenta() {
                 onScan={manejarCodigoEscaneado}
                 onProductoEncontrado={manejarProductoEncontrado}
                 onProductoNoEncontrado={manejarProductoNoEncontrado}
-                productos={productosInventario}
+                productos={productosEnriquecidos}
                 isActive={escanerActivo}
               />
             </div>
@@ -369,12 +310,12 @@ function PuntoVenta() {
               >
                 <div className="producto-imagen">
                   <img src={producto.imagen} alt={producto.nombre} />
-                  <span className="precio">${producto.precio.toLocaleString()}</span>
+                  <span className="precio">${(producto.precio || 0).toLocaleString()}</span>
                 </div>
                 <div className="producto-info">
                   <h4>{producto.nombre}</h4>
                   <p>{producto.categoria}</p>
-                  <span className="codigo">{producto.codigo}</span>
+                  <span className="codigo">{producto.codigoBarras?.slice(-6) || 'N/A'}</span>
                 </div>
               </div>
             ))}
@@ -404,31 +345,31 @@ function PuntoVenta() {
               carrito.map(item => (
                 <div key={item.id} className="carrito-item">
                   <div className="item-info">
-                    <h5>{item.nombre}</h5>
-                    <p>${item.precio.toLocaleString()} c/u</p>
+                    <h5>{item.producto.nombre}</h5>
+                    <p>${item.precioUnitario.toLocaleString()} c/u</p>
                   </div>
-                  
+
                   <div className="item-controles">
-                    <button 
+                    <button
                       className="button small"
                       onClick={() => actualizarCantidad(item.id, item.cantidad - 1)}
                     >
                       -
                     </button>
                     <span className="cantidad">{item.cantidad}</span>
-                    <button 
+                    <button
                       className="button small"
                       onClick={() => actualizarCantidad(item.id, item.cantidad + 1)}
                     >
                       +
                     </button>
                   </div>
-                  
+
                   <div className="item-subtotal">
                     ${item.subtotal.toLocaleString()}
                   </div>
-                  
-                  <button 
+
+                  <button
                     className="button danger small"
                     onClick={() => removerDelCarrito(item.id)}
                   >

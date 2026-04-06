@@ -1,27 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { BrowserMultiFormatReader, Result } from "@zxing/library";
+import { Producto } from "../types/pos.types";
 import "../styles/EscanerZXing.css";
-
-interface Producto {
-  id: number | string;
-  nombre: string;
-  codigoBarras: string;
-  categoria: string;
-  stock: number;
-  stockMinimo: number;
-  precioCompra: number;
-  precioVenta: number;
-  margen: number;
-  proveedor: string;
-  proveedorId: number;
-  fechaVencimiento?: string;
-  ubicacion: string;
-  imagen?: string;
-  descripcion?: string;
-  estado: "activo" | "descontinuado" | "agotado";
-  fechaCreacion: string;
-  ultimaActualizacion: string;
-}
 
 interface EscanerProps {
   onScan: (codigo: string) => void;
@@ -404,14 +384,14 @@ function EscanerZXing({
               <p className="codigo">Código: {productoEncontrado.codigoBarras}</p>
               <div className="precios">
                 <span className="precio-compra">
-                  Compra: ${productoEncontrado.precioCompra.toLocaleString()}
+                  Compra: ${(productoEncontrado.precioCompra || 0).toLocaleString()}
                 </span>
                 <span className="precio-venta">
-                  Venta: ${productoEncontrado.precioVenta.toLocaleString()}
+                  Venta: ${(productoEncontrado.precioVenta || 0).toLocaleString()}
                 </span>
               </div>
               <p className="stock">
-                Stock: {productoEncontrado.stock} unidades
+                Stock: {(productoEncontrado.stock ?? 0)} unidades
               </p>
             </div>
           </div>

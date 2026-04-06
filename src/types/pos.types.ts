@@ -1,16 +1,30 @@
 // src/types/pos.types.ts
 export interface Producto {
-  id: number;
+  id: number | string;
   nombre: string;
-  precio: number;
+  precio?: number;
+  precioVenta?: number;
+  precioCompra?: number;
   codigoBarras: string;
-  cantidad: number;
+  cantidad?: number;
+  stock?: number;
   categoria: string;
   imagen?: string;
   iva?: number;
+  margen?: number;
+  proveedor?: string;
+  proveedorId?: number;
+  stockMinimo?: number;
+  ubicacion?: string;
+  descripcion?: string;
+  estado?: 'activo' | 'descontinuado' | 'agotado';
+  fechaCreacion?: string;
+  ultimaActualizacion?: string;
+  fechaVencimiento?: string;
 }
 
 export interface ItemVenta {
+  id: number;
   producto: Producto;
   cantidad: number;
   precioUnitario: number;
