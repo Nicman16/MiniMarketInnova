@@ -2,6 +2,11 @@
 builder = "nixpacks"
 buildCommand = "npm run build"
 
+[build.nixpacks]
+# Reduce npm timeout issues in Docker
+ccacheSize = "2G"
+enableCoreutils = true
+
 [deploy]
 startCommand = "npm start"
 healthcheckPath = "/health"
