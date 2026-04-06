@@ -46,7 +46,7 @@ const normalizeProducto = (producto) => {
   const obj = producto.toObject ? producto.toObject() : producto;
   return {
     ...obj,
-    id: obj.id ?? obj._id ?? obj.cantidad ?? null,
+    id: obj.id ?? obj._id ?? null,
   };
 };
 
