@@ -1,63 +1,30 @@
-// src/componentes/Login.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import '../styles/Login.css';
-import { authService } from '../services/authService';
 
-interface LoginProps {
-  onLogin: (empleado: any) => void;
-}
-
-function Login({ onLogin }: LoginProps) {
-  const [pin, setPin] = useState('');
-  const [empleados, setEmpleados] = useState<any[]>([]);
-  const [cargando, setCargando] = useState(false);
+function Login() {
+  const { login } = useAuth();
+  const [email, setEmail] = useState('');
+  const [contraseña, setContraseña] = useState('');
   const [error, setError] = useState('');
+  const [cargando, setCargando] = useState(false);
 
-  useEffect(() => {
-    cargarEmpleados();
-  }, []);
-
-  const cargarEmpleados = async () => {
-    try {
-      const empleadosData = await authService.obtenerEmpleadosActivos();
-      setEmpleados(empleadosData);
-    } catch (error) {
-      setError('Error cargando empleados');
-    }
-  };
-
-  const manejarLogin = async (empleadoId: string) => {
-    if (!pin || pin.length < 4) {
-      setError('Ingrese su PIN de 4 dígitos');
-      return;
-    }
-
-    setCargando(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError('');
+    setCargando(true);
 
     try {
-      const empleado = await authService.login(empleadoId, pin);
-      onLogin(empleado);
-    } catch (error: any) {
-      setError(error.message || 'PIN incorrecto');
+      if (!email || !contraseña) {
+        throw new Error('Completa usuario y contraseña');
+      }
+      
+      await login(email, contraseña);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
     } finally {
       setCargando(false);
     }
-  };
-
-  const agregarDigito = (digito: string) => {
-    if (pin.length < 4) {
-      setPin(pin + digito);
-    }
-  };
-
-  const borrarDigito = () => {
-    setPin(pin.slice(0, -1));
-  };
-
-  const limpiarPin = () => {
-    setPin('');
-    setError('');
   };
 
   return (
@@ -65,97 +32,49 @@ function Login({ onLogin }: LoginProps) {
       <div className="login-card">
         <div className="login-header">
           <h1>🏪 MiniMarket Innova</h1>
-          <h2>Sistema POS</h2>
+          <p>Sistema de Gestión</p>
         </div>
 
-        <div className="login-body">
-          <h3>👨‍💼 Seleccionar Empleado</h3>
-          
-          <div className="empleados-login">
-            {empleados.map(empleado => (
-              <button
-                key={empleado.id}
-                className="empleado-btn"
-                onClick={() => manejarLogin(empleado.id)}
-                disabled={cargando || pin.length < 4}
-              >
-                <div className="empleado-avatar">
-                  {empleado.nombre.charAt(0).toUpperCase()}
-                </div>
-                <div className="empleado-info">
-                  <span className="nombre">{empleado.nombre}</span>
-                  <span className="rol">
-                    {empleado.rol === 'admin' ? '👑 Admin' : 
-                     empleado.rol === 'supervisor' ? '🔧 Supervisor' : '🛒 Vendedor'}
-                  </span>
-                </div>
-              </button>
-            ))}
+        <form onSubmit={handleSubmit} className="login-form">
+          <div className="form-group">
+            <label htmlFor="email">📧 Email</label>
+            <input
+              id="email"
+              type="email"
+              placeholder="tu@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={cargando}
+            />
           </div>
 
-          <div className="pin-section">
-            <h4>🔐 Ingrese su PIN</h4>
-            
-            <div className="pin-display">
-              {Array(4).fill(0).map((_, index) => (
-                <div key={index} className={`pin-dot ${pin.length > index ? 'filled' : ''}`}>
-                  {pin.length > index ? '●' : '○'}
-                </div>
-              ))}
-            </div>
-
-            <div className="teclado-numerico">
-              {Array.from({length: 9}, (_, i) => i + 1).map(num => (
-                <button
-                  key={num}
-                  className="tecla-numero"
-                  onClick={() => agregarDigito(num.toString())}
-                  disabled={pin.length >= 4}
-                >
-                  {num}
-                </button>
-              ))}
-              
-              <button 
-                className="tecla-numero"
-                onClick={limpiarPin}
-              >
-                🗑️
-              </button>
-              
-              <button
-                className="tecla-numero"
-                onClick={() => agregarDigito('0')}
-                disabled={pin.length >= 4}
-              >
-                0
-              </button>
-              
-              <button 
-                className="tecla-numero"
-                onClick={borrarDigito}
-              >
-                ⬅️
-              </button>
-            </div>
-
-            {error && (
-              <div className="error-message">
-                ⚠️ {error}
-              </div>
-            )}
-
-            {cargando && (
-              <div className="loading-message">
-                🔄 Verificando credenciales...
-              </div>
-            )}
+          <div className="form-group">
+            <label htmlFor="contraseña">🔐 Contraseña</label>
+            <input
+              id="contraseña"
+              type="password"
+              placeholder="••••••••"
+              value={contraseña}
+              onChange={(e) => setContraseña(e.target.value)}
+              disabled={cargando}
+            />
           </div>
 
-          <div className="login-footer">
-            <p>🕐 {new Date().toLocaleString()}</p>
-            <p>Versión 1.0.0</p>
-          </div>
+          {error && <div className="error-message">⚠️ {error}</div>}
+
+          <button 
+            type="submit" 
+            className="login-button"
+            disabled={cargando}
+          >
+            {cargando ? '⏳ Iniciando...' : '🚀 Iniciar Sesión'}
+          </button>
+        </form>
+
+        <div className="login-footer">
+          <p className="demo-hint">
+            💡 Demo: prueba con jefe@test.com / 1234 o empleado@test.com / 1234
+          </p>
         </div>
       </div>
     </div>

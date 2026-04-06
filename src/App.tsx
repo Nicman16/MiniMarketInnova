@@ -1,150 +1,76 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import './styles/App.css';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './componentes/Login';
 import PuntoVenta from './componentes/PuntoVenta';
-import ControlCaja from './componentes/ControlCaja';
 import Inventario from './componentes/Inventario';
-import { authService } from './services/authService';
-import { Empleado } from './types/pos.types';
 
-function App() {
-  const [empleadoActual, setEmpleadoActual] = useState<Empleado | null>(null);
-  const [paginaActual, setPaginaActual] = useState('pos');
-  const [cargando, setCargando] = useState(true);
+function DashboardContent() {
+  const { usuario, logout, isJefe } = useAuth();
+  const [paginaActual, setPaginaActual] = React.useState('punto-venta');
 
-  useEffect(() => {
-    // FORZAR LOGOUT AL INICIO (temporal para debugging)
-    localStorage.clear();
-    
-    verificarAutenticacion();
-  }, []);
-
-  const verificarAutenticacion = async () => {
-    try {
-      const empleado = await authService.obtenerEmpleadoActual();
-      setEmpleadoActual(empleado);
-    } catch (error) {
-      console.log('No hay empleado autenticado - mostrando login');
-      setEmpleadoActual(null); // Forzar null para mostrar login
-    } finally {
-      setCargando(false);
-    }
-  };
-
-  const manejarLogin = (empleado: Empleado) => {
-    console.log('Login exitoso:', empleado);
-    setEmpleadoActual(empleado);
-    setPaginaActual('pos');
-  };
-
-  const manejarLogout = async () => {
-    await authService.logout();
-    setEmpleadoActual(null);
-    setPaginaActual('pos');
-  };
-
-  const puedeAcceder = (pagina: string): boolean => {
-    if (!empleadoActual) return false;
-    
-    const permisos = {
-      pos: ['admin', 'supervisor', 'vendedor'],
-      inventario: ['admin', 'supervisor'],
-      caja: ['admin', 'supervisor']
-    };
-
-    return permisos[pagina as keyof typeof permisos]?.includes(empleadoActual.rol) || false;
-  };
-
-  // DEBUG: Mostrar estado actual
-  console.log('🔍 Estado actual:', {
-    cargando,
-    empleadoActual,
-    paginaActual
-  });
-
-  // LOADING
-  if (cargando) {
-    return (
-      <div className="loading-screen">
-        <div className="loading-spinner"></div>
-        <p className="loading-text">🏪 Cargando MiniMarket Innova...</p>
-      </div>
-    );
-  }
-
-  // LOGIN (FORZADO)
-  if (!empleadoActual) {
-    console.log('✅ Mostrando LOGIN - sin empleado autenticado');
-    return <Login onLogin={manejarLogin} />;
-  }
-
-  // RENDERIZAR PÁGINAS
   const renderPagina = () => {
     switch (paginaActual) {
-      case 'pos':
+      case 'punto-venta':
         return <PuntoVenta />;
       case 'inventario':
-        return puedeAcceder('inventario') ? <Inventario /> : <SinPermisos />;
-      case 'caja':
-        return puedeAcceder('caja') ? <ControlCaja /> : <SinPermisos />;
+        return isJefe ? <Inventario /> : <div className="sin-permiso">❌ Solo jefes pueden acceder al inventario</div>;
+      case 'fiado':
+        return <div className="seccion-no-implementada">🔄 Sistema de Fiado (en desarrollo)</div>;
       default:
         return <PuntoVenta />;
     }
   };
 
-  console.log('✅ Mostrando SISTEMA PRINCIPAL');
   return (
     <div className="app">
+      {/* NAVBAR */}
       <nav className="navbar">
-        <div className="navbar-brand">
+        <div className="navbar-left">
           <h1 className="app-title">🏪 MiniMarket Innova</h1>
-          <span className="version-badge">POS v2.0</span>
         </div>
 
-        <div className="navbar-menu">
+        <div className="navbar-center">
           <button 
-            className={`nav-item ${paginaActual === 'pos' ? 'active' : ''}`}
-            onClick={() => setPaginaActual('pos')}
+            className={`nav-btn ${paginaActual === 'punto-venta' ? 'active' : ''}`}
+            onClick={() => setPaginaActual('punto-venta')}
           >
             🛒 Punto de Venta
           </button>
 
-          <button 
-            className={`nav-item ${paginaActual === 'inventario' ? 'active' : ''} ${!puedeAcceder('inventario') ? 'disabled' : ''}`}
-            onClick={() => puedeAcceder('inventario') && setPaginaActual('inventario')}
-            disabled={!puedeAcceder('inventario')}
-          >
-            📦 Inventario
-          </button>
-
-          <button 
-            className={`nav-item ${paginaActual === 'caja' ? 'active' : ''} ${!puedeAcceder('caja') ? 'disabled' : ''}`}
-            onClick={() => puedeAcceder('caja') && setPaginaActual('caja')}
-            disabled={!puedeAcceder('caja')}
-          >
-            💵 Caja
-          </button>
+          {isJefe && (
+            <>
+              <button 
+                className={`nav-btn ${paginaActual === 'inventario' ? 'active' : ''}`}
+                onClick={() => setPaginaActual('inventario')}
+              >
+                📦 Inventario
+              </button>
+              
+              <button 
+                className={`nav-btn ${paginaActual === 'fiado' ? 'active' : ''}`}
+                onClick={() => setPaginaActual('fiado')}
+              >
+                💳 Fiado
+              </button>
+            </>
+          )}
         </div>
 
-        <div className="navbar-user">
+        <div className="navbar-right">
           <div className="user-info">
-            <div className="user-avatar">
-              {empleadoActual.nombre.charAt(0).toUpperCase()}
-            </div>
-            <div className="user-details">
-              <span className="user-name">{empleadoActual.nombre}</span>
-              <span className="user-role">
-                {empleadoActual.rol === 'admin' ? '👑 Admin' : 
-                 empleadoActual.rol === 'supervisor' ? '🔧 Supervisor' : '🛒 Vendedor'}
-              </span>
-            </div>
+            <span className="user-name">{usuario?.nombre}</span>
+            <span className={`user-badge ${isJefe ? 'jefe' : 'empleado'}`}>
+              {isJefe ? '👑 Jefe' : '👤 Empleado'}
+            </span>
           </div>
-          <button className="logout-btn" onClick={manejarLogout}>
+          <button className="logout-btn" onClick={logout}>
             🚪 Salir
           </button>
         </div>
       </nav>
 
+      {/* CONTENIDO PRINCIPAL */}
       <main className="main-content">
         {renderPagina()}
       </main>
@@ -152,12 +78,20 @@ function App() {
   );
 }
 
-const SinPermisos = () => (
-  <div className="sin-permisos">
-    <h2 className="sin-permisos-title">🚫 Acceso Denegado</h2>
-    <p className="sin-permisos-text">No tienes permisos para acceder a esta sección.</p>
-    <p className="sin-permisos-text">Contacta a tu administrador si necesitas acceso.</p>
-  </div>
-);
+function App() {
+  const { isAuthenticated } = useAuth();
 
-export default App;
+  return (
+    <div>
+      {isAuthenticated ? <DashboardContent /> : <Login />}
+    </div>
+  );
+}
+
+export default function AppWithAuth() {
+  return (
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
+}

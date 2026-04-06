@@ -1,4 +1,23 @@
 // src/types/pos.types.ts
+
+// ============ AUTENTICACIÓN ============
+export interface Usuario {
+  id: string;
+  nombre: string;
+  email: string;
+  contraseña?: string; // No se envía al frontend
+  rol: 'jefe' | 'empleado';
+  estado: 'activo' | 'inactivo';
+  fechaCreacion: string;
+  ultimoAcceso?: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  usuario: Omit<Usuario, 'contraseña'>;
+}
+
+// ============ PRODUCTOS ============
 export interface Producto {
   id: number | string;
   nombre: string;
@@ -73,9 +92,10 @@ export interface Empleado {
   id: string;
   nombre: string;
   email: string;
-  rol: 'admin' | 'vendedor' | 'supervisor';
+  rol: 'jefe' | 'empleado';
   activo: boolean;
   pin?: string;
+  deudaAcumulada?: number;
 }
 
 export interface Cliente {
@@ -84,4 +104,46 @@ export interface Cliente {
   telefono?: string;
   email?: string;
   totalCompras: number;
+  deudaTotal: number;
+  fechaRegistro: string;
+}
+
+// ============ FIADO / DEUDA ============
+export interface Deuda {
+  id: string;
+  tipo: 'cliente' | 'empleado'; // Fiado de cliente o consumo de empleado
+  referencia: string; // ID del cliente o empleado
+  nombrePersona: string;
+  monto: number;
+  razon: string; // "Compra de productos", "Consumo personal", etc.
+  fecha: string;
+  estado: 'pendiente' | 'parcial' | 'pagada';
+  saldo: number; // Monto pendiente por pagar
+}
+
+export interface TransaccionDeuda {
+  id: string;
+  deudaId: string;
+  tipo: 'cargo' | 'abono'; // Cargo (se lleva algo) o Abono (paga)
+  monto: number;
+  fecha: string;
+  razon: string;
+  empleadoRegistro: string; // Quién registró la transacción
+  comprobante?: ComprobanteEvidencia;
+}
+
+export interface ComprobanteEvidencia {
+  id: string;
+  transaccionId: string;
+  foto: string; // URL o base64 de la foto
+  descripcion?: string;
+  fechaCarga: string;
+  tipoComprobante: 'foto_pago' | 'recibo' | 'ticket';
+}
+
+// ============ SESIÓN DE USUARIO ============
+export interface SesionUsuario {
+  usuario: Omit<Usuario, 'contraseña'>;
+  token: string;
+  fechaLogin: string;
 }

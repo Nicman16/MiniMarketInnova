@@ -37,34 +37,34 @@ class AuthService {
     if (this.empleados.length === 0) {
       this.empleados = [
         {
-          id: 'admin-001',
-          nombre: 'Administrador',
-          email: 'admin@minimarket.com',
-          rol: 'admin',
+          id: 'jefe-001',
+          nombre: 'Jefe de Tienda',
+          email: 'jefe@minimarket.com',
+          rol: 'jefe',
           activo: true,
           pin: '1234'
         },
         {
-          id: 'vendedor-001',
+          id: 'empleado-001',
           nombre: 'María González',
           email: 'maria@minimarket.com',
-          rol: 'vendedor',
+          rol: 'empleado',
           activo: true,
           pin: '5678'
         },
         {
-          id: 'vendedor-002',
+          id: 'empleado-002',
           nombre: 'Carlos Rodríguez',
           email: 'carlos@minimarket.com',
-          rol: 'vendedor',
+          rol: 'empleado',
           activo: true,
           pin: '9999'
         },
         {
-          id: 'supervisor-001',
+          id: 'empleado-003',
           nombre: 'Ana López',
           email: 'ana@minimarket.com',
-          rol: 'supervisor',
+          rol: 'empleado',
           activo: true,
           pin: '0000'
         }
@@ -114,16 +114,8 @@ class AuthService {
     if (!this.empleadoActual) return false;
 
     const permisos = {
-      admin: ['*'], // Todos los permisos
-      supervisor: [
-        'ventas',
-        'inventario.ver',
-        'inventario.editar',
-        'reportes.ver',
-        'caja.ver',
-        'caja.movimientos'
-      ],
-      vendedor: [
+      jefe: ['*'], // Todos los permisos
+      empleado: [
         'ventas',
         'inventario.ver',
         'caja.ver'
@@ -150,7 +142,7 @@ class AuthService {
   async crearEmpleado(datos: {
     nombre: string;
     email: string;
-    rol: 'admin' | 'vendedor' | 'supervisor';
+    rol: 'jefe' | 'empleado';
     pin: string;
   }): Promise<Empleado> {
     // Verificar permisos
@@ -223,11 +215,11 @@ class AuthService {
       throw new Error('Empleado no encontrado');
     }
 
-    // No permitir desactivar el último admin
-    if (empleado.rol === 'admin' && empleado.activo) {
-      const adminsActivos = this.empleados.filter(e => e.rol === 'admin' && e.activo);
-      if (adminsActivos.length === 1) {
-        throw new Error('No se puede desactivar el último administrador');
+    // No permitir desactivar el último jefe
+    if (empleado.rol === 'jefe' && empleado.activo) {
+      const jefesActivos = this.empleados.filter(e => e.rol === 'jefe' && e.activo);
+      if (jefesActivos.length === 1) {
+        throw new Error('No se puede desactivar el último jefe');
       }
     }
 
@@ -251,11 +243,11 @@ class AuthService {
       throw new Error('Empleado no encontrado');
     }
 
-    // No permitir eliminar el último admin
-    if (empleado.rol === 'admin') {
-      const admins = this.empleados.filter(e => e.rol === 'admin');
-      if (admins.length === 1) {
-        throw new Error('No se puede eliminar el último administrador');
+    // No permitir eliminar el último jefe
+    if (empleado.rol === 'jefe') {
+      const jefes = this.empleados.filter(e => e.rol === 'jefe');
+      if (jefes.length === 1) {
+        throw new Error('No se puede eliminar el último jefe');
       }
     }
 
@@ -302,9 +294,8 @@ class AuthService {
     const totalEmpleados = this.empleados.length;
     const empleadosActivos = this.empleados.filter(e => e.activo).length;
     const porRol = {
-      admin: this.empleados.filter(e => e.rol === 'admin').length,
-      supervisor: this.empleados.filter(e => e.rol === 'supervisor').length,
-      vendedor: this.empleados.filter(e => e.rol === 'vendedor').length
+      jefe: this.empleados.filter(e => e.rol === 'jefe').length,
+      empleado: this.empleados.filter(e => e.rol === 'empleado').length
     };
 
     return {

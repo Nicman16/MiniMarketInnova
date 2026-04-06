@@ -39,26 +39,26 @@ class CajaService {
     if (this.empleados.length === 0) {
       this.empleados = [
         {
-          id: 'admin-001',
-          nombre: 'Admin Principal',
-          email: 'admin@minimarket.com',
-          rol: 'admin',
+          id: 'jefe-001',
+          nombre: 'Jefe Principal',
+          email: 'jefe@minimarket.com',
+          rol: 'jefe',
           activo: true,
           pin: '1234'
         },
         {
-          id: 'vendedor-001',
+          id: 'empleado-001',
           nombre: 'María González',
           email: 'maria@minimarket.com',
-          rol: 'vendedor',
+          rol: 'empleado',
           activo: true,
           pin: '5678'
         },
         {
-          id: 'supervisor-001',
+          id: 'empleado-002',
           nombre: 'Carlos Rodríguez',
           email: 'carlos@minimarket.com',
-          rol: 'supervisor',
+          rol: 'empleado',
           activo: true,
           pin: '9999'
         }

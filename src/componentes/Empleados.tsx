@@ -9,7 +9,7 @@ function Empleados() {
   const [nuevoEmpleado, setNuevoEmpleado] = useState({
     nombre: '',
     email: '',
-    rol: 'vendedor' as 'admin' | 'vendedor' | 'supervisor',
+    rol: 'empleado' as 'jefe' | 'empleado',
     pin: ''
   });
   const [empleadoEditando, setEmpleadoEditando] = useState<Empleado | null>(null);
@@ -53,7 +53,7 @@ function Empleados() {
     try {
       const empleado = await authService.crearEmpleado(nuevoEmpleado);
       setEmpleados([...empleados, empleado]);
-      setNuevoEmpleado({ nombre: '', email: '', rol: 'vendedor', pin: '' });
+      setNuevoEmpleado({ nombre: '', email: '', rol: 'empleado', pin: '' });
       setModalAbierto(false);
       alert('✅ Empleado creado correctamente');
     } catch (error: any) {
@@ -104,21 +104,21 @@ function Empleados() {
   };
 
   const abrirModalNuevo = () => {
-    setNuevoEmpleado({ nombre: '', email: '', rol: 'vendedor', pin: '' });
+    setNuevoEmpleado({ nombre: '', email: '', rol: 'empleado', pin: '' });
     setEmpleadoEditando(null);
     setModalAbierto(true);
   };
 
   const abrirModalEditar = (empleado: Empleado) => {
     setEmpleadoEditando({ ...empleado });
-    setNuevoEmpleado({ nombre: '', email: '', rol: 'vendedor', pin: '' });
+    setNuevoEmpleado({ nombre: '', email: '', rol: 'empleado', pin: '' });
     setModalAbierto(true);
   };
 
   const cerrarModal = () => {
     setModalAbierto(false);
     setEmpleadoEditando(null);
-    setNuevoEmpleado({ nombre: '', email: '', rol: 'vendedor', pin: '' });
+    setNuevoEmpleado({ nombre: '', email: '', rol: 'empleado', pin: '' });
   };
 
   const generarPinAleatorio = () => {
@@ -130,7 +130,7 @@ function Empleados() {
     }
   };
 
-  const puedeEditar = empleadoActual?.rol === 'admin';
+  const puedeEditar = empleadoActual?.rol === 'jefe';
 
   return (
     <div className="empleados-container">
@@ -153,12 +153,12 @@ function Empleados() {
           <p className="stat-value">{empleados.filter(e => e.activo).length}</p>
         </div>
         <div className="stat-card">
-          <h3>👑 Administradores</h3>
-          <p className="stat-value">{empleados.filter(e => e.rol === 'admin').length}</p>
+          <h3>👑 Jefes</h3>
+          <p className="stat-value">{empleados.filter(e => e.rol === 'jefe').length}</p>
         </div>
         <div className="stat-card">
-          <h3>🛒 Vendedores</h3>
-          <p className="stat-value">{empleados.filter(e => e.rol === 'vendedor').length}</p>
+          <h3>👤 Empleados</h3>
+          <p className="stat-value">{empleados.filter(e => e.rol === 'empleado').length}</p>
         </div>
       </div>
 
@@ -174,8 +174,7 @@ function Empleados() {
               <p className="empleado-email">{empleado.email}</p>
               <div className="empleado-badges">
                 <span className={`badge ${empleado.rol}`}>
-                  {empleado.rol === 'admin' ? '👑 Admin' : 
-                   empleado.rol === 'supervisor' ? '🔧 Supervisor' : '🛒 Vendedor'}
+                  {empleado.rol === 'jefe' ? '👑 Jefe' : '👤 Empleado'}
                 </span>
                 <span className={`badge ${empleado.activo ? 'activo' : 'inactivo'}`}>
                   {empleado.activo ? '🟢 Activo' : '🔴 Inactivo'}
@@ -259,9 +258,8 @@ function Empleados() {
                   }
                   className="input"
                 >
-                  <option value="vendedor">🛒 Vendedor</option>
-                  <option value="supervisor">🔧 Supervisor</option>
-                  <option value="admin">👑 Administrador</option>
+                  <option value="empleado">👤 Empleado</option>
+                  <option value="jefe">👑 Jefe</option>
                 </select>
 
                 <div className="pin-container">

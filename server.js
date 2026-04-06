@@ -5,6 +5,8 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const path = require('path');
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const server = http.createServer(app);
@@ -14,8 +16,7 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/minimarket
 mongoose.connect(MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB conectado');
-    inicializarProductosBD();
-  })
+    inicializarProductosBD();    inicializarUsuariosDemoer();  })
   .catch(err => {
     console.warn('⚠️ No se pudo conectar a MongoDB (se mantiene in-memory):', err.message);
   });
@@ -41,6 +42,47 @@ const productoSchema = new mongoose.Schema({
 });
 const Producto = mongoose.model('Producto', productoSchema);
 
+// Schema para Usuarios
+const usuarioSchema = new mongoose.Schema({
+  nombre: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  contraseña: { type: String, required: true },
+  rol: { type: String, enum: ['jefe', 'empleado'], default: 'empleado' },
+  estado: { type: String, enum: ['activo', 'inactivo'], default: 'activo' },
+  fechaCreacion: { type: Date, default: Date.now },
+  ultimoAcceso: Date
+});
+const Usuario = mongoose.model('Usuario', usuarioSchema);
+
+// Schema para Deudas
+const deudaSchema = new mongoose.Schema({
+  tipo: { type: String, enum: ['cliente', 'empleado'], required: true },
+  referencia: { type: String, required: true }, // ID del cliente o empleado
+  nombrePersona: { type: String, required: true },
+  monto: { type: Number, required: true },
+  razon: String,
+  fecha: { type: Date, default: Date.now },
+  estado: { type: String, enum: ['pendiente', 'parcial', 'pagada'], default: 'pendiente' },
+  saldo: { type: Number, required: true }
+});
+const Deuda = mongoose.model('Deuda', deudaSchema);
+
+// Schema para Transacciones de Deuda
+const transaccionDeudaSchema = new mongoose.Schema({
+  deudaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Deuda', required: true },
+  tipo: { type: String, enum: ['cargo', 'abono'], required: true },
+  monto: { type: Number, required: true },
+  fecha: { type: Date, default: Date.now },
+  razon: String,
+  empleadoRegistro: String,
+  comprobante: {
+    foto: String,
+    descripcion: String,
+    tipoComprobante: { type: String, enum: ['foto_pago', 'recibo', 'ticket'] }
+  }
+});
+const TransaccionDeuda = mongoose.model('TransaccionDeuda', transaccionDeudaSchema);
+
 const normalizeProducto = (producto) => {
   if (!producto) return producto;
   const obj = producto.toObject ? producto.toObject() : producto;
@@ -61,6 +103,114 @@ const io = socketIo(server, {
 
 app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ========== RUTAS DE AUTENTICACIÓN ==========
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, contraseña } = req.body;
+    
+    if (!email || !contraseña) {
+      return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+    }
+    
+    // Buscar usuario por email
+    const usuario = await Usuario.findOne({ email });
+    
+    if (!usuario) {
+      return res.status(401).json({ error: 'Usuario o contraseña inválidos' });
+    }
+    
+    // Verificar contraseña
+    const esValida = await bcrypt.compare(contraseña, usuario.contraseña);
+    if (!esValida) {
+      return res.status(401).json({ error: 'Usuario o contraseña inválidos' });
+    }
+    
+    // Generar token JWT
+    const token = jwt.sign(
+      { id: usuario._id, email: usuario.email, rol: usuario.rol },
+      process.env.JWT_SECRET || 'tu_clave_secreta_aqui',
+      { expiresIn: '7d' }
+    );
+    
+    // Actualizar último acceso
+    usuario.ultimoAcceso = new Date();
+    await usuario.save();
+    
+    // Responder sin la contraseña
+    const usuarioSinPassword = usuario.toObject();
+    delete usuarioSinPassword.contraseña;
+    
+    res.json({
+      token,
+      usuario: usuarioSinPassword
+    });
+  } catch (error) {
+    console.error('Error en login:', error);
+    res.status(500).json({ error: 'Error al intentar login' });
+  }
+});
+
+app.post('/api/auth/registro', async (req, res) => {
+  try {
+    const { nombre, email, contraseña, rol = 'empleado' } = req.body;
+    
+    if (!nombre || !email || !contraseña) {
+      return res.status(400).json({ error: 'Nombre, email y contraseña son requeridos' });
+    }
+    
+    // Verificar si el usuario ya existe
+    const usuarioExistente = await Usuario.findOne({ email });
+    if (usuarioExistente) {
+      return res.status(400).json({ error: 'El email ya está registrado' });
+    }
+    
+    // Hash de la contraseña
+    const salt = await bcrypt.genSalt(10);
+    const contraseniaHasheada = await bcrypt.hash(contraseña, salt);
+    
+    // Crear nuevo usuario
+    const nuevoUsuario = new Usuario({
+      nombre,
+      email,
+      contraseña: contraseniaHasheada,
+      rol,
+      estado: 'activo'
+    });
+    
+    await nuevoUsuario.save();
+    
+    // Generar token
+    const token = jwt.sign(
+      { id: nuevoUsuario._id, email: nuevoUsuario.email, rol: nuevoUsuario.rol },
+      process.env.JWT_SECRET || 'tu_clave_secreta_aqui',
+      { expiresIn: '7d' }
+    );
+    
+    const usuarioSinPassword = nuevoUsuario.toObject();
+    delete usuarioSinPassword.contraseña;
+    
+    res.status(201).json({
+      token,
+      usuario: usuarioSinPassword,
+      mensaje: 'Usuario registrado exitosamente'
+    });
+  } catch (error) {
+    console.error('Error en registro:', error);
+    res.status(500).json({ error: 'Error al registrar usuario' });
+  }
+});
+
+app.get('/api/auth/me', verificarToken, async (req, res) => {
+  try {
+    const usuario = await Usuario.findById(req.usuario.id).select('-contraseña');
+    res.json(usuario);
+  } catch (error) {
+    console.error('Error en /api/auth/me:', error);
+    res.status(500).json({ error: 'Error al obtener información del usuario' });
+  }
+});
 
 // Datos en memoria (fallback)
 let productos = [
@@ -93,6 +243,55 @@ async function inicializarProductosBD() {
     console.error('Error inicializando productos en MongoDB:', err);
   }
 }
+
+// Inicializar usuarios demo
+async function inicializarUsuariosDemoer() {
+  try {
+    const usuariosExistentes = await Usuario.countDocuments();
+    if (usuariosExistentes === 0) {
+      const salt = await bcrypt.genSalt(10);
+      const contraseniaHasheada = await bcrypt.hash('1234', salt);
+      
+      await Usuario.insertMany([
+        {
+          nombre: 'Jefe de Tienda',
+          email: 'jefe@test.com',
+          contraseña: contraseniaHasheada,
+          rol: 'jefe',
+          estado: 'activo',
+          fechaCreacion: new Date()
+        },
+        {
+          nombre: 'Empleado Demo',
+          email: 'empleado@test.com',
+          contraseña: contraseniaHasheada,
+          rol: 'empleado',
+          estado: 'activo',
+          fechaCreacion: new Date()
+        }
+      ]);
+      console.log('✅ Usuarios demo creados: jefe@test.com y empleado@test.com (contraseña: 1234)');
+    }
+  } catch (err) {
+    console.error('Error inicializando usuarios demo:', err);
+  }
+}
+
+// Middleware para verificar token
+const verificarToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'Token requerido' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'tu_clave_secreta_aqui');
+    req.usuario = decoded;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: 'Token inválido' });
+  }
+};
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString(), dispositivos: dispositivosConectados.length, productos: productos.length, estadisticas });
