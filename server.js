@@ -116,7 +116,6 @@ const io = socketIo(server, {
 
 app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
 // Middleware para verificar token JWT
 const verificarToken = (req, res, next) => {
@@ -613,7 +612,7 @@ if (process.env.NODE_ENV === 'production') {
     proxyInstalled = true;
     console.log('Proxy activo: / -> http://localhost:3002');
   } catch (err) {
-    console.warn('http-proxy-middleware no est� instalado; si quieres usar proxy en dev, instala http-proxy-middleware');
+    console.warn('http-proxy-middleware no está instalado; si quieres usar proxy en dev, instala http-proxy-middleware');
   }
 
   if (!proxyInstalled) {
