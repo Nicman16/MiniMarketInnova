@@ -11,13 +11,16 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const server = http.createServer(app);
 
-// Conexi�n a MongoDB
+// Conexión a MongoDB
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/minimarket';
-console.log('🔍 Intentando conectar a MongoDB:', MONGO_URI.replace(/\/\/.*@/, '//***:***@')); // Oculta credenciales en logs
+const DISPLAY_URI = MONGO_URI.replace(/:\/\/.*@/, '://***:***@').split('?')[0];
+console.log('🔍 Intentando conectar a MongoDB:', DISPLAY_URI);
+console.log('📍 Entorno:', process.env.NODE_ENV);
 
 mongoose.connect(MONGO_URI, {
-  serverSelectionTimeoutMS: 5000, // Timeout de 5 segundos
+  serverSelectionTimeoutMS: 10000, // Timeout de 10 segundos
   socketTimeoutMS: 45000,
+  maxPoolSize: 10,
 })
   .then(() => {
     console.log('✅ MongoDB conectado exitosamente');

@@ -21,30 +21,7 @@ value = "production"
 name = "NPM_CONFIG_PRODUCTION"
 value = "false"
 
-# MongoDB Database Service
-[[services.mongodb]]
-image = "mongo:7"
-restartPolicyType = "always"
-healthcheckPath = "/health"
-healthcheckTimeout = 300
-
-[[services.mongodb.environmentVariables]]
-name = "MONGO_INITDB_ROOT_USERNAME"
-value = "admin"
-
-[[services.mongodb.environmentVariables]]
-name = "MONGO_INITDB_ROOT_PASSWORD"
-value = "password123"
-
-[[services.mongodb.environmentVariables]]
-name = "MONGO_INITDB_DATABASE"
-value = "minimarket"
-
-# Conectar la app con MongoDB
-[[deploy.environmentVariables]]
-name = "MONGO_URI"
-value = "mongodb://admin:password123@mongodb:27017/minimarket?authSource=admin"
-
-[[deploy.environmentVariables]]
-name = "JWT_SECRET"
-value = "minimarket_jwt_secret_2024_secure_key_change_in_production"
+# IMPORTANTE: Configura estas variables en el dashboard de Railway
+# Variables requeridas:
+# MONGO_URI=tu_uri_de_mongodb_atlas_aqui
+# JWT_SECRET=tu_clave_secreta_segura_aqui
