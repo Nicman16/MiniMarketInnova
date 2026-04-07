@@ -5,6 +5,7 @@ import Login from './componentes/Login';
 import PuntoVenta from './componentes/PuntoVenta';
 import Inventario from './componentes/Inventario';
 import Fiado from './componentes/Fiado';
+import DashboardMetrics from './componentes/DashboardMetrics';
 
 function DashboardContent() {
   const { usuario, logout, isJefe } = useAuth();
@@ -70,6 +71,8 @@ function DashboardContent() {
           </button>
         </div>
       </nav>
+
+      <DashboardMetrics />
 
       {/* CONTENIDO PRINCIPAL */}
       <main className="main-content">
