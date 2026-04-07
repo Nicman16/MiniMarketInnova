@@ -43,7 +43,7 @@ value = "minimarket"
 # Conectar la app con MongoDB
 [[deploy.environmentVariables]]
 name = "MONGO_URI"
-value = "${{ services.mongodb.MONGODB_PRIVATE_URL }}/minimarket?authSource=admin"
+value = "mongodb://admin:password123@mongodb:27017/minimarket?authSource=admin"
 
 [[deploy.environmentVariables]]
 name = "JWT_SECRET"
