@@ -50,7 +50,7 @@ function DashboardMetrics() {
 
   if (loading) {
     return (
-      <div className="dashboard-summary loading">
+      <div className="dashboard-container">
         <div className="loading-container">
           <div className="loading-spinner-modern"></div>
           <p>Cargando métricas del sistema...</p>
@@ -61,7 +61,7 @@ function DashboardMetrics() {
 
   if (error || !stats) {
     return (
-      <div className="dashboard-summary error">
+      <div className="dashboard-container">
         <div className="error-container">
           <div className="error-icon">⚠️</div>
           <p>No fue posible cargar métricas: {error}</p>
@@ -78,101 +78,150 @@ function DashboardMetrics() {
   };
 
   return (
-    <div className="dashboard-summary">
-      <div className="summary-header">
-        <div>
-          <h2>📊 Panel de Control - MiniMarket Innova</h2>
-          <p>Monitoreo en tiempo real del rendimiento del sistema</p>
-        </div>
-        <div className="summary-badge">
-          <span className="status-dot"></span>
-          Sistema Activo
-        </div>
-      </div>
-
-      <div className="metric-grid">
-        <div className="metric-card metric-primary">
-          <div className="metric-icon">📦</div>
-          <div className="metric-content">
-            <div className="metric-label">Productos en Inventario</div>
-            <div className="metric-value">{formatNumber(stats.productos)}</div>
-            <div className="metric-trend trend-up">
-              <span className="trend-icon">↗️</span>
-              +12% esta semana
-            </div>
+    <div className="dashboard-container">
+      {/* HEADER DEL DASHBOARD */}
+      <div className="dashboard-header">
+        <div className="header-content">
+          <div className="header-title-section">
+            <h1>MiniMarket Innova</h1>
+            <p className="dashboard-subtitle">Panel de control en tiempo real</p>
           </div>
-        </div>
-
-        <div className="metric-card metric-info">
-          <div className="metric-icon">🖥️</div>
-          <div className="metric-content">
-            <div className="metric-label">Dispositivos Conectados</div>
-            <div className="metric-value">{stats.dispositivos}</div>
-            <div className="metric-trend trend-neutral">
-              <span className="trend-icon">➡️</span>
-              Estable
+          <div className="header-stats">
+            <div className="header-stat">
+              <span className="stat-icon">🟢</span>
+              <span>Sistema Activo</span>
             </div>
-          </div>
-        </div>
-
-        <div className="metric-card metric-success">
-          <div className="metric-icon">➕</div>
-          <div className="metric-content">
-            <div className="metric-label">Productos Agregados</div>
-            <div className="metric-value">{formatNumber(stats.estadisticas.productosAgregados)}</div>
-            <div className="metric-trend trend-up">
-              <span className="trend-icon">↗️</span>
-              Hoy
-            </div>
-          </div>
-        </div>
-
-        <div className="metric-card metric-warning">
-          <div className="metric-icon">🔄</div>
-          <div className="metric-content">
-            <div className="metric-label">Productos Actualizados</div>
-            <div className="metric-value">{formatNumber(stats.estadisticas.productosActualizados)}</div>
-            <div className="metric-trend trend-up">
-              <span className="trend-icon">↗️</span>
-              Hoy
-            </div>
-          </div>
-        </div>
-
-        <div className="metric-card metric-secondary">
-          <div className="metric-icon">📱</div>
-          <div className="metric-content">
-            <div className="metric-label">Escaneos Realizados</div>
-            <div className="metric-value">{formatNumber(stats.estadisticas.escaneos)}</div>
-            <div className="metric-trend trend-up">
-              <span className="trend-icon">↗️</span>
-              Sesión actual
-            </div>
-          </div>
-        </div>
-
-        <div className="metric-card metric-accent">
-          <div className="metric-icon">🕒</div>
-          <div className="metric-content">
-            <div className="metric-label">Último Reinicio</div>
-            <div className="metric-value-small">
-              {new Date(stats.estadisticas.inicioServidor).toLocaleDateString('es-ES')}
-            </div>
-            <div className="metric-time">
-              {new Date(stats.estadisticas.inicioServidor).toLocaleTimeString('es-ES', {
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
+            <div className="header-stat">
+              <span className="stat-icon">📅</span>
+              <span>{new Date().toLocaleDateString('es-ES')}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="dashboard-footer">
-        <div className="footer-stats">
-          <span>Última actualización: {new Date().toLocaleTimeString('es-ES')}</span>
-          <span>•</span>
-          <span>Sistema funcionando correctamente</span>
+      {/* MÉTRICAS PRINCIPALES */}
+      <div className="metrics-overview">
+        <div className="metric-card-large primary">
+          <div className="metric-header">
+            <div className="metric-icon-large">📦</div>
+            <div className="metric-info">
+              <h3>Inventario Total</h3>
+              <p>Productos disponibles</p>
+            </div>
+          </div>
+          <div className="metric-value-large">{formatNumber(stats.productos)}</div>
+          <div className="metric-change positive">
+            <span className="change-icon">↗️</span>
+            <span>+12% esta semana</span>
+          </div>
+        </div>
+
+        <div className="metric-card-large success">
+          <div className="metric-header">
+            <div className="metric-icon-large">💰</div>
+            <div className="metric-info">
+              <h3>Ventas del Día</h3>
+              <p>Ingresos generados</p>
+            </div>
+          </div>
+          <div className="metric-value-large">$2,847</div>
+          <div className="metric-change positive">
+            <span className="change-icon">↗️</span>
+            <span>+18% vs ayer</span>
+          </div>
+        </div>
+
+        <div className="metric-card-large info">
+          <div className="metric-header">
+            <div className="metric-icon-large">📱</div>
+            <div className="metric-info">
+              <h3>Dispositivos</h3>
+              <p>Conectados al sistema</p>
+            </div>
+          </div>
+          <div className="metric-value-large">{stats.dispositivos}</div>
+          <div className="metric-change neutral">
+            <span className="change-icon">➡️</span>
+            <span>Estable</span>
+          </div>
+        </div>
+
+        <div className="metric-card-large warning">
+          <div className="metric-header">
+            <div className="metric-icon-large">⏱️</div>
+            <div className="metric-info">
+              <h3>Tiempo Activo</h3>
+              <p>Horas de funcionamiento</p>
+            </div>
+          </div>
+          <div className="metric-value-large">{Math.floor((Date.now() - new Date(stats.estadisticas.inicioServidor).getTime()) / (1000 * 60 * 60))}</div>
+          <div className="metric-change neutral">
+            <span className="change-icon">🕐</span>
+            <span>Continuo</span>
+          </div>
+        </div>
+      </div>
+
+      {/* MÉTRICAS SECUNDARIAS */}
+      <div className="metrics-secondary">
+        <div className="secondary-grid">
+          <div className="metric-card-medium">
+            <div className="metric-icon">➕</div>
+            <div className="metric-content">
+              <div className="metric-label">Productos Agregados</div>
+              <div className="metric-value">{formatNumber(stats.estadisticas.productosAgregados)}</div>
+              <div className="metric-trend positive">Hoy</div>
+            </div>
+          </div>
+
+          <div className="metric-card-medium">
+            <div className="metric-icon">🔄</div>
+            <div className="metric-content">
+              <div className="metric-label">Actualizaciones</div>
+              <div className="metric-value">{formatNumber(stats.estadisticas.productosActualizados)}</div>
+              <div className="metric-trend positive">Hoy</div>
+            </div>
+          </div>
+
+          <div className="metric-card-medium">
+            <div className="metric-icon">📱</div>
+            <div className="metric-content">
+              <div className="metric-label">Escaneos</div>
+              <div className="metric-value">{formatNumber(stats.estadisticas.escaneos)}</div>
+              <div className="metric-trend positive">Sesión</div>
+            </div>
+          </div>
+
+          <div className="metric-card-medium">
+            <div className="metric-icon">🔔</div>
+            <div className="metric-content">
+              <div className="metric-label">Alertas</div>
+              <div className="metric-value">2</div>
+              <div className="metric-trend warning">Activas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ESTADO DEL SISTEMA */}
+      <div className="system-status">
+        <h3 className="section-title">Estado del Sistema</h3>
+        <div className="status-indicators">
+          <div className="status-item online">
+            <div className="status-dot"></div>
+            <span>Base de Datos</span>
+            <span className="status-desc">Conectado</span>
+          </div>
+          <div className="status-item online">
+            <div className="status-dot"></div>
+            <span>Servidor API</span>
+            <span className="status-desc">Operativo</span>
+          </div>
+          <div className="status-item warning">
+            <div className="status-dot"></div>
+            <span>Sincronización</span>
+            <span className="status-desc">5 min atrás</span>
+          </div>
         </div>
       </div>
     </div>

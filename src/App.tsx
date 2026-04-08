@@ -26,18 +26,20 @@ function DashboardContent() {
   };
 
   const renderPagina = () => {
+    console.log('Renderizando página:', paginaActual, 'isJefe:', isJefe);
+
     const paginaComponent = (() => {
       switch (paginaActual) {
         case 'dashboard':
-          return <Welcome />;
+          return <DashboardMetrics />;
         case 'punto-venta':
           return <PuntoVenta />;
         case 'inventario':
-          return isJefe ? <Inventario /> : <div className="sin-permiso">❌ Solo jefes pueden acceder al inventario</div>;
+          return isJefe ? <Inventario /> : <div className="sin-permiso">❌ Solo administradores pueden acceder al inventario</div>;
         case 'fiado':
-          return isJefe ? <Fiado /> : <div className="sin-permiso">❌ Solo jefes pueden acceder a Fiado</div>;
+          return isJefe ? <Fiado /> : <div className="sin-permiso">❌ Solo administradores pueden acceder al sistema Fiado</div>;
         default:
-          return <Welcome />;
+          return <DashboardMetrics />;
       }
     })();
 
@@ -109,8 +111,6 @@ function DashboardContent() {
           </button>
         </div>
       </nav>
-
-      {paginaActual !== 'dashboard' && <DashboardMetrics />}
 
       {/* CONTENIDO PRINCIPAL */}
       <main className="main-content">
