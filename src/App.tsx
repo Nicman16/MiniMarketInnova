@@ -16,32 +16,50 @@ function DashboardContent() {
   const [isTransitioning, setIsTransitioning] = React.useState(false);
 
   const cambiarPagina = (nuevaPagina: string) => {
-    if (nuevaPagina === paginaActual) return;
+    console.log('Intentando cambiar página de', paginaActual, 'a', nuevaPagina);
+    if (nuevaPagina === paginaActual) {
+      console.log('Página ya es la actual, no cambiando');
+      return;
+    }
 
     setIsTransitioning(true);
+    console.log('Iniciando transición...');
+
     setTimeout(() => {
+      console.log('Cambiando páginaActual a:', nuevaPagina);
       setPaginaActual(nuevaPagina);
       setIsTransitioning(false);
+      console.log('Transición completada');
     }, 150);
   };
 
   const renderPagina = () => {
-    console.log('Renderizando página:', paginaActual, 'isJefe:', isJefe);
+    console.log('Renderizando página:', paginaActual, 'isJefe:', isJefe, 'isTransitioning:', isTransitioning);
 
-    const paginaComponent = (() => {
-      switch (paginaActual) {
-        case 'dashboard':
-          return <DashboardMetrics />;
-        case 'punto-venta':
-          return <PuntoVenta />;
-        case 'inventario':
-          return isJefe ? <Inventario /> : <div className="sin-permiso">❌ Solo administradores pueden acceder al inventario</div>;
-        case 'fiado':
-          return isJefe ? <Fiado /> : <div className="sin-permiso">❌ Solo administradores pueden acceder al sistema Fiado</div>;
-        default:
-          return <DashboardMetrics />;
-      }
-    })();
+    let paginaComponent;
+    switch (paginaActual) {
+      case 'dashboard':
+        console.log('Renderizando DashboardMetrics');
+        paginaComponent = <DashboardMetrics />;
+        break;
+      case 'punto-venta':
+        console.log('Renderizando PuntoVenta');
+        paginaComponent = <PuntoVenta />;
+        break;
+      case 'inventario':
+        console.log('Renderizando Inventario, isJefe:', isJefe);
+        paginaComponent = isJefe ? <Inventario /> : <div className="sin-permiso">❌ Solo administradores pueden acceder al inventario</div>;
+        break;
+      case 'fiado':
+        console.log('Renderizando Fiado, isJefe:', isJefe);
+        paginaComponent = isJefe ? <Fiado /> : <div className="sin-permiso">❌ Solo administradores pueden acceder al sistema Fiado</div>;
+        break;
+      default:
+        console.log('Página por defecto, renderizando DashboardMetrics');
+        paginaComponent = <DashboardMetrics />;
+    }
+
+    console.log('Componente a renderizar:', paginaComponent ? 'Componente válido' : 'Componente nulo');
 
     return (
       <div className={`page-container ${isTransitioning ? 'page-transitioning' : 'page-active'}`}>
