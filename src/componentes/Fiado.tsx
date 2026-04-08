@@ -3,10 +3,14 @@ import React, { useState, useEffect } from 'react';
 import '../styles/Fiado.css';
 import { deudaService } from '../services/deudaService';
 import { Deuda, TransaccionDeuda } from '../types/pos.types';
+import { useAuth } from '../context/AuthContext';
 
 interface FiadoProps {}
 
 function Fiado({}: FiadoProps) {
+  // Contexto de autenticación
+  const { usuario, isJefe } = useAuth();
+
   // Estados
   const [deudas, setDeudas] = useState<Deuda[]>([]);
   const [cargando, setCargando] = useState(false);
