@@ -10,8 +10,8 @@
     "dev:server": "cross-env PORT=3001 node server.js",
     "dev:all": "concurrently \"cross-env PORT=3001 node server.js\" \"cross-env PORT=3002 react-scripts start\"",
     "client": "cross-env PORT=3002 react-scripts start",
-    "build": "GENERATE_SOURCEMAP=false react-scripts build",
-    "build:prod": "GENERATE_SOURCEMAP=false CI=true react-scripts build"
+    "build": "cross-env GENERATE_SOURCEMAP=false react-scripts build",
+    "build:prod": "cross-env GENERATE_SOURCEMAP=false CI=true react-scripts build"
   },
   "engines": {
     "node": ">=18.0.0",

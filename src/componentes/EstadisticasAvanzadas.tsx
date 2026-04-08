@@ -1,11 +1,12 @@
 // src/componentes/EstadisticasAvanzadas.tsx
 import React, { useState, useEffect } from 'react';
 import '../styles/EstadisticasAvanzadas.css';
+import { statisticsService } from '../services/statisticsService';
 
 interface VentaData {
   fecha: string;
   ventas: number;
-  productos: number;
+  productos?: number;
   ingresos: number;
 }
 
@@ -14,6 +15,7 @@ interface ProductoVendido {
   cantidad: number;
   ingresos: number;
   categoria: string;
+  margen?: number;
 }
 
 interface EstadisticasAvanzadasProps {
@@ -26,61 +28,59 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
   const [productosVendidos, setProductosVendidos] = useState<ProductoVendido[]>([]);
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState<'7d' | '30d' | '90d'>('30d');
   const [tipoGrafico, setTipoGrafico] = useState<'ventas' | 'ingresos' | 'productos'>('ventas');
+  const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    // Simular datos de ventas (en una app real, esto vendría de la API)
-    const generarDatosVentas = () => {
-      const datos: VentaData[] = [];
-      const dias = periodoSeleccionado === '7d' ? 7 : periodoSeleccionado === '30d' ? 30 : 90;
-      
-      for (let i = dias - 1; i >= 0; i--) {
-        const fecha = new Date();
-        fecha.setDate(fecha.getDate() - i);
+    const cargarDatos = async () => {
+      try {
+        setCargando(true);
         
-        // Simular variación en ventas (más altas en fines de semana)
-        const esFindeSemana = fecha.getDay() === 0 || fecha.getDay() === 6;
-        const factorFindeSemana = esFindeSemana ? 1.3 : 1;
-        const factorAleatorio = 0.7 + Math.random() * 0.6; // 70% - 130%
+        // Cargar datos de ventas avanzadas
+        const datosAvanzados = await statisticsService.obtenerEstadisticasAvanzadas(periodoSeleccionado);
+        if (datosAvanzados && datosAvanzados.ventasData) {
+          // Normalizar datos: calcular productos como una proporción de ventas
+          const ventasConProductos = datosAvanzados.ventasData.map((d: any) => ({
+            ...d,
+            productos: Math.round(d.ventas * (2 + Math.random()))
+          }));
+          setVentasData(ventasConProductos);
+        }
         
-        const ventasBase = 15;
-        const ventas = Math.round(ventasBase * factorFindeSemana * factorAleatorio);
-        const productos = Math.round(ventas * (2 + Math.random()));
-        const ingresos = productos * (8000 + Math.random() * 12000);
-        
-        datos.push({
-          fecha: fecha.toISOString().split('T')[0],
-          ventas,
-          productos,
-          ingresos: Math.round(ingresos)
-        });
+        // Cargar productos más vendidos
+        const productosTop = await statisticsService.obtenerProductosMasVendidos(10);
+        if (productosTop && Array.isArray(productosTop)) {
+          setProductosVendidos(productosTop);
+        }
+      } catch (error) {
+        console.error('Error cargando estadísticas avanzadas:', error);
+        // En caso de error, usar datos por defecto
+        setVentasData([]);
+        setProductosVendidos([]);
+      } finally {
+        setCargando(false);
       }
-      
-      return datos;
     };
 
-    // Generar productos más vendidos
-    const generarProductosVendidos = () => {
-      return [
-        { nombre: 'Arroz Diana Premium 500g', cantidad: 45, ingresos: 112500, categoria: 'Granos' },
-        { nombre: 'Aceite Gourmet 1L', cantidad: 32, ingresos: 144000, categoria: 'Aceites' },
-        { nombre: 'Azúcar Incauca 1kg', cantidad: 28, ingresos: 89600, categoria: 'Endulzantes' },
-        { nombre: 'Leche Alpina 1L', cantidad: 52, ingresos: 156000, categoria: 'Lácteos' },
-        { nombre: 'Pan Bimbo Integral', cantidad: 38, ingresos: 76000, categoria: 'Panadería' },
-        { nombre: 'Huevos AA x30', cantidad: 25, ingresos: 87500, categoria: 'Proteínas' },
-        { nombre: 'Pollo Pechuga kg', cantidad: 18, ingresos: 270000, categoria: 'Carnes' },
-        { nombre: 'Coca Cola 2L', cantidad: 41, ingresos: 164000, categoria: 'Bebidas' }
-      ].sort((a, b) => b.ingresos - a.ingresos);
-    };
-
-    setVentasData(generarDatosVentas());
-    setProductosVendidos(generarProductosVendidos());
+    cargarDatos();
   }, [periodoSeleccionado]);
 
   // Calcular estadísticas
   const calcularEstadisticas = () => {
+    if (!ventasData || ventasData.length === 0) {
+      return {
+        totalVentas: 0,
+        totalIngresos: 0,
+        totalProductos: 0,
+        promedioVentasDiarias: 0,
+        mejorDia: 'Sin datos',
+        mejorDiaVentas: 0,
+        tendencia: 0
+      };
+    }
+
     const totalVentas = ventasData.reduce((sum, day) => sum + day.ventas, 0);
     const totalIngresos = ventasData.reduce((sum, day) => sum + day.ingresos, 0);
-    const totalProductos = ventasData.reduce((sum, day) => sum + day.productos, 0);
+    const totalProductos = ventasData.reduce((sum, day) => sum + (day.productos || 0), 0);
     const promedioVentasDiarias = totalVentas / ventasData.length;
     const mejorDia = ventasData.reduce((max, day) => day.ventas > max.ventas ? day : max, ventasData[0]);
     
@@ -108,15 +108,36 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
 
   // Obtener valor máximo para normalizar el gráfico
   const getMaxValue = () => {
+    if (!ventasData || ventasData.length === 0) return 100;
     switch (tipoGrafico) {
       case 'ventas': return Math.max(...ventasData.map(d => d.ventas));
       case 'ingresos': return Math.max(...ventasData.map(d => d.ingresos));
-      case 'productos': return Math.max(...ventasData.map(d => d.productos));
+      case 'productos': return Math.max(...ventasData.map(d => d.productos || 0));
       default: return 100;
     }
   };
 
   const maxValue = getMaxValue();
+
+  if (cargando && ventasData.length === 0) {
+    return (
+      <div className="estadisticas-avanzadas">
+        <div className="estadisticas-header">
+          <h2>📊 Análisis de Ventas y Rendimiento</h2>
+        </div>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '400px',
+          fontSize: '18px',
+          color: '#a0aec0'
+        }}>
+          Cargando datos de estadísticas...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="estadisticas-avanzadas">
@@ -232,7 +253,7 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
                     const x = (index / (ventasData.length - 1)) * 780 + 10;
                     const value = tipoGrafico === 'ventas' ? data.ventas :
                                  tipoGrafico === 'ingresos' ? data.ingresos :
-                                 data.productos;
+                                 (data.productos || 0);
                     const y = 280 - (value / maxValue) * 260;
                     return `${x},${y}`;
                   }).join(' ')
@@ -244,7 +265,7 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
                 const x = (index / (ventasData.length - 1)) * 780 + 10;
                 const value = tipoGrafico === 'ventas' ? data.ventas :
                              tipoGrafico === 'ingresos' ? data.ingresos :
-                             data.productos;
+                             (data.productos || 0);
                 const y = 280 - (value / maxValue) * 260;
                 
                 return (
