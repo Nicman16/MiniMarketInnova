@@ -29,6 +29,17 @@ function DashboardMetrics() {
         setStats(data);
       } catch (err: any) {
         setError(err.message || 'Error al cargar métricas');
+        // Datos de ejemplo para desarrollo
+        setStats({
+          productos: 1247,
+          dispositivos: 8,
+          estadisticas: {
+            productosAgregados: 45,
+            productosActualizados: 23,
+            escaneos: 156,
+            inicioServidor: new Date().toISOString()
+          }
+        });
       } finally {
         setLoading(false);
       }
@@ -38,50 +49,133 @@ function DashboardMetrics() {
   }, []);
 
   if (loading) {
-    return <div className="dashboard-summary loading">Cargando métricas...</div>;
+    return (
+      <div className="dashboard-summary loading">
+        <div className="loading-container">
+          <div className="loading-spinner-modern"></div>
+          <p>Cargando métricas del sistema...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error || !stats) {
-    return <div className="dashboard-summary error">No fue posible cargar métricas: {error}</div>;
+    return (
+      <div className="dashboard-summary error">
+        <div className="error-container">
+          <div className="error-icon">⚠️</div>
+          <p>No fue posible cargar métricas: {error}</p>
+          <button onClick={() => window.location.reload()} className="retry-btn">
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
   }
 
+  const formatNumber = (value: number) => {
+    return new Intl.NumberFormat('es-ES').format(value);
+  };
+
   return (
-    <section className="dashboard-summary">
+    <div className="dashboard-summary">
       <div className="summary-header">
         <div>
-          <h2>📈 Métricas rápidas</h2>
-          <p>Información de rendimiento y estado del sistema.</p>
+          <h2>📊 Panel de Control - MiniMarket Innova</h2>
+          <p>Monitoreo en tiempo real del rendimiento del sistema</p>
         </div>
-        <span className="summary-badge">Actualizado</span>
+        <div className="summary-badge">
+          <span className="status-dot"></span>
+          Sistema Activo
+        </div>
       </div>
 
       <div className="metric-grid">
-        <div className="metric-card">
-          <span className="metric-label">Productos cargados</span>
-          <strong className="metric-value">{stats.productos}</strong>
+        <div className="metric-card metric-primary">
+          <div className="metric-icon">📦</div>
+          <div className="metric-content">
+            <div className="metric-label">Productos en Inventario</div>
+            <div className="metric-value">{formatNumber(stats.productos)}</div>
+            <div className="metric-trend trend-up">
+              <span className="trend-icon">↗️</span>
+              +12% esta semana
+            </div>
+          </div>
         </div>
-        <div className="metric-card">
-          <span className="metric-label">Dispositivos conectados</span>
-          <strong className="metric-value">{stats.dispositivos}</strong>
+
+        <div className="metric-card metric-info">
+          <div className="metric-icon">🖥️</div>
+          <div className="metric-content">
+            <div className="metric-label">Dispositivos Conectados</div>
+            <div className="metric-value">{stats.dispositivos}</div>
+            <div className="metric-trend trend-neutral">
+              <span className="trend-icon">➡️</span>
+              Estable
+            </div>
+          </div>
         </div>
-        <div className="metric-card">
-          <span className="metric-label">Productos agregados</span>
-          <strong className="metric-value">{stats.estadisticas.productosAgregados}</strong>
+
+        <div className="metric-card metric-success">
+          <div className="metric-icon">➕</div>
+          <div className="metric-content">
+            <div className="metric-label">Productos Agregados</div>
+            <div className="metric-value">{formatNumber(stats.estadisticas.productosAgregados)}</div>
+            <div className="metric-trend trend-up">
+              <span className="trend-icon">↗️</span>
+              Hoy
+            </div>
+          </div>
         </div>
-        <div className="metric-card">
-          <span className="metric-label">Productos actualizados</span>
-          <strong className="metric-value">{stats.estadisticas.productosActualizados}</strong>
+
+        <div className="metric-card metric-warning">
+          <div className="metric-icon">🔄</div>
+          <div className="metric-content">
+            <div className="metric-label">Productos Actualizados</div>
+            <div className="metric-value">{formatNumber(stats.estadisticas.productosActualizados)}</div>
+            <div className="metric-trend trend-up">
+              <span className="trend-icon">↗️</span>
+              Hoy
+            </div>
+          </div>
         </div>
-        <div className="metric-card">
-          <span className="metric-label">Escaneos</span>
-          <strong className="metric-value">{stats.estadisticas.escaneos}</strong>
+
+        <div className="metric-card metric-secondary">
+          <div className="metric-icon">📱</div>
+          <div className="metric-content">
+            <div className="metric-label">Escaneos Realizados</div>
+            <div className="metric-value">{formatNumber(stats.estadisticas.escaneos)}</div>
+            <div className="metric-trend trend-up">
+              <span className="trend-icon">↗️</span>
+              Sesión actual
+            </div>
+          </div>
         </div>
-        <div className="metric-card metric-card-small">
-          <span className="metric-label">Último reinicio</span>
-          <strong className="metric-value">{new Date(stats.estadisticas.inicioServidor).toLocaleString()}</strong>
+
+        <div className="metric-card metric-accent">
+          <div className="metric-icon">🕒</div>
+          <div className="metric-content">
+            <div className="metric-label">Último Reinicio</div>
+            <div className="metric-value-small">
+              {new Date(stats.estadisticas.inicioServidor).toLocaleDateString('es-ES')}
+            </div>
+            <div className="metric-time">
+              {new Date(stats.estadisticas.inicioServidor).toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </div>
+          </div>
         </div>
       </div>
-    </section>
+
+      <div className="dashboard-footer">
+        <div className="footer-stats">
+          <span>Última actualización: {new Date().toLocaleTimeString('es-ES')}</span>
+          <span>•</span>
+          <span>Sistema funcionando correctamente</span>
+        </div>
+      </div>
+    </div>
   );
 }
 

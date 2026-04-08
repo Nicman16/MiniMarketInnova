@@ -6,73 +6,111 @@ import PuntoVenta from './componentes/PuntoVenta';
 import Inventario from './componentes/Inventario';
 import Fiado from './componentes/Fiado';
 import DashboardMetrics from './componentes/DashboardMetrics';
+import Welcome from './componentes/Welcome';
+import './componentes/DashboardMetrics.css';
+import './componentes/Welcome.css';
 
 function DashboardContent() {
   const { usuario, logout, isJefe } = useAuth();
-  const [paginaActual, setPaginaActual] = React.useState('punto-venta');
+  const [paginaActual, setPaginaActual] = React.useState('dashboard');
+  const [isTransitioning, setIsTransitioning] = React.useState(false);
+
+  const cambiarPagina = (nuevaPagina: string) => {
+    if (nuevaPagina === paginaActual) return;
+
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setPaginaActual(nuevaPagina);
+      setIsTransitioning(false);
+    }, 150);
+  };
 
   const renderPagina = () => {
-    switch (paginaActual) {
-      case 'punto-venta':
-        return <PuntoVenta />;
-      case 'inventario':
-        return isJefe ? <Inventario /> : <div className="sin-permiso">❌ Solo jefes pueden acceder al inventario</div>;
-      case 'fiado':
-        return isJefe ? <Fiado /> : <div className="sin-permiso">❌ Solo jefes pueden acceder a Fiado</div>;
-      default:
-        return <PuntoVenta />;
-    }
+    const paginaComponent = (() => {
+      switch (paginaActual) {
+        case 'dashboard':
+          return <Welcome />;
+        case 'punto-venta':
+          return <PuntoVenta />;
+        case 'inventario':
+          return isJefe ? <Inventario /> : <div className="sin-permiso">❌ Solo jefes pueden acceder al inventario</div>;
+        case 'fiado':
+          return isJefe ? <Fiado /> : <div className="sin-permiso">❌ Solo jefes pueden acceder a Fiado</div>;
+        default:
+          return <Welcome />;
+      }
+    })();
+
+    return (
+      <div className={`page-container ${isTransitioning ? 'page-transitioning' : 'page-active'}`}>
+        {paginaComponent}
+      </div>
+    );
   };
 
   return (
     <div className="app">
       {/* NAVBAR */}
       <nav className="navbar">
-        <div className="navbar-left">
-          <h1 className="app-title">🏪 MiniMarket Innova</h1>
+        <div className="navbar-brand">
+          <div className="app-logo"></div>
+          <div>
+            <h1 className="app-title">MiniMarket Innova</h1>
+            <span className="version-badge">v2.0</span>
+          </div>
         </div>
 
-        <div className="navbar-center">
-          <button 
-            className={`nav-btn ${paginaActual === 'punto-venta' ? 'active' : ''}`}
-            onClick={() => setPaginaActual('punto-venta')}
+        <div className="navbar-menu">
+          <button
+            className={`nav-item ${paginaActual === 'dashboard' ? 'active' : ''}`}
+            onClick={() => cambiarPagina('dashboard')}
+          >
+            📊 Dashboard
+          </button>
+
+          <button
+            className={`nav-item ${paginaActual === 'punto-venta' ? 'active' : ''}`}
+            onClick={() => cambiarPagina('punto-venta')}
           >
             🛒 Punto de Venta
           </button>
 
           {isJefe && (
             <>
-              <button 
-                className={`nav-btn ${paginaActual === 'inventario' ? 'active' : ''}`}
-                onClick={() => setPaginaActual('inventario')}
+              <button
+                className={`nav-item ${paginaActual === 'inventario' ? 'active' : ''}`}
+                onClick={() => cambiarPagina('inventario')}
               >
                 📦 Inventario
               </button>
-              
-              <button 
-                className={`nav-btn ${paginaActual === 'fiado' ? 'active' : ''}`}
-                onClick={() => setPaginaActual('fiado')}
+
+              <button
+                className={`nav-item ${paginaActual === 'fiado' ? 'active' : ''}`}
+                onClick={() => cambiarPagina('fiado')}
               >
-                💳 Fiado
+                💳 Sistema Fiado
               </button>
             </>
           )}
         </div>
 
-        <div className="navbar-right">
+        <div className="navbar-user">
           <div className="user-info">
-            <span className="user-name">{usuario?.nombre}</span>
-            <span className={`user-badge ${isJefe ? 'jefe' : 'empleado'}`}>
-              {isJefe ? '👑 Jefe' : '👤 Empleado'}
-            </span>
+            <div className="user-avatar">
+              {usuario?.nombre?.charAt(0).toUpperCase()}
+            </div>
+            <div className="user-details">
+              <div className="user-name">{usuario?.nombre}</div>
+              <div className="user-role">{isJefe ? '👑 Administrador' : '👤 Empleado'}</div>
+            </div>
           </div>
           <button className="logout-btn" onClick={logout}>
-            🚪 Salir
+            <span>🚪</span> Salir
           </button>
         </div>
       </nav>
 
-      <DashboardMetrics />
+      {paginaActual !== 'dashboard' && <DashboardMetrics />}
 
       {/* CONTENIDO PRINCIPAL */}
       <main className="main-content">
