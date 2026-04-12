@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { BrowserMultiFormatReader, Result } from "@zxing/library";
+import axios from "axios";
 import { Producto } from "../types/pos.types";
 import "../styles/EscanerZXing.css";
 
@@ -33,6 +34,8 @@ function EscanerZXing({
   const [productoEncontrado, setProductoEncontrado] = useState<Producto | null>(
     null
   );
+  const [productoApi, setProductoApi] = useState<any>(null);
+  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
 
   // Base de datos de códigos de barras conocidos
   const baseDatosCodigosBarras = {
@@ -253,6 +256,76 @@ function EscanerZXing({
 
     // Llamar callback original
     onScan(codigo);
+
+    // 4. Buscar en API externa (Open Food Facts)
+    buscarProductoEnAPI(codigo);
+  };
+
+  const buscarProductoEnAPI = async (codigo: string) => {
+    try {
+      console.log("🌐 Buscando producto en API externa...");
+      const response = await axios.get(
+        `https://world.openfoodfacts.org/api/v0/product/${codigo}.json`
+      );
+
+      if (response.data && response.data.product) {
+        const product = response.data.product;
+        const productoDeAPI = {
+          nombre: product.product_name || product.product_name_es || "Producto sin nombre",
+          categoria: product.categories || "Sin categoría",
+          descripcion: product.ingredients_text || product.generic_name || "Sin descripción",
+          imagen: product.image_url || product.image_front_url || null,
+          marca: product.brands || "Sin marca",
+          peso: product.quantity || "Sin especificar",
+          origen: product.countries || "Sin origen",
+        };
+
+        console.log("📦 Producto encontrado en API:", productoDeAPI.nombre);
+        setProductoApi(productoDeAPI);
+        setMostrarConfirmacion(true);
+      } else {
+        console.log("❌ Producto no encontrado en API");
+      }
+    } catch (error) {
+      console.error("Error buscando en API:", error);
+    }
+  };
+
+  const confirmarProductoDeAPI = () => {
+    if (productoApi) {
+      const nuevoProducto: Producto = {
+        id: Date.now(),
+        nombre: productoApi.nombre,
+        codigoBarras: ultimoEscaneo,
+        categoria: productoApi.categoria,
+        stock: 0,
+        stockMinimo: 5,
+        precioCompra: 0,
+        precioVenta: 0,
+        margen: 0,
+        proveedor: productoApi.marca,
+        proveedorId: 0,
+        ubicacion: "Por Definir",
+        descripcion: productoApi.descripcion,
+        imagen: productoApi.imagen,
+        estado: "activo",
+        fechaCreacion: new Date().toISOString(),
+        ultimaActualizacion: new Date().toISOString(),
+      };
+
+      setProductoEncontrado(nuevoProducto);
+      setMostrarConfirmacion(false);
+      setProductoApi(null);
+
+      if (onProductoEncontrado) {
+        onProductoEncontrado(nuevoProducto);
+      }
+    }
+  };
+
+  const rechazarProductoDeAPI = () => {
+    setMostrarConfirmacion(false);
+    setProductoApi(null);
   };
 
   const iniciarEscaneo = async () => {
@@ -473,6 +546,38 @@ function EscanerZXing({
           </p>
         )}
       </div>
+
+      {/* Modal de confirmación de producto de API */}
+      {mostrarConfirmacion && productoApi && (
+        <div className="modal-overlay" onClick={rechazarProductoDeAPI}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h4>🤔 ¿Es este tu producto?</h4>
+            <div className="producto-api-card">
+              {productoApi.imagen && (
+                <div className="producto-api-imagen">
+                  <img src={productoApi.imagen} alt={productoApi.nombre} />
+                </div>
+              )}
+              <div className="producto-api-info">
+                <h5>{productoApi.nombre}</h5>
+                <p><strong>Marca:</strong> {productoApi.marca}</p>
+                <p><strong>Categoría:</strong> {productoApi.categoria}</p>
+                <p><strong>Peso:</strong> {productoApi.peso}</p>
+                <p><strong>Origen:</strong> {productoApi.origen}</p>
+                <p className="descripcion">{productoApi.descripcion}</p>
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button className="button success" onClick={confirmarProductoDeAPI}>
+                ✅ Sí, usar este producto
+              </button>
+              <button className="button danger" onClick={rechazarProductoDeAPI}>
+                ❌ No, buscar manualmente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

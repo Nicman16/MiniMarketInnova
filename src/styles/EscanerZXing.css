@@ -198,6 +198,86 @@
   font-size: 1.1rem;
 }
 
+/* Modal de confirmación de producto API */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: var(--gray-800);
+  padding: var(--spacing-xl);
+  border-radius: var(--border-radius-xl);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  border: 1px solid var(--gray-600);
+}
+
+.modal-content h4 {
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.producto-api-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.producto-api-imagen {
+  text-align: center;
+}
+
+.producto-api-imagen img {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: var(--border-radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.producto-api-info h5 {
+  color: white;
+  margin-bottom: var(--spacing-sm);
+  font-size: 1.1rem;
+}
+
+.producto-api-info p {
+  margin: var(--spacing-xs) 0;
+  color: var(--gray-300);
+  font-size: 0.9rem;
+}
+
+.producto-api-info .descripcion {
+  font-style: italic;
+  color: var(--gray-400);
+}
+
+.modal-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+}
+
+.modal-actions .button {
+  flex: 1;
+  padding: var(--spacing-md);
+  font-size: 0.9rem;
+}
+
 .escaner-ayuda {
   background: #ebf8ff;
   color: #2a69ac;
