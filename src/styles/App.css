@@ -83,6 +83,7 @@
 /* ========= NAVBAR ========= */
 .navbar {
   background: rgba(255, 255, 255, 0.02);
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding: 1.2rem 2.5rem;
@@ -90,6 +91,7 @@
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: -webkit-sticky;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -150,8 +152,8 @@
   color: white;
   margin: 0;
   background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%);
-  background-clip: text;
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }

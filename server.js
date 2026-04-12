@@ -792,6 +792,114 @@ app.get('/api/stats/resumen', async (req, res) => {
   }
 });
 
+// ========== ENDPOINTS DE REPORTES ==========
+
+// Reporte de ventas por período
+app.get('/api/reportes/ventas', async (req, res) => {
+  try {
+    const { inicio, fin } = req.query;
+    if (!inicio || !fin) {
+      return res.status(400).json({ error: 'Se requieren fechas inicio y fin' });
+    }
+
+    // Generar datos simulados de ventas por día
+    const fechaInicio = new Date(inicio);
+    const fechaFin = new Date(fin);
+    const reportes = [];
+
+    for (let d = new Date(fechaInicio); d <= fechaFin; d.setDate(d.getDate() + 1)) {
+      const fecha = d.toISOString().split('T')[0];
+      const esFindeSemana = d.getDay() === 0 || d.getDay() === 6;
+      const ventasBase = 15 * (esFindeSemana ? 1.3 : 1);
+      const cantidad = Math.round(ventasBase * (0.7 + Math.random() * 0.6));
+      const ingresos = Math.round(cantidad * 8000 + Math.random() * 8000);
+
+      reportes.push({
+        fecha,
+        cantidad,
+        ingresos,
+        ticket_promedio: Math.round(ingresos / cantidad),
+        productos_vendidos: Math.round(cantidad * (2 + Math.random()))
+      });
+    }
+
+    res.json(reportes);
+  } catch (error) {
+    console.error('Error /api/reportes/ventas:', error);
+    res.status(500).json({ error: 'Error al obtener reporte de ventas' });
+  }
+});
+
+// Reporte de productos más vendidos
+app.get('/api/reportes/productos', async (req, res) => {
+  try {
+    const { inicio, fin } = req.query;
+
+    // Datos simulados de productos vendidos
+    const productosVendidos = [
+      { nombre: 'Arroz Diana Premium 500g', cantidad: 45, ingresos: 112500, categoria: 'Granos', margen: 30 },
+      { nombre: 'Aceite Gourmet 1L', cantidad: 32, ingresos: 144000, categoria: 'Aceites', margen: 35 },
+      { nombre: 'Azúcar Incauca 1kg', cantidad: 28, ingresos: 89600, categoria: 'Endulzantes', margen: 28 },
+      { nombre: 'Leche Alpina 1L', cantidad: 52, ingresos: 156000, categoria: 'Lácteos', margen: 25 },
+      { nombre: 'Pan Bimbo Integral', cantidad: 38, ingresos: 76000, categoria: 'Panadería', margen: 20 },
+      { nombre: 'Huevos AA x30', cantidad: 25, ingresos: 87500, categoria: 'Proteínas', margen: 22 },
+      { nombre: 'Pollo Pechuga kg', cantidad: 18, ingresos: 270000, categoria: 'Carnes', margen: 40 },
+      { nombre: 'Coca Cola 2L', cantidad: 41, ingresos: 164000, categoria: 'Bebidas', margen: 32 },
+      { nombre: 'Café Pasilla x500g', cantidad: 22, ingresos: 110000, categoria: 'Bebidas', margen: 38 },
+      { nombre: 'Atún lata 170g', cantidad: 35, ingresos: 70000, categoria: 'Conservas', margen: 29 }
+    ];
+
+    res.json(productosVendidos);
+  } catch (error) {
+    console.error('Error /api/reportes/productos:', error);
+    res.status(500).json({ error: 'Error al obtener reporte de productos' });
+  }
+});
+
+// Reporte de empleados
+app.get('/api/reportes/empleados', async (req, res) => {
+  try {
+    const { inicio, fin } = req.query;
+
+    // Datos simulados de rendimiento de empleados
+    const empleados = [
+      { nombre: 'Carlos Rodríguez', ventas: 45, ingresos: 360000, comision: 18000 },
+      { nombre: 'María González', ventas: 38, ingresos: 304000, comision: 15200 },
+      { nombre: 'Ana Martínez', ventas: 35, ingresos: 280000, comision: 14000 },
+      { nombre: 'Pedro López', ventas: 42, ingresos: 336000, comision: 16800 },
+      { nombre: 'Laura Sánchez', ventas: 28, ingresos: 224000, comision: 11200 }
+    ];
+
+    res.json(empleados);
+  } catch (error) {
+    console.error('Error /api/reportes/empleados:', error);
+    res.status(500).json({ error: 'Error al obtener reporte de empleados' });
+  }
+});
+
+// Reporte de stock bajo
+app.get('/api/reportes/stock-bajo', async (req, res) => {
+  try {
+    const { dias = 30 } = req.query;
+
+    // Datos simulados de productos con stock bajo
+    const stockBajo = [
+      { nombre: 'Leche Alpina 1L', cantidad: 5, nivel_minimo: 20, dias_sin_stock: 0 },
+      { nombre: 'Pan Bimbo Integral', cantidad: 3, nivel_minimo: 15, dias_sin_stock: 2 },
+      { nombre: 'Huevos AA x30', cantidad: 8, nivel_minimo: 25, dias_sin_stock: 0 },
+      { nombre: 'Coca Cola 2L', cantidad: 6, nivel_minimo: 30, dias_sin_stock: 1 },
+      { nombre: 'Pollo Pechuga kg', cantidad: 2, nivel_minimo: 10, dias_sin_stock: 3 },
+      { nombre: 'Arroz Diana Premium 500g', cantidad: 4, nivel_minimo: 15, dias_sin_stock: 0 },
+      { nombre: 'Aceite Gourmet 1L', cantidad: 7, nivel_minimo: 20, dias_sin_stock: 1 }
+    ];
+
+    res.json(stockBajo);
+  } catch (error) {
+    console.error('Error /api/reportes/stock-bajo:', error);
+    res.status(500).json({ error: 'Error al obtener reporte de stock bajo' });
+  }
+});
+
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'build')));
   app.get('*', (req, res) => {

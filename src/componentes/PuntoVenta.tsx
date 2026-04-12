@@ -181,7 +181,7 @@ function PuntoVenta() {
         <div className="pos-header">
           <h1>🛒 Punto de Venta</h1>
         </div>
-        <div style={{ textAlign: 'center', padding: '2rem', color: 'white' }}>
+        <div className="loading-state">
           Cargando productos...
         </div>
       </div>
@@ -200,7 +200,7 @@ function PuntoVenta() {
         </div>
       </div>
 
-      {error && <div className="error-msg" style={{ margin: '1rem', borderRadius: '8px' }}>{error}</div>}
+      {error && <div className="error-msg">{error}</div>}
 
       <div className="pos-layout">
         {/* PANEL DE PRODUCTOS */}

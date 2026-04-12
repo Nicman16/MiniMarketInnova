@@ -44,14 +44,14 @@ function Login() {
     {
       nombre: 'Carlos Rodríguez',
       email: 'jefe@test.com',
-      password: '1234',
+      password: '••••',
       rol: 'Administrador',
       avatar: '👑'
     },
     {
       nombre: 'María González',
       email: 'empleado@test.com',
-      password: '1234',
+      password: '••••',
       rol: 'Empleado',
       avatar: '👤'
     }

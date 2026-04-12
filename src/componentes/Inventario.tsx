@@ -347,7 +347,9 @@ function Inventario() {
                 />
               </div>
               
-              <select 
+              <select
+                id="filtro-categoria"
+                aria-label="Filtrar por categoría"
                 value={filtros.categoria}
                 onChange={(e) => setFiltros({...filtros, categoria: e.target.value})}
                 className="filter-select"
@@ -358,7 +360,9 @@ function Inventario() {
                 ))}
               </select>
 
-              <select 
+              <select
+                id="filtro-proveedor"
+                aria-label="Filtrar por proveedor"
                 value={filtros.proveedor}
                 onChange={(e) => setFiltros({...filtros, proveedor: e.target.value})}
                 className="filter-select"
@@ -369,7 +373,9 @@ function Inventario() {
                 ))}
               </select>
 
-              <select 
+              <select
+                id="filtro-estado"
+                aria-label="Filtrar por estado"
                 value={filtros.estado}
                 onChange={(e) => setFiltros({...filtros, estado: e.target.value})}
                 className="filter-select"
@@ -467,29 +473,76 @@ function Inventario() {
               <div className="modal-content">
                 <h2>{modalActivo === 'agregar' ? '➕ Agregar producto' : '✏️ Editar producto'}</h2>
                 <div className="modal-form">
-                  <label>Nombre</label>
-                  <input value={productoForm.nombre || ''} onChange={(e) => setProductoForm({...productoForm, nombre: e.target.value})} />
+                  <label htmlFor="nombre-producto">Nombre del Producto</label>
+                  <input
+                    id="nombre-producto"
+                    placeholder="Ej: Arroz Diana Premium 500g"
+                    value={productoForm.nombre || ''}
+                    onChange={(e) => setProductoForm({...productoForm, nombre: e.target.value})}
+                  />
 
-                  <label>Código de barras</label>
-                  <input value={productoForm.codigoBarras || ''} onChange={(e) => setProductoForm({...productoForm, codigoBarras: e.target.value})} />
+                  <label htmlFor="codigo-barras">Código de Barras</label>
+                  <input
+                    id="codigo-barras"
+                    placeholder="7701234567890"
+                    value={productoForm.codigoBarras || ''}
+                    onChange={(e) => setProductoForm({...productoForm, codigoBarras: e.target.value})}
+                  />
 
-                  <label>Categoría</label>
-                  <input value={productoForm.categoria || ''} onChange={(e) => setProductoForm({...productoForm, categoria: e.target.value})} />
+                  <label htmlFor="categoria-producto">Categoría</label>
+                  <input
+                    id="categoria-producto"
+                    placeholder="Ej: Granos, Lácteos, Bebidas..."
+                    value={productoForm.categoria || ''}
+                    onChange={(e) => setProductoForm({...productoForm, categoria: e.target.value})}
+                  />
 
-                  <label>Proveedor</label>
-                  <input value={productoForm.proveedor || ''} onChange={(e) => setProductoForm({...productoForm, proveedor: e.target.value})} />
+                  <label htmlFor="proveedor-producto">Proveedor</label>
+                  <input
+                    id="proveedor-producto"
+                    placeholder="Nombre del proveedor"
+                    value={productoForm.proveedor || ''}
+                    onChange={(e) => setProductoForm({...productoForm, proveedor: e.target.value})}
+                  />
 
-                  <label>Stock</label>
-                  <input type="number" value={productoForm.stock ?? 0} onChange={(e) => setProductoForm({...productoForm, stock: Number(e.target.value)})} />
+                  <label htmlFor="stock-producto">Stock Actual</label>
+                  <input
+                    id="stock-producto"
+                    type="number"
+                    placeholder="0"
+                    min="0"
+                    value={productoForm.stock ?? 0}
+                    onChange={(e) => setProductoForm({...productoForm, stock: Number(e.target.value)})}
+                  />
 
-                  <label>Precio compra</label>
-                  <input type="number" value={productoForm.precioCompra ?? 0} onChange={(e) => setProductoForm({...productoForm, precioCompra: Number(e.target.value)})} />
+                  <label htmlFor="precio-compra">Precio de Compra</label>
+                  <input
+                    id="precio-compra"
+                    type="number"
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                    value={productoForm.precioCompra ?? 0}
+                    onChange={(e) => setProductoForm({...productoForm, precioCompra: Number(e.target.value)})}
+                  />
 
-                  <label>Precio venta</label>
-                  <input type="number" value={productoForm.precioVenta ?? 0} onChange={(e) => setProductoForm({...productoForm, precioVenta: Number(e.target.value)})} />
+                  <label htmlFor="precio-venta">Precio de Venta</label>
+                  <input
+                    id="precio-venta"
+                    type="number"
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                    value={productoForm.precioVenta ?? 0}
+                    onChange={(e) => setProductoForm({...productoForm, precioVenta: Number(e.target.value)})}
+                  />
 
-                  <label>Estado</label>
-                  <select value={productoForm.estado || 'activo'} onChange={(e) => setProductoForm({...productoForm, estado: e.target.value as Producto['estado']})}>
+                  <label htmlFor="estado-producto">Estado del Producto</label>
+                  <select
+                    id="estado-producto"
+                    value={productoForm.estado || 'activo'}
+                    onChange={(e) => setProductoForm({...productoForm, estado: e.target.value as Producto['estado']})}
+                  >
                     <option value="activo">Activo</option>
                     <option value="agotado">Agotado</option>
                     <option value="descontinuado">Descontinuado</option>

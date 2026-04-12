@@ -229,10 +229,11 @@ function Empleados() {
             <div className="modal-body">
               <div className="form-container">
                 <input
+                  id="nombre-empleado"
                   type="text"
                   placeholder="Nombre completo"
                   value={empleadoEditando ? empleadoEditando.nombre : nuevoEmpleado.nombre}
-                  onChange={(e) => empleadoEditando 
+                  onChange={(e) => empleadoEditando
                     ? setEmpleadoEditando({...empleadoEditando, nombre: e.target.value})
                     : setNuevoEmpleado({...nuevoEmpleado, nombre: e.target.value})
                   }
@@ -240,10 +241,11 @@ function Empleados() {
                 />
 
                 <input
+                  id="email-empleado"
                   type="email"
-                  placeholder="Email"
+                  placeholder="correo@ejemplo.com"
                   value={empleadoEditando ? empleadoEditando.email : nuevoEmpleado.email}
-                  onChange={(e) => empleadoEditando 
+                  onChange={(e) => empleadoEditando
                     ? setEmpleadoEditando({...empleadoEditando, email: e.target.value})
                     : setNuevoEmpleado({...nuevoEmpleado, email: e.target.value})
                   }
@@ -251,8 +253,10 @@ function Empleados() {
                 />
 
                 <select
+                  id="rol-empleado"
+                  aria-label="Seleccionar rol del empleado"
                   value={empleadoEditando ? empleadoEditando.rol : nuevoEmpleado.rol}
-                  onChange={(e) => empleadoEditando 
+                  onChange={(e) => empleadoEditando
                     ? setEmpleadoEditando({...empleadoEditando, rol: e.target.value as any})
                     : setNuevoEmpleado({...nuevoEmpleado, rol: e.target.value as any})
                   }
@@ -264,17 +268,18 @@ function Empleados() {
 
                 <div className="pin-container">
                   <input
+                    id="pin-empleado"
                     type="text"
-                    placeholder="PIN (4 dígitos)"
+                    placeholder="1234"
+                    maxLength={4}
                     value={empleadoEditando ? empleadoEditando.pin || '' : nuevoEmpleado.pin}
                     onChange={(e) => {
                       const pin = e.target.value.replace(/\D/g, '').slice(0, 4);
-                      empleadoEditando 
+                      empleadoEditando
                         ? setEmpleadoEditando({...empleadoEditando, pin})
                         : setNuevoEmpleado({...nuevoEmpleado, pin});
                     }}
                     className="input"
-                    maxLength={4}
                   />
                   <button 
                     type="button"

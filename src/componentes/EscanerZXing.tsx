@@ -430,6 +430,8 @@ function EscanerZXing({
         {/* Selector de cámara - solo mostrar si hay múltiples dispositivos */}
         {dispositivos.length > 1 && (
           <select
+            id="selector-camara"
+            aria-label="Seleccionar cámara para escáner"
             className="input"
             value={dispositivoSeleccionado}
             onChange={(e) => setDispositivoSeleccionado(e.target.value)}

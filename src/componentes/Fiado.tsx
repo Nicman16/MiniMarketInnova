@@ -192,13 +192,23 @@ function Fiado({}: FiadoProps) {
         </button>
 
         <div className="filtros">
-          <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value as any)}>
+          <select
+            id="filtro-tipo-fiado"
+            aria-label="Filtrar por tipo de deuda"
+            value={filtroTipo}
+            onChange={(e) => setFiltroTipo(e.target.value as any)}
+          >
             <option value="">Todos los tipos</option>
             <option value="cliente">Cliente</option>
             <option value="empleado">Empleado</option>
           </select>
 
-          <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+          <select
+            id="filtro-estado-fiado"
+            aria-label="Filtrar por estado de deuda"
+            value={filtroEstado}
+            onChange={(e) => setFiltroEstado(e.target.value)}
+          >
             <option value="">Todos los estados</option>
             <option value="pendiente">Pendiente</option>
             <option value="parcial">Parcial</option>
