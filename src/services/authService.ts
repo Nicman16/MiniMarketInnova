@@ -8,7 +8,6 @@ class AuthService {
 
   constructor() {
     this.cargarDatos();
-    this.inicializarEmpleadosDemo();
   }
 
   private cargarDatos() {
@@ -30,46 +29,6 @@ class AuthService {
       localStorage.setItem('minimarket-empleado-actual', JSON.stringify(this.empleadoActual));
     } else {
       localStorage.removeItem('minimarket-empleado-actual');
-    }
-  }
-
-  private inicializarEmpleadosDemo() {
-    if (this.empleados.length === 0) {
-      this.empleados = [
-        {
-          id: 'jefe-001',
-          nombre: 'Jefe de Tienda',
-          email: 'jefe@minimarket.com',
-          rol: 'jefe',
-          activo: true,
-          pin: '1234'
-        },
-        {
-          id: 'empleado-001',
-          nombre: 'María González',
-          email: 'maria@minimarket.com',
-          rol: 'empleado',
-          activo: true,
-          pin: '5678'
-        },
-        {
-          id: 'empleado-002',
-          nombre: 'Carlos Rodríguez',
-          email: 'carlos@minimarket.com',
-          rol: 'empleado',
-          activo: true,
-          pin: '9999'
-        },
-        {
-          id: 'empleado-003',
-          nombre: 'Ana López',
-          email: 'ana@minimarket.com',
-          rol: 'empleado',
-          activo: true,
-          pin: '0000'
-        }
-      ];
-      this.guardarDatos();
     }
   }
 
