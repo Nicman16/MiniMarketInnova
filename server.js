@@ -7,6 +7,8 @@ const path = require('path');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const server = http.createServer(app);
@@ -25,7 +27,10 @@ mongoose.connect(MONGO_URI, {
   .then(() => {
     console.log('✅ MongoDB conectado exitosamente');
     inicializarProductosBD();
-    inicializarUsuariosDemoer();
+    // Demo users are only initialized via manual seed script, never auto-loaded
+    if (process.env.NODE_ENV === 'development') {
+      console.log('ℹ️ Para cargar usuarios demo en desarrollo, ejecuta: npm run seed:demo');
+    }
   })
   .catch(err => {
     console.warn('⚠️ No se pudo conectar a MongoDB (se mantiene in-memory):', err.message);
@@ -107,15 +112,45 @@ const normalizeProducto = (producto) => {
 
 const io = socketIo(server, {
   cors: {
-    origin: '*',
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3002',
     methods: ['GET', 'POST'],
     credentials: true
   },
   transports: ['websocket', 'polling']
 });
 
-app.use(cors({ origin: '*', credentials: true }));
-app.use(express.json());
+// Security middleware
+app.use(helmet());
+
+// CORS configuration (restrict origin instead of *)
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3002',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+app.use(cors(corsOptions));
+
+// Rate limiting for API endpoints
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.'
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 login attempts per windowMs
+  message: 'Too many login attempts, please try again later.',
+  skipSuccessfulRequests: true
+});
+
+app.use('/api/', generalLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/registro', authLimiter);
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Middleware para verificar token JWT
 const verificarToken = (req, res, next) => {
@@ -438,38 +473,10 @@ async function inicializarProductosBD() {
   }
 }
 
-// Inicializar usuarios demo
-async function inicializarUsuariosDemoer() {
-  try {
-    const usuariosExistentes = await Usuario.countDocuments();
-    if (usuariosExistentes === 0) {
-      const salt = await bcrypt.genSalt(10);
-      const contraseniaHasheada = await bcrypt.hash('1234', salt);
-      
-      await Usuario.insertMany([
-        {
-          nombre: 'Jefe de Tienda',
-          email: 'jefe@test.com',
-          contraseña: contraseniaHasheada,
-          rol: 'jefe',
-          estado: 'activo',
-          fechaCreacion: new Date()
-        },
-        {
-          nombre: 'Empleado Demo',
-          email: 'empleado@test.com',
-          contraseña: contraseniaHasheada,
-          rol: 'empleado',
-          estado: 'activo',
-          fechaCreacion: new Date()
-        }
-      ]);
-      console.log('✅ Usuarios demo creados: jefe@test.com y empleado@test.com (contraseña: 1234)');
-    }
-  } catch (err) {
-    console.error('Error inicializando usuarios demo:', err);
-  }
-}
+// Inicializar usuarios demo (REMOVED - use scripts/seed-demo.js instead)
+// This function has been removed for security reasons.
+// Demo users should only be created via manual seed script in development.
+// Use: npm run seed:demo
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString(), dispositivos: dispositivosConectados.length, productos: productos.length, estadisticas });
