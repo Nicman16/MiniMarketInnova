@@ -1,7 +1,9 @@
-// src/services/deudaService.ts
-import { Deuda, TransaccionDeuda } from '../types/pos.types';
+// src/services/fiado/deudaService.ts
+import { Deuda, TransaccionDeuda } from '../../types/pos.types';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+// En Railway usamos mismo origen (frontend y backend en el mismo host).
+// Solo define REACT_APP_API_URL si separas frontend/backend en dominios distintos.
+const API_BASE = process.env.REACT_APP_API_URL || '';
 
 class DeudaService {
   private getHeaders(): HeadersInit {

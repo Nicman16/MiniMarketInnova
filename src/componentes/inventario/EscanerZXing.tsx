@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useState } from "react";
 import { BrowserMultiFormatReader, Result } from "@zxing/library";
 import axios from "axios";
-import { Producto } from "../types/pos.types";
-import "../styles/EscanerZXing.css";
+import { Producto } from "../../types/pos.types";
+import "../../styles/EscanerZXing.css";
 
 interface EscanerProps {
   onScan: (codigo: string) => void;

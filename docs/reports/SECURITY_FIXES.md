@@ -105,9 +105,9 @@ Protection against:
 
 ## 3. FUNCTIONALITY: Demo Seed Script
 
-### New File: seed-demo.js
+### New File: scripts/seed-demo.js
 
-**Location:** Root directory  
+**Location:** scripts/ directory  
 **Usage:** 
 ```bash
 npm run seed:demo      # Create demo users
@@ -169,7 +169,7 @@ PORT=3001
 ### New Scripts
 
 ```json
-"seed:demo": "cross-env NODE_ENV=development node seed-demo.js",
+"seed:demo": "cross-env NODE_ENV=development node scripts/seed-demo.js",
 "seed:clean-demo": "cross-env NODE_ENV=development node -e \"...\""
 ```
 

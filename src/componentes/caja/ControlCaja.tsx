@@ -1,8 +1,8 @@
 // src/componentes/ControlCaja.tsx
 import React, { useState, useEffect } from 'react';
-import '../styles/ControlCaja.css';
-import { cajaService } from '../services/cajaService';
-import { SesionCaja, MovimientoCaja, Empleado } from '../types/pos.types';
+import '../../styles/ControlCaja.css';
+import { cajaService } from '../../services/caja/cajaService';
+import { SesionCaja, MovimientoCaja, Empleado } from '../../types/pos.types';
 
 function ControlCaja() {
   const [sesionActual, setSesionActual] = useState<SesionCaja | null>(null);

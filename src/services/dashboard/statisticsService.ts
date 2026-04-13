@@ -1,5 +1,4 @@
-// src/services/statisticsService.ts
-import { Producto, Deuda } from '../types/pos.types';
+// src/services/dashboard/statisticsService.ts
 
 export const statisticsService = {
   // Obtener estadísticas avanzadas

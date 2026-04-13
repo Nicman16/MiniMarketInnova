@@ -55,6 +55,12 @@ PORT=3001
 
 # Entorno
 NODE_ENV=development
+
+# CORS permitido para el frontend
+CORS_ORIGIN=http://localhost:3002
+
+# Opcional: solo si frontend y backend están en hosts distintos
+# REACT_APP_API_URL=https://tu-backend-api.up.railway.app
 ```
 
 ### 4. Configurar MongoDB
@@ -85,20 +91,29 @@ NODE_ENV=development
 ### 5. Ejecutar la aplicación
 
 ```bash
-# Modo desarrollo (con hot reload)
+# Frontend en desarrollo
 npm run dev
 
-# O ejecutar por separado:
-npm run dev:server  # Backend en puerto 3001
-npm run dev:all     # Frontend + Backend
+# Backend en desarrollo
+npm run dev:server
+
+# Frontend + backend
+npm run dev:all
 ```
 
-## 🔐 Usuarios de Prueba
+## 🔐 Usuarios Demo
+
+Las cuentas demo no se crean automáticamente al iniciar el servidor.
+
+1. Asegúrate de tener `NODE_ENV=development`
+2. Ejecuta `npm run seed:demo`
+3. Inicia sesión con las cuentas generadas por el seed
 
 | Email | Contraseña | Rol | Permisos |
 |-------|------------|-----|----------|
-| `jefe@test.com` | `1234` | Jefe | Todo (inventario, fiado, empleados) |
-| `empleado@test.com` | `1234` | Empleado | Solo punto de venta |
+| `jefe@demo.local` | `DemoJefe2024!` | Jefe | Todo (inventario, fiado, empleados) |
+| `empleado1@demo.local` | `DemoEmpleado2024!` | Empleado | Punto de venta |
+| `empleado2@demo.local` | `DemoEmpleado2024!` | Empleado | Punto de venta |
 
 ## 🌐 Despliegue en Railway
 
@@ -119,7 +134,15 @@ Ve a tu proyecto → Settings → Environment y configura:
 ```env
 NODE_ENV=production
 JWT_SECRET=tu_clave_secreta_segura_aqui
+MONGO_URI=mongodb+srv://<usuario>:<password>@<cluster>.mongodb.net/minimarket?retryWrites=true&w=majority
+CORS_ORIGIN=https://<tu-app>.up.railway.app
+
+# Opcional: solo si API y frontend están separados
+# REACT_APP_API_URL=https://<tu-api>.up.railway.app
 ```
+
+Si usas una sola app en Railway (frontend servido por Express + API en el mismo servicio),
+deja `REACT_APP_API_URL` sin definir: el frontend consumirá `/api/...` en el mismo dominio automáticamente.
 
 ### URL de producción
 
@@ -148,15 +171,20 @@ https://minimarketinnova-production.up.railway.app
 
 ## 🧪 Probar el Sistema de Fiado
 
-### 1. Login como Jefe
-```
-Email: jefe@test.com
-Contraseña: 1234
+### 1. Crear usuarios demo
+```bash
+npm run seed:demo
 ```
 
-### 2. Ir a "💳 Fiado"
+### 2. Login como Jefe
+```
+Email: jefe@demo.local
+Contraseña: DemoJefe2024!
+```
 
-### 3. Crear una deuda
+### 3. Ir a "💳 Fiado"
+
+### 4. Crear una deuda
 - Click "➕ Nueva Deuda"
 - Tipo: Cliente
 - Nombre: Juan Pérez
@@ -164,7 +192,7 @@ Contraseña: 1234
 - Monto: 50000
 - Razón: Compra de productos
 
-### 4. Registrar un pago
+### 5. Registrar un pago
 - Click "📋 Ver Historial"
 - Tipo: Abono (pago)
 - Monto: 20000
@@ -175,17 +203,31 @@ Contraseña: 1234
 ```
 📁 MiniMarket Innova/
 ├── 📁 src/
-│   ├── 📁 componentes/     # Componentes React
-│   │   ├── Login.tsx       # Autenticación
-│   │   ├── PuntoVenta.tsx  # Sistema POS
-│   │   ├── Inventario.tsx  # Gestión productos
-│   │   └── Fiado.tsx       # Sistema de deudas
-│   ├── 📁 services/        # Servicios API
-│   ├── 📁 types/          # Tipos TypeScript
-│   └── 📁 styles/         # CSS
-├── 📄 server.js           # Backend Express
-├── 📄 railway.toml        # Config Railway
-└── 📄 package.json        # Dependencias
+│   ├── 📁 componentes/
+│   │   ├── 📁 auth/        # Login y acceso
+│   │   ├── 📁 caja/        # Apertura, cierre y movimientos de caja
+│   │   ├── 📁 dashboard/   # Dashboard, bienvenida y estadísticas
+│   │   ├── 📁 fiado/       # Gestión de deudas
+│   │   ├── 📁 inventario/  # Inventario, escáner, precios y proveedores
+│   │   ├── 📁 personal/    # Personal y empleados
+│   │   └── 📁 ventas/      # Punto de venta y reportes
+│   ├── 📁 context/         # Contextos de sesión y auth
+│   ├── 📁 services/
+│   │   ├── 📁 auth/        # Servicios de autenticación local de empleados
+│   │   ├── 📁 caja/        # Estado y operaciones de caja
+│   │   ├── 📁 dashboard/   # Consumo de estadísticas
+│   │   ├── 📁 fiado/       # API de deuda/fiado
+│   │   ├── 📁 inventario/  # Productos e inventario
+│   │   ├── 📁 reportes/    # Ventas y reportes
+│   │   └── 📁 shared/      # Sincronización y utilidades compartidas
+│   ├── 📁 styles/          # Estilos
+│   └── 📁 types/           # Tipos TypeScript
+├── 📁 docs/                # Documentación técnica y reportes
+├── 📁 scripts/             # Scripts de soporte
+├── 📁 notebooks/           # Exploración y pruebas
+├── 📄 server.js            # Backend Express
+├── 📄 railway.toml         # Config Railway
+└── 📄 package.json         # Dependencias y scripts
 ```
 
 ## 🔧 Scripts Disponibles
@@ -193,8 +235,10 @@ Contraseña: 1234
 ```bash
 npm run dev          # Desarrollo completo
 npm run dev:server   # Solo backend
+npm run dev:all      # Frontend + backend
 npm run build        # Build producción
 npm start           # Servidor producción
+npm run seed:demo    # Crea usuarios demo en desarrollo
 ```
 
 ## 📝 Tecnologías

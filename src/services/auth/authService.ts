@@ -1,6 +1,6 @@
 // src/services/authService.ts
-import { Empleado } from '../types/pos.types';
-import { syncService } from './syncService';
+import { Empleado } from '../../types/pos.types';
+import { syncService } from '../shared/syncService';
 
 class AuthService {
   private empleadoActual: Empleado | null = null;

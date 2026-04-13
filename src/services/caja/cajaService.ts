@@ -1,6 +1,6 @@
 // src/services/cajaService.ts
-import { SesionCaja, MovimientoCaja, Empleado } from '../types/pos.types';
-import { syncService } from './syncService';
+import { SesionCaja, MovimientoCaja, Empleado } from '../../types/pos.types';
+import { syncService } from '../shared/syncService';
 
 class CajaService {
   private sesiones: SesionCaja[] = [];
@@ -9,7 +9,6 @@ class CajaService {
 
   constructor() {
     this.cargarDatos();
-    this.inicializarEmpleadosDemo();
   }
 
   private cargarDatos() {
@@ -32,42 +31,10 @@ class CajaService {
   private guardarDatos() {
     localStorage.setItem('minimarket-sesiones', JSON.stringify(this.sesiones));
     localStorage.setItem('minimarket-movimientos', JSON.stringify(this.movimientos));
-    localStorage.setItem('minimarket-empleados', JSON.stringify(this.empleados));
-  }
-
-  private inicializarEmpleadosDemo() {
-    if (this.empleados.length === 0) {
-      this.empleados = [
-        {
-          id: 'jefe-001',
-          nombre: 'Jefe Principal',
-          email: 'jefe@minimarket.com',
-          rol: 'jefe',
-          activo: true,
-          pin: '1234'
-        },
-        {
-          id: 'empleado-001',
-          nombre: 'María González',
-          email: 'maria@minimarket.com',
-          rol: 'empleado',
-          activo: true,
-          pin: '5678'
-        },
-        {
-          id: 'empleado-002',
-          nombre: 'Carlos Rodríguez',
-          email: 'carlos@minimarket.com',
-          rol: 'empleado',
-          activo: true,
-          pin: '9999'
-        }
-      ];
-      this.guardarDatos();
-    }
   }
 
   async obtenerEmpleados(): Promise<Empleado[]> {
+    this.cargarDatos();
     return this.empleados;
   }
 

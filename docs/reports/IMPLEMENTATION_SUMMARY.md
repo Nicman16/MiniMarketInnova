@@ -50,7 +50,7 @@ if (process.env.NODE_ENV === 'development') {
 
 ### 2. Created Seed Script for Demo Data
 
-**New File:** `seed-demo.js`
+**New File:** `scripts/seed-demo.js`
 
 **Features:**
 - ✅ Environment protection: Refuses to run if `NODE_ENV !== 'development'`
@@ -162,7 +162,7 @@ MONGO_URI=mongodb://...           # Your MongoDB connection
 
 **New Scripts:**
 ```json
-"seed:demo": "cross-env NODE_ENV=development node seed-demo.js",
+"seed:demo": "cross-env NODE_ENV=development node scripts/seed-demo.js",
 "seed:clean-demo": "cross-env NODE_ENV=development node -e \"...\""
 ```
 
@@ -310,7 +310,7 @@ curl http://localhost:3001/api/reportes/ventas?inicio=2024-01-01&fin=2024-12-31
 
 ## Documentation
 
-See `SECURITY_FIXES.md` for detailed technical documentation of all changes.
+See `docs/reports/SECURITY_FIXES.md` for detailed technical documentation of all changes.
 
 ---
 
@@ -318,8 +318,8 @@ See `SECURITY_FIXES.md` for detailed technical documentation of all changes.
 
 All credentials, environment variables, and deployment configurations are documented in:
 - `.env.example` - Environment template
-- `SECURITY_FIXES.md` - Detailed technical docs
+- `docs/reports/SECURITY_FIXES.md` - Detailed technical docs
 - This file - Implementation summary
 
-For troubleshooting, see SECURITY_FIXES.md section 10: TROUBLESHOOTING
+For troubleshooting, see docs/reports/SECURITY_FIXES.md section 10: TROUBLESHOOTING
 

@@ -12,7 +12,7 @@
     "client": "cross-env PORT=3002 react-scripts start",
     "build": "cross-env GENERATE_SOURCEMAP=false react-scripts build",
     "build:prod": "cross-env GENERATE_SOURCEMAP=false CI=true react-scripts build",
-    "seed:demo": "cross-env NODE_ENV=development node seed-demo.js",
+    "seed:demo": "cross-env NODE_ENV=development node scripts/seed-demo.js",
     "seed:clean-demo": "cross-env NODE_ENV=development node -e \"require('dotenv').config(); const mongoose = require('mongoose'); mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/minimarket').then(() => { const User = mongoose.model('Usuario', new mongoose.Schema({})); User.deleteMany({ email: { \\$in: ['jefe@demo.local', 'empleado1@demo.local', 'empleado2@demo.local'] } }).then(() => { console.log('✅ Demo users cleaned'); process.exit(0); }); }).catch(e => { console.error(e); process.exit(1); });\""
   },
   "engines": {

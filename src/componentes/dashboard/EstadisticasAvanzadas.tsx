@@ -1,7 +1,7 @@
 // src/componentes/EstadisticasAvanzadas.tsx
 import React, { useState, useEffect } from 'react';
-import '../styles/EstadisticasAvanzadas.css';
-import { statisticsService } from '../services/statisticsService';
+import '../../styles/EstadisticasAvanzadas.css';
+import { statisticsService } from '../../services/dashboard/statisticsService';
 
 interface VentaData {
   fecha: string;

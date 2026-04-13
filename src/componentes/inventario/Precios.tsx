@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import '../styles/Precios.css';
+import '../../styles/Precios.css';
 
 function Precios() {
   const [precios, setPrecios] = useState([

@@ -1,10 +1,10 @@
 // src/componentes/PuntoVenta.tsx
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Producto, ItemVenta } from '../types/pos.types';
-import { productoService } from '../services/productoService';
-import { useAuth } from '../context/AuthContext';
-import EscanerZXing from './EscanerZXing';
-import '../styles/PuntoVenta.css';
+import { Producto, ItemVenta } from '../../types/pos.types';
+import { productoService } from '../../services/inventario/productoService';
+import { useAuth } from '../../context/AuthContext';
+import EscanerZXing from '../inventario/EscanerZXing';
+import '../../styles/PuntoVenta.css';
 
 function PuntoVenta() {
   // Estados

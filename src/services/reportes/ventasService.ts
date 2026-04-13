@@ -1,6 +1,6 @@
 // src/services/ventasService.ts
-import { syncService } from './syncService';
-import { Venta, SesionCaja, ItemVenta } from '../types/pos.types';
+import { syncService } from '../shared/syncService';
+import { Venta, SesionCaja, ItemVenta } from '../../types/pos.types';
 
 class VentasService {
   private ventas: Venta[] = [];

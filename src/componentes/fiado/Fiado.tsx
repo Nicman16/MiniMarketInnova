@@ -1,9 +1,9 @@
 // src/componentes/Fiado.tsx
 import React, { useState, useEffect } from 'react';
-import '../styles/Fiado.css';
-import { deudaService } from '../services/deudaService';
-import { Deuda, TransaccionDeuda } from '../types/pos.types';
-import { useAuth } from '../context/AuthContext';
+import '../../styles/Fiado.css';
+import { deudaService } from '../../services/fiado/deudaService';
+import { Deuda, TransaccionDeuda } from '../../types/pos.types';
+import { useAuth } from '../../context/AuthContext';
 
 interface FiadoProps {}
 

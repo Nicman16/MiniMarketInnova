@@ -1,8 +1,8 @@
 // src/componentes/Empleados.tsx
 import React, { useState, useEffect } from 'react';
-import '../styles/Empleados.css';
-import { authService } from '../services/authService';
-import { Empleado } from '../types/pos.types';
+import '../../styles/Empleados.css';
+import { authService } from '../../services/auth/authService';
+import { Empleado } from '../../types/pos.types';
 
 function Empleados() {
   const [empleados, setEmpleados] = useState<Empleado[]>([]);

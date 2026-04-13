@@ -1,9 +1,9 @@
 // src/componentes/Inventario.tsx - Sistema completo
 import React, { useState, useEffect } from 'react';
-import '../styles/Inventario.css';
-import { Producto } from '../types/pos.types';
+import '../../styles/Inventario.css';
+import { Producto } from '../../types/pos.types';
 import EscanerZXing from './EscanerZXing';
-import EstadisticasAvanzadas from './EstadisticasAvanzadas';
+import EstadisticasAvanzadas from '../dashboard/EstadisticasAvanzadas';
 
 interface Proveedor {
   id: number;

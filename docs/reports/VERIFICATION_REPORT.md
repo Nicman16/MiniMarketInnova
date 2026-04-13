@@ -106,7 +106,7 @@ curl -H "Origin: http://another-domain.com" http://localhost:3001/api/products
 
 ### 4. FUNCTIONALITY: Seed Script Created
 
-**New File:** `seed-demo.js`
+**New File:** `scripts/seed-demo.js`
 
 **Status:** ✅ CREATED & TESTED
 
@@ -243,9 +243,9 @@ npm install
 
 | File | Purpose |
 |------|---------|
-| `seed-demo.js` | Creates demo users for development |
-| `SECURITY_FIXES.md` | Detailed technical documentation |
-| `IMPLEMENTATION_SUMMARY.md` | Implementation overview |
+| `scripts/seed-demo.js` | Creates demo users for development |
+| `docs/reports/SECURITY_FIXES.md` | Detailed technical documentation |
+| `docs/reports/IMPLEMENTATION_SUMMARY.md` | Implementation overview |
 
 ---
 
@@ -310,8 +310,8 @@ npm install
 ## 📝 DOCUMENTATION
 
 ### For Developers
-1. **SECURITY_FIXES.md** - Detailed technical documentation of all changes
-2. **IMPLEMENTATION_SUMMARY.md** - High-level overview and setup guide
+1. **docs/reports/SECURITY_FIXES.md** - Detailed technical documentation of all changes
+2. **docs/reports/IMPLEMENTATION_SUMMARY.md** - High-level overview and setup guide
 3. **.env.example** - Environment configuration template with security notes
 
 ### Quick Start

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import '../styles/Login.css';
+import { useAuth } from '../../context/AuthContext';
+import '../../styles/Login.css';
 
 function Login() {
   const { login } = useAuth();
@@ -27,36 +27,6 @@ function Login() {
     }
   };
 
-  const handleQuickLogin = async (userEmail: string, userPassword: string) => {
-    setError('');
-    setCargando(true);
-
-    try {
-      await login(userEmail, userPassword);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
-    } finally {
-      setCargando(false);
-    }
-  };
-
-  const empleadosDemo = [
-    {
-      nombre: 'Carlos Rodríguez',
-      email: 'jefe@test.com',
-      password: '••••',
-      rol: 'Administrador',
-      avatar: '👑'
-    },
-    {
-      nombre: 'María González',
-      email: 'empleado@test.com',
-      password: '••••',
-      rol: 'Empleado',
-      avatar: '👤'
-    }
-  ];
-
   return (
     <div className="login-container">
       <div className="login-card">
@@ -67,26 +37,7 @@ function Login() {
         </div>
 
         <div className="login-body">
-          <h3>Acceso Rápido</h3>
-
-          <div className="empleados-login">
-            {empleadosDemo.map((empleado, index) => (
-              <button
-                key={index}
-                className="empleado-btn"
-                onClick={() => handleQuickLogin(empleado.email, empleado.password)}
-                disabled={cargando}
-              >
-                <div className="empleado-avatar">
-                  {empleado.avatar}
-                </div>
-                <div className="empleado-info">
-                  <span className="nombre">{empleado.nombre}</span>
-                  <span className="rol">{empleado.rol}</span>
-                </div>
-              </button>
-            ))}
-          </div>
+          <h3>Iniciar Sesión</h3>
 
           <div className="login-form">
             <form onSubmit={handleSubmit}>
@@ -127,10 +78,10 @@ function Login() {
           </div>
 
           <div className="demo-accounts">
-            <h4>💡 Cuentas de Demostración</h4>
+            <h4>💡 Entorno de Demostración</h4>
             <p>
-              <strong>Jefe:</strong> jefe@test.com / 1234<br/>
-              <strong>Empleado:</strong> empleado@test.com / 1234
+              Ejecuta <strong>npm run seed:demo</strong> en desarrollo para crear usuarios demo.<br/>
+              Después inicia sesión manualmente con las cuentas generadas por el script.
             </p>
           </div>
         </div>

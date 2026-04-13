@@ -1,14 +1,15 @@
 import React from 'react';
 import './styles/App.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import Login from './componentes/Login';
-import PuntoVenta from './componentes/PuntoVenta';
-import Inventario from './componentes/Inventario';
-import Fiado from './componentes/Fiado';
-import DashboardMetrics from './componentes/DashboardMetrics';
-import Welcome from './componentes/Welcome';
-import './componentes/DashboardMetrics.css';
-import './componentes/Welcome.css';
+import Login from './componentes/auth/Login';
+import PuntoVenta from './componentes/ventas/PuntoVenta';
+import Inventario from './componentes/inventario/Inventario';
+import Fiado from './componentes/fiado/Fiado';
+import ControlCaja from './componentes/caja/ControlCaja';
+import Reportes from './componentes/ventas/Reportes';
+import Empleados from './componentes/personal/Empleados';
+import DashboardMetrics from './componentes/dashboard/DashboardMetrics';
+import './componentes/dashboard/DashboardMetrics.css';
 
 function DashboardContent() {
   const { usuario, logout, isJefe } = useAuth();
@@ -53,6 +54,18 @@ function DashboardContent() {
       case 'fiado':
         console.log('Renderizando Fiado, isJefe:', isJefe);
         paginaComponent = isJefe ? <Fiado /> : <div className="sin-permiso">❌ Solo administradores pueden acceder al sistema Fiado</div>;
+        break;
+      case 'caja':
+        console.log('Renderizando ControlCaja, isJefe:', isJefe);
+        paginaComponent = isJefe ? <ControlCaja /> : <div className="sin-permiso">❌ Solo administradores pueden acceder al control de caja</div>;
+        break;
+      case 'reportes':
+        console.log('Renderizando Reportes, isJefe:', isJefe);
+        paginaComponent = isJefe ? <Reportes /> : <div className="sin-permiso">❌ Solo administradores pueden acceder a reportes</div>;
+        break;
+      case 'empleados':
+        console.log('Renderizando Empleados, isJefe:', isJefe);
+        paginaComponent = isJefe ? <Empleados /> : <div className="sin-permiso">❌ Solo administradores pueden acceder a empleados</div>;
         break;
       default:
         console.log('Página por defecto, renderizando DashboardMetrics');
@@ -109,6 +122,27 @@ function DashboardContent() {
                 onClick={() => cambiarPagina('fiado')}
               >
                 💳 Sistema Fiado
+              </button>
+
+              <button
+                className={`nav-item ${paginaActual === 'caja' ? 'active' : ''}`}
+                onClick={() => cambiarPagina('caja')}
+              >
+                💵 Caja
+              </button>
+
+              <button
+                className={`nav-item ${paginaActual === 'reportes' ? 'active' : ''}`}
+                onClick={() => cambiarPagina('reportes')}
+              >
+                📑 Reportes
+              </button>
+
+              <button
+                className={`nav-item ${paginaActual === 'empleados' ? 'active' : ''}`}
+                onClick={() => cambiarPagina('empleados')}
+              >
+                👥 Empleados
               </button>
             </>
           )}

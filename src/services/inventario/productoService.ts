@@ -1,5 +1,5 @@
-// src/services/productoService.ts
-import { Producto } from '../types/pos.types';
+// src/services/inventario/productoService.ts
+import { Producto } from '../../types/pos.types';
 
 export const productoService = {
   // Obtener todos los productos

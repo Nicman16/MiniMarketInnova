@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import '../styles/Personal.css';
+import '../../styles/Personal.css';
 
 function Personal() {
   const [empleados, setEmpleados] = useState([

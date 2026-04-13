@@ -1,7 +1,7 @@
 // src/componentes/Reportes.tsx
 import React, { useState, useEffect } from 'react';
-import '../styles/Reportes.css';
-import { ventasService } from '../services/ventasService';
+import '../../styles/Reportes.css';
+import { ventasService } from '../../services/reportes/ventasService';
 
 function Reportes() {
   const [fechaInicio, setFechaInicio] = useState(new Date().toISOString().split('T')[0]);
