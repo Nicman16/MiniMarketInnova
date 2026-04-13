@@ -1,6 +1,7 @@
 {
   "name": "minimarket-innova",
   "version": "1.0.0",
+  "homepage": "/",
   "description": "Aplicación para gestión de Minimarket Innova",
   "main": "server.js",
   "scripts": {
