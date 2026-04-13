@@ -172,7 +172,7 @@ function DashboardContent() {
   );
 }
 
-function App() {
+function AppContent() {
   const { isAuthenticated } = useAuth();
 
   return (
@@ -180,6 +180,10 @@ function App() {
       {isAuthenticated ? <DashboardContent /> : <Login />}
     </div>
   );
+}
+
+function App() {
+  return <AppContent />;
 }
 
 export default function AppWithAuth() {
