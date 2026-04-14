@@ -45,14 +45,9 @@ function ControlCaja() {
     }
 
     try {
-      const empleado = empleados.find(e => e.id === empleadoSeleccionado);
-      if (!empleado || empleado.pin !== pinEmpleado) {
-        alert('PIN incorrecto');
-        return;
-      }
-
       const nuevaSesion = await cajaService.abrirCaja({
-        empleado,
+        empleadoId: empleadoSeleccionado,
+        pin: pinEmpleado,
         montoApertura: parseFloat(montoApertura)
       });
 
@@ -63,7 +58,7 @@ function ControlCaja() {
       
       alert('✅ Caja abierta correctamente');
     } catch (error) {
-      alert('Error al abrir caja');
+      alert(error instanceof Error ? error.message : 'Error al abrir caja');
       console.error(error);
     }
   };
@@ -95,7 +90,7 @@ function ControlCaja() {
         alert('✅ Caja cerrada correctamente');
       }
     } catch (error) {
-      alert('Error al cerrar caja');
+      alert(error instanceof Error ? error.message : 'Error al cerrar caja');
       console.error(error);
     }
   };
@@ -119,7 +114,7 @@ function ControlCaja() {
       
       alert('✅ Movimiento registrado');
     } catch (error) {
-      alert('Error al registrar movimiento');
+      alert(error instanceof Error ? error.message : 'Error al registrar movimiento');
       console.error(error);
     }
   };
@@ -184,7 +179,9 @@ function ControlCaja() {
                 <select 
                   value={empleadoSeleccionado}
                   onChange={(e) => setEmpleadoSeleccionado(e.target.value)}
-                  className="input"
+                    className="input"
+                    aria-label="Seleccionar empleado para abrir caja"
+                    title="Seleccionar empleado para abrir caja"
                 >
                   <option value="">Seleccionar empleado</option>
                   {empleados.filter(e => e.activo).map(empleado => (
@@ -244,7 +241,9 @@ function ControlCaja() {
                 <select
                   value={nuevoMovimiento.tipo}
                   onChange={(e) => setNuevoMovimiento({...nuevoMovimiento, tipo: e.target.value as any})}
-                  className="input"
+                    className="input"
+                    aria-label="Seleccionar tipo de movimiento de caja"
+                    title="Seleccionar tipo de movimiento de caja"
                 >
                   <option value="ingreso">📈 Ingreso</option>
                   <option value="egreso">📉 Egreso</option>

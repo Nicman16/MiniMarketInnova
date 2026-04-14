@@ -1,268 +1,154 @@
-// src/services/authService.ts
 import { Empleado } from '../../types/pos.types';
-import { syncService } from '../shared/syncService';
+
+type EmpleadoPayload = {
+  nombre: string;
+  email: string;
+  rol: 'jefe' | 'empleado';
+  pin?: string;
+};
 
 class AuthService {
-  private empleadoActual: Empleado | null = null;
-  private empleados: Empleado[] = [];
+  private getHeaders(): HeadersInit {
+    const token = localStorage.getItem('token');
 
-  constructor() {
-    this.cargarDatos();
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
   }
 
-  private cargarDatos() {
-    const empleadosGuardados = localStorage.getItem('minimarket-empleados');
-    if (empleadosGuardados) {
-      this.empleados = JSON.parse(empleadosGuardados);
+  private async request<T>(url: string, options: RequestInit = {}): Promise<T> {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...this.getHeaders(),
+        ...(options.headers || {})
+      }
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(errorBody?.error || `Error en ${options.method || 'GET'} ${url}`);
     }
 
-    const empleadoActualGuardado = localStorage.getItem('minimarket-empleado-actual');
-    if (empleadoActualGuardado) {
-      this.empleadoActual = JSON.parse(empleadoActualGuardado);
+    if (response.status === 204) {
+      return undefined as T;
     }
+
+    return response.json();
   }
 
-  private guardarDatos() {
-    localStorage.setItem('minimarket-empleados', JSON.stringify(this.empleados));
-    
-    if (this.empleadoActual) {
-      localStorage.setItem('minimarket-empleado-actual', JSON.stringify(this.empleadoActual));
-    } else {
-      localStorage.removeItem('minimarket-empleado-actual');
-    }
-  }
-
-  async login(empleadoId: string, pin: string): Promise<Empleado> {
-    const empleado = this.empleados.find(e => e.id === empleadoId && e.activo);
-    
-    if (!empleado) {
-      throw new Error('Empleado no encontrado o inactivo');
-    }
-
-    if (empleado.pin !== pin) {
-      throw new Error('PIN incorrecto');
-    }
-
-    this.empleadoActual = empleado;
-    this.guardarDatos();
-
-    // Notificar login a otros dispositivos
-    syncService.notificarLogin(empleado);
-
-    return empleado;
-  }
-
-  async logout(): Promise<void> {
-    if (this.empleadoActual) {
-      syncService.notificarLogout(this.empleadoActual);
-    }
-    
-    this.empleadoActual = null;
-    localStorage.removeItem('minimarket-empleado-actual');
+  private toEmpleado(data: any): Empleado {
+    return {
+      id: String(data.id || data._id),
+      nombre: data.nombre,
+      email: data.email,
+      rol: data.rol,
+      activo: typeof data.activo === 'boolean' ? data.activo : data.estado === 'activo',
+      pin: data.pin || ''
+    };
   }
 
   async obtenerEmpleadoActual(): Promise<Empleado | null> {
-    return this.empleadoActual;
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+
+    const usuario = await this.request<any>('/api/auth/me');
+    return this.toEmpleado(usuario);
   }
 
   async estaAutenticado(): Promise<boolean> {
-    return this.empleadoActual !== null;
+    return !!localStorage.getItem('token');
   }
 
   async tienePermiso(accion: string): Promise<boolean> {
-    if (!this.empleadoActual) return false;
+    const empleadoActual = await this.obtenerEmpleadoActual();
+    if (!empleadoActual) return false;
 
-    const permisos = {
-      jefe: ['*'], // Todos los permisos
-      empleado: [
-        'ventas',
-        'inventario.ver',
-        'caja.ver'
-      ]
+    const permisos: Record<Empleado['rol'], string[]> = {
+      jefe: ['*'],
+      empleado: ['ventas', 'inventario.ver', 'caja.ver']
     };
 
-    const permisosRol = permisos[this.empleadoActual.rol] || [];
+    const permisosRol = permisos[empleadoActual.rol] || [];
     return permisosRol.includes('*') || permisosRol.includes(accion);
   }
 
   async obtenerEmpleados(): Promise<Empleado[]> {
-    // Verificar permisos
-    if (!(await this.tienePermiso('empleados.ver'))) {
-      throw new Error('Sin permisos para ver empleados');
-    }
-
-    return this.empleados;
+    const empleados = await this.request<any[]>('/api/empleados');
+    return empleados.map((empleado) => this.toEmpleado(empleado));
   }
 
   async obtenerEmpleadosActivos(): Promise<Empleado[]> {
-    return this.empleados.filter(e => e.activo);
+    const empleados = await this.obtenerEmpleados();
+    return empleados.filter((empleado) => empleado.activo);
   }
 
-  async crearEmpleado(datos: {
-    nombre: string;
-    email: string;
-    rol: 'jefe' | 'empleado';
-    pin: string;
-  }): Promise<Empleado> {
-    // Verificar permisos
-    if (!(await this.tienePermiso('empleados.crear'))) {
-      throw new Error('Sin permisos para crear empleados');
-    }
+  async crearEmpleado(datos: EmpleadoPayload): Promise<Empleado> {
+    const empleado = await this.request<any>('/api/empleados', {
+      method: 'POST',
+      body: JSON.stringify(datos)
+    });
 
-    // Validaciones
-    if (this.empleados.some(e => e.email === datos.email)) {
-      throw new Error('Ya existe un empleado con ese email');
-    }
-
-    if (this.empleados.some(e => e.pin === datos.pin)) {
-      throw new Error('Ya existe un empleado con ese PIN');
-    }
-
-    const nuevoEmpleado: Empleado = {
-      id: `emp-${Date.now()}`,
-      ...datos,
-      activo: true
-    };
-
-    this.empleados.push(nuevoEmpleado);
-    this.guardarDatos();
-
-    // Sincronizar con otros dispositivos
-    syncService.notificarNuevoEmpleado(nuevoEmpleado);
-
-    return nuevoEmpleado;
+    return this.toEmpleado(empleado);
   }
 
   async actualizarEmpleado(empleado: Empleado): Promise<Empleado> {
-    // Verificar permisos
-    if (!(await this.tienePermiso('empleados.editar'))) {
-      throw new Error('Sin permisos para editar empleados');
-    }
+    const empleadoActualizado = await this.request<any>(`/api/empleados/${empleado.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        nombre: empleado.nombre,
+        email: empleado.email,
+        rol: empleado.rol,
+        pin: empleado.pin,
+        activo: empleado.activo
+      })
+    });
 
-    const index = this.empleados.findIndex(e => e.id === empleado.id);
-    if (index === -1) {
-      throw new Error('Empleado no encontrado');
-    }
-
-    // Validar email único (excluyendo el empleado actual)
-    if (this.empleados.some(e => e.id !== empleado.id && e.email === empleado.email)) {
-      throw new Error('Ya existe un empleado con ese email');
-    }
-
-    // Validar PIN único (excluyendo el empleado actual)
-    if (this.empleados.some(e => e.id !== empleado.id && e.pin === empleado.pin)) {
-      throw new Error('Ya existe un empleado con ese PIN');
-    }
-
-    this.empleados[index] = empleado;
-    this.guardarDatos();
-
-    // Sincronizar con otros dispositivos
-    syncService.notificarEmpleadoActualizado(empleado);
-
-    return empleado;
+    return this.toEmpleado(empleadoActualizado);
   }
 
   async toggleEstadoEmpleado(empleadoId: string): Promise<Empleado> {
-    // Verificar permisos
-    if (!(await this.tienePermiso('empleados.editar'))) {
-      throw new Error('Sin permisos para cambiar estado de empleados');
-    }
+    const empleado = await this.request<any>(`/api/empleados/${empleadoId}/toggle-estado`, {
+      method: 'PATCH'
+    });
 
-    const empleado = this.empleados.find(e => e.id === empleadoId);
-    if (!empleado) {
-      throw new Error('Empleado no encontrado');
-    }
-
-    // No permitir desactivar el último jefe
-    if (empleado.rol === 'jefe' && empleado.activo) {
-      const jefesActivos = this.empleados.filter(e => e.rol === 'jefe' && e.activo);
-      if (jefesActivos.length === 1) {
-        throw new Error('No se puede desactivar el último jefe');
-      }
-    }
-
-    empleado.activo = !empleado.activo;
-    this.guardarDatos();
-
-    // Sincronizar con otros dispositivos
-    syncService.notificarEmpleadoActualizado(empleado);
-
-    return empleado;
+    return this.toEmpleado(empleado);
   }
 
   async eliminarEmpleado(empleadoId: string): Promise<void> {
-    // Verificar permisos
-    if (!(await this.tienePermiso('empleados.eliminar'))) {
-      throw new Error('Sin permisos para eliminar empleados');
-    }
-
-    const empleado = this.empleados.find(e => e.id === empleadoId);
-    if (!empleado) {
-      throw new Error('Empleado no encontrado');
-    }
-
-    // No permitir eliminar el último jefe
-    if (empleado.rol === 'jefe') {
-      const jefes = this.empleados.filter(e => e.rol === 'jefe');
-      if (jefes.length === 1) {
-        throw new Error('No se puede eliminar el último jefe');
-      }
-    }
-
-    // No permitir eliminar el empleado actual
-    if (empleado.id === this.empleadoActual?.id) {
-      throw new Error('No puedes eliminar tu propio usuario');
-    }
-
-    this.empleados = this.empleados.filter(e => e.id !== empleadoId);
-    this.guardarDatos();
-
-    // Sincronizar con otros dispositivos
-    syncService.notificarEmpleadoEliminado(empleadoId);
+    await this.request<void>(`/api/empleados/${empleadoId}`, {
+      method: 'DELETE'
+    });
   }
 
   async cambiarPin(nuevoPin: string): Promise<void> {
-    if (!this.empleadoActual) {
+    const empleadoActual = await this.obtenerEmpleadoActual();
+    if (!empleadoActual) {
       throw new Error('No hay empleado autenticado');
     }
 
-    if (nuevoPin.length < 4) {
-      throw new Error('El PIN debe tener al menos 4 dígitos');
-    }
-
-    // Verificar que el PIN no esté en uso
-    if (this.empleados.some(e => e.id !== this.empleadoActual!.id && e.pin === nuevoPin)) {
-      throw new Error('Ya existe un empleado con ese PIN');
-    }
-
-    this.empleadoActual.pin = nuevoPin;
-    
-    const index = this.empleados.findIndex(e => e.id === this.empleadoActual!.id);
-    if (index !== -1) {
-      this.empleados[index] = this.empleadoActual;
-    }
-
-    this.guardarDatos();
-
-    // Sincronizar con otros dispositivos
-    syncService.notificarEmpleadoActualizado(this.empleadoActual);
+    await this.actualizarEmpleado({
+      ...empleadoActual,
+      pin: nuevoPin
+    });
   }
 
   async obtenerEstadisticasEmpleados(): Promise<any> {
-    const totalEmpleados = this.empleados.length;
-    const empleadosActivos = this.empleados.filter(e => e.activo).length;
-    const porRol = {
-      jefe: this.empleados.filter(e => e.rol === 'jefe').length,
-      empleado: this.empleados.filter(e => e.rol === 'empleado').length
-    };
+    const [empleados, empleadoActual] = await Promise.all([
+      this.obtenerEmpleados(),
+      this.obtenerEmpleadoActual()
+    ]);
 
     return {
-      totalEmpleados,
-      empleadosActivos,
-      empleadosInactivos: totalEmpleados - empleadosActivos,
-      porRol,
-      empleadoActual: this.empleadoActual
+      totalEmpleados: empleados.length,
+      empleadosActivos: empleados.filter((empleado) => empleado.activo).length,
+      empleadosInactivos: empleados.filter((empleado) => !empleado.activo).length,
+      porRol: {
+        jefe: empleados.filter((empleado) => empleado.rol === 'jefe').length,
+        empleado: empleados.filter((empleado) => empleado.rol === 'empleado').length
+      },
+      empleadoActual
     };
   }
 }

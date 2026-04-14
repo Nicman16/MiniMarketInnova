@@ -65,6 +65,7 @@ const usuarioSchema = new mongoose.Schema({
   nombre: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   contraseña: { type: String, required: true },
+  pin: { type: String, unique: true, sparse: true },
   rol: { type: String, enum: ['jefe', 'empleado'], default: 'empleado' },
   estado: { type: String, enum: ['activo', 'inactivo'], default: 'activo' },
   fechaCreacion: { type: Date, default: Date.now },
@@ -100,6 +101,37 @@ const transaccionDeudaSchema = new mongoose.Schema({
   }
 });
 const TransaccionDeuda = mongoose.model('TransaccionDeuda', transaccionDeudaSchema);
+
+const sesionCajaSchema = new mongoose.Schema({
+  empleadoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', required: true },
+  empleadoNombre: { type: String, required: true },
+  empleadoEmail: { type: String, required: true },
+  empleadoRol: { type: String, enum: ['jefe', 'empleado'], required: true },
+  fechaApertura: { type: Date, default: Date.now },
+  fechaCierre: Date,
+  montoApertura: { type: Number, required: true },
+  montoCierre: Number,
+  ventasEfectivo: { type: Number, default: 0 },
+  ventasTarjeta: { type: Number, default: 0 },
+  ventasTransferencia: { type: Number, default: 0 },
+  ingresos: { type: Number, default: 0 },
+  egresos: { type: Number, default: 0 },
+  estado: { type: String, enum: ['abierta', 'cerrada'], default: 'abierta' }
+});
+const SesionCaja = mongoose.model('SesionCaja', sesionCajaSchema);
+
+const movimientoCajaSchema = new mongoose.Schema({
+  sesionId: { type: mongoose.Schema.Types.ObjectId, ref: 'SesionCaja', required: true },
+  tipo: { type: String, enum: ['ingreso', 'egreso', 'venta'], required: true },
+  monto: { type: Number, required: true },
+  concepto: { type: String, required: true },
+  fecha: { type: Date, default: Date.now },
+  empleadoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', required: true },
+  empleadoNombre: { type: String, required: true },
+  empleadoEmail: { type: String, required: true },
+  empleadoRol: { type: String, enum: ['jefe', 'empleado'], required: true }
+});
+const MovimientoCaja = mongoose.model('MovimientoCaja', movimientoCajaSchema);
 
 const normalizeProducto = (producto) => {
   if (!producto) return producto;
@@ -166,6 +198,75 @@ const verificarToken = (req, res, next) => {
   } catch (error) {
     res.status(401).json({ error: 'Token inválido' });
   }
+};
+
+const requireJefe = (req, res, next) => {
+  if (req.usuario?.rol !== 'jefe') {
+    return res.status(403).json({ error: 'Solo administradores pueden realizar esta acción' });
+  }
+
+  next();
+};
+
+const normalizeEmpleado = (usuarioDoc) => {
+  if (!usuarioDoc) return null;
+
+  const usuario = usuarioDoc.toObject ? usuarioDoc.toObject() : usuarioDoc;
+  return {
+    id: usuario._id?.toString?.() || usuario.id,
+    nombre: usuario.nombre,
+    email: usuario.email,
+    rol: usuario.rol,
+    activo: usuario.estado === 'activo',
+    pin: usuario.pin || '',
+    fechaCreacion: usuario.fechaCreacion,
+    ultimoAcceso: usuario.ultimoAcceso
+  };
+};
+
+const normalizeSesionCaja = (sesionDoc) => {
+  if (!sesionDoc) return null;
+
+  const sesion = sesionDoc.toObject ? sesionDoc.toObject() : sesionDoc;
+  return {
+    id: sesion._id?.toString?.() || sesion.id,
+    empleado: {
+      id: sesion.empleadoId?.toString?.() || sesion.empleadoId,
+      nombre: sesion.empleadoNombre,
+      email: sesion.empleadoEmail,
+      rol: sesion.empleadoRol,
+      activo: true
+    },
+    fechaApertura: sesion.fechaApertura,
+    fechaCierre: sesion.fechaCierre,
+    montoApertura: sesion.montoApertura,
+    montoCierre: sesion.montoCierre,
+    ventasEfectivo: sesion.ventasEfectivo || 0,
+    ventasTarjeta: sesion.ventasTarjeta || 0,
+    ingresos: sesion.ingresos || 0,
+    egresos: sesion.egresos || 0,
+    estado: sesion.estado
+  };
+};
+
+const normalizeMovimientoCaja = (movimientoDoc) => {
+  if (!movimientoDoc) return null;
+
+  const movimiento = movimientoDoc.toObject ? movimientoDoc.toObject() : movimientoDoc;
+  return {
+    id: movimiento._id?.toString?.() || movimiento.id,
+    tipo: movimiento.tipo,
+    monto: movimiento.monto,
+    concepto: movimiento.concepto,
+    fecha: movimiento.fecha,
+    empleado: {
+      id: movimiento.empleadoId?.toString?.() || movimiento.empleadoId,
+      nombre: movimiento.empleadoNombre,
+      email: movimiento.empleadoEmail,
+      rol: movimiento.empleadoRol,
+      activo: true
+    }
+  };
 };
 
 // ========== RUTAS DE AUTENTICACIÓN ==========
@@ -272,6 +373,388 @@ app.get('/api/auth/me', verificarToken, async (req, res) => {
   } catch (error) {
     console.error('Error en /api/auth/me:', error);
     res.status(500).json({ error: 'Error al obtener información del usuario' });
+  }
+});
+
+// ========== RUTAS DE EMPLEADOS ===========
+
+app.get('/api/empleados', verificarToken, requireJefe, async (req, res) => {
+  try {
+    const usuarios = await Usuario.find().select('-contraseña').sort({ fechaCreacion: -1 });
+    res.json(usuarios.map(normalizeEmpleado));
+  } catch (error) {
+    console.error('Error en GET /api/empleados:', error);
+    res.status(500).json({ error: 'Error al obtener empleados' });
+  }
+});
+
+app.post('/api/empleados', verificarToken, requireJefe, async (req, res) => {
+  try {
+    const { nombre, email, rol = 'empleado', pin } = req.body;
+
+    if (!nombre || !email || !pin) {
+      return res.status(400).json({ error: 'Nombre, email y PIN son requeridos' });
+    }
+
+    if (String(pin).length < 4) {
+      return res.status(400).json({ error: 'El PIN debe tener al menos 4 dígitos' });
+    }
+
+    const usuarioExistente = await Usuario.findOne({ email });
+    if (usuarioExistente) {
+      return res.status(400).json({ error: 'Ya existe un empleado con ese email' });
+    }
+
+    const pinExistente = await Usuario.findOne({ pin });
+    if (pinExistente) {
+      return res.status(400).json({ error: 'Ya existe un empleado con ese PIN' });
+    }
+
+    const passwordTemporal = `Temp${pin}!${Date.now().toString().slice(-4)}`;
+    const salt = await bcrypt.genSalt(10);
+    const contraseniaHasheada = await bcrypt.hash(passwordTemporal, salt);
+
+    const nuevoEmpleado = await Usuario.create({
+      nombre,
+      email,
+      contraseña: contraseniaHasheada,
+      pin,
+      rol,
+      estado: 'activo'
+    });
+
+    res.status(201).json(normalizeEmpleado(nuevoEmpleado));
+  } catch (error) {
+    console.error('Error en POST /api/empleados:', error);
+    res.status(500).json({ error: 'Error al crear empleado' });
+  }
+});
+
+app.put('/api/empleados/:id', verificarToken, requireJefe, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, email, rol, pin, activo } = req.body;
+
+    const empleado = await Usuario.findById(id);
+    if (!empleado) {
+      return res.status(404).json({ error: 'Empleado no encontrado' });
+    }
+
+    if (email && email !== empleado.email) {
+      const emailExistente = await Usuario.findOne({ email, _id: { $ne: id } });
+      if (emailExistente) {
+        return res.status(400).json({ error: 'Ya existe un empleado con ese email' });
+      }
+      empleado.email = email;
+    }
+
+    if (pin && pin !== empleado.pin) {
+      if (String(pin).length < 4) {
+        return res.status(400).json({ error: 'El PIN debe tener al menos 4 dígitos' });
+      }
+
+      const pinExistente = await Usuario.findOne({ pin, _id: { $ne: id } });
+      if (pinExistente) {
+        return res.status(400).json({ error: 'Ya existe un empleado con ese PIN' });
+      }
+
+      empleado.pin = pin;
+    }
+
+    if (typeof nombre === 'string') empleado.nombre = nombre;
+    if (rol === 'jefe' || rol === 'empleado') empleado.rol = rol;
+    if (typeof activo === 'boolean') empleado.estado = activo ? 'activo' : 'inactivo';
+
+    await empleado.save();
+    res.json(normalizeEmpleado(empleado));
+  } catch (error) {
+    console.error('Error en PUT /api/empleados/:id:', error);
+    res.status(500).json({ error: 'Error al actualizar empleado' });
+  }
+});
+
+app.patch('/api/empleados/:id/toggle-estado', verificarToken, requireJefe, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const empleado = await Usuario.findById(id);
+
+    if (!empleado) {
+      return res.status(404).json({ error: 'Empleado no encontrado' });
+    }
+
+    if (empleado.rol === 'jefe' && empleado.estado === 'activo') {
+      const jefesActivos = await Usuario.countDocuments({ rol: 'jefe', estado: 'activo' });
+      if (jefesActivos <= 1) {
+        return res.status(400).json({ error: 'No se puede desactivar el último jefe' });
+      }
+    }
+
+    empleado.estado = empleado.estado === 'activo' ? 'inactivo' : 'activo';
+    await empleado.save();
+
+    res.json(normalizeEmpleado(empleado));
+  } catch (error) {
+    console.error('Error en PATCH /api/empleados/:id/toggle-estado:', error);
+    res.status(500).json({ error: 'Error al cambiar estado del empleado' });
+  }
+});
+
+app.delete('/api/empleados/:id', verificarToken, requireJefe, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (req.usuario.id === id) {
+      return res.status(400).json({ error: 'No puedes eliminar tu propio usuario' });
+    }
+
+    const empleado = await Usuario.findById(id);
+    if (!empleado) {
+      return res.status(404).json({ error: 'Empleado no encontrado' });
+    }
+
+    if (empleado.rol === 'jefe') {
+      const totalJefes = await Usuario.countDocuments({ rol: 'jefe' });
+      if (totalJefes <= 1) {
+        return res.status(400).json({ error: 'No se puede eliminar el último jefe' });
+      }
+    }
+
+    await Usuario.findByIdAndDelete(id);
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error en DELETE /api/empleados/:id:', error);
+    res.status(500).json({ error: 'Error al eliminar empleado' });
+  }
+});
+
+// ========== RUTAS DE CAJA ===========
+
+app.get('/api/caja/sesion-activa', verificarToken, requireJefe, async (req, res) => {
+  try {
+    const sesion = await SesionCaja.findOne({ estado: 'abierta' }).sort({ fechaApertura: -1 });
+    res.json(sesion ? normalizeSesionCaja(sesion) : null);
+  } catch (error) {
+    console.error('Error en GET /api/caja/sesion-activa:', error);
+    res.status(500).json({ error: 'Error al obtener sesión activa' });
+  }
+});
+
+app.post('/api/caja/abrir', verificarToken, requireJefe, async (req, res) => {
+  try {
+    const { empleadoId, pin, montoApertura } = req.body;
+
+    if (!empleadoId || !pin || !montoApertura) {
+      return res.status(400).json({ error: 'Empleado, PIN y monto de apertura son requeridos' });
+    }
+
+    const sesionExistente = await SesionCaja.findOne({ estado: 'abierta' });
+    if (sesionExistente) {
+      return res.status(400).json({ error: 'Ya hay una sesión de caja abierta' });
+    }
+
+    const empleado = await Usuario.findById(empleadoId);
+    if (!empleado || empleado.estado !== 'activo') {
+      return res.status(404).json({ error: 'Empleado no encontrado o inactivo' });
+    }
+
+    if (empleado.pin !== pin) {
+      return res.status(401).json({ error: 'PIN incorrecto' });
+    }
+
+    const sesion = await SesionCaja.create({
+      empleadoId: empleado._id,
+      empleadoNombre: empleado.nombre,
+      empleadoEmail: empleado.email,
+      empleadoRol: empleado.rol,
+      montoApertura: Number(montoApertura),
+      estado: 'abierta'
+    });
+
+    await MovimientoCaja.create({
+      sesionId: sesion._id,
+      tipo: 'ingreso',
+      monto: Number(montoApertura),
+      concepto: 'Apertura de caja',
+      empleadoId: empleado._id,
+      empleadoNombre: empleado.nombre,
+      empleadoEmail: empleado.email,
+      empleadoRol: empleado.rol
+    });
+
+    const sesionNormalizada = normalizeSesionCaja(sesion);
+    io.emit('caja-abierta', sesionNormalizada);
+    res.status(201).json(sesionNormalizada);
+  } catch (error) {
+    console.error('Error en POST /api/caja/abrir:', error);
+    res.status(500).json({ error: 'Error al abrir caja' });
+  }
+});
+
+app.post('/api/caja/:id/cerrar', verificarToken, requireJefe, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { montoCierre } = req.body;
+
+    const sesion = await SesionCaja.findById(id);
+    if (!sesion) {
+      return res.status(404).json({ error: 'Sesión no encontrada' });
+    }
+
+    if (sesion.estado === 'cerrada') {
+      return res.status(400).json({ error: 'La sesión ya está cerrada' });
+    }
+
+    sesion.fechaCierre = new Date();
+    sesion.montoCierre = Number(montoCierre || 0);
+    sesion.estado = 'cerrada';
+    await sesion.save();
+
+    const sesionNormalizada = normalizeSesionCaja(sesion);
+    io.emit('caja-cerrada', sesionNormalizada);
+    res.json(sesionNormalizada);
+  } catch (error) {
+    console.error('Error en POST /api/caja/:id/cerrar:', error);
+    res.status(500).json({ error: 'Error al cerrar caja' });
+  }
+});
+
+app.post('/api/caja/movimiento', verificarToken, requireJefe, async (req, res) => {
+  try {
+    const { tipo, monto, concepto, empleadoId } = req.body;
+
+    if (!tipo || !monto || !concepto || !empleadoId) {
+      return res.status(400).json({ error: 'Tipo, monto, concepto y empleado son requeridos' });
+    }
+
+    const sesion = await SesionCaja.findOne({ estado: 'abierta' }).sort({ fechaApertura: -1 });
+    if (!sesion) {
+      return res.status(400).json({ error: 'No hay una sesión de caja abierta' });
+    }
+
+    const empleado = await Usuario.findById(empleadoId);
+    if (!empleado) {
+      return res.status(404).json({ error: 'Empleado no encontrado' });
+    }
+
+    const movimiento = await MovimientoCaja.create({
+      sesionId: sesion._id,
+      tipo,
+      monto: Number(monto),
+      concepto,
+      empleadoId: empleado._id,
+      empleadoNombre: empleado.nombre,
+      empleadoEmail: empleado.email,
+      empleadoRol: empleado.rol
+    });
+
+    if (tipo === 'ingreso') {
+      sesion.ingresos += Number(monto);
+    } else if (tipo === 'egreso') {
+      sesion.egresos += Number(monto);
+    }
+
+    await sesion.save();
+
+    const movimientoNormalizado = normalizeMovimientoCaja(movimiento);
+    io.emit('movimiento-caja', movimientoNormalizado);
+    res.status(201).json(movimientoNormalizado);
+  } catch (error) {
+    console.error('Error en POST /api/caja/movimiento:', error);
+    res.status(500).json({ error: 'Error al registrar movimiento de caja' });
+  }
+});
+
+app.get('/api/caja/movimientos', verificarToken, requireJefe, async (req, res) => {
+  try {
+    const fecha = String(req.query.fecha || new Date().toISOString().split('T')[0]);
+    const inicio = new Date(`${fecha}T00:00:00.000Z`);
+    const fin = new Date(`${fecha}T23:59:59.999Z`);
+
+    const movimientos = await MovimientoCaja.find({
+      fecha: { $gte: inicio, $lte: fin }
+    }).sort({ fecha: -1 });
+
+    res.json(movimientos.map(normalizeMovimientoCaja));
+  } catch (error) {
+    console.error('Error en GET /api/caja/movimientos:', error);
+    res.status(500).json({ error: 'Error al obtener movimientos' });
+  }
+});
+
+app.get('/api/caja/resumen', verificarToken, requireJefe, async (req, res) => {
+  try {
+    const fecha = String(req.query.fecha || new Date().toISOString().split('T')[0]);
+    const inicio = new Date(`${fecha}T00:00:00.000Z`);
+    const fin = new Date(`${fecha}T23:59:59.999Z`);
+    const sesion = await SesionCaja.findOne({ fechaApertura: { $gte: inicio, $lte: fin } }).sort({ fechaApertura: -1 });
+    const movimientos = await MovimientoCaja.find({ fecha: { $gte: inicio, $lte: fin } });
+
+    const ingresos = movimientos
+      .filter((movimiento) => movimiento.tipo === 'ingreso' && movimiento.concepto !== 'Apertura de caja')
+      .reduce((total, movimiento) => total + movimiento.monto, 0);
+
+    const egresos = movimientos
+      .filter((movimiento) => movimiento.tipo === 'egreso')
+      .reduce((total, movimiento) => total + movimiento.monto, 0);
+
+    const ventasEfectivo = sesion?.ventasEfectivo || 0;
+    const ventasTarjeta = sesion?.ventasTarjeta || 0;
+    const ventasTransferencia = sesion?.ventasTransferencia || 0;
+    const totalVentas = ventasEfectivo + ventasTarjeta + ventasTransferencia;
+    const totalEnCaja = (sesion?.montoApertura || 0) + ventasEfectivo + ingresos - egresos;
+
+    res.json({
+      totalVentas,
+      cantidadVentas: 0,
+      ventasEfectivo,
+      ventasTarjeta,
+      ventasTransferencia,
+      ingresos,
+      egresos,
+      totalEnCaja,
+      sesionActiva: sesion ? normalizeSesionCaja(sesion) : null
+    });
+  } catch (error) {
+    console.error('Error en GET /api/caja/resumen:', error);
+    res.status(500).json({ error: 'Error al obtener resumen de caja' });
+  }
+});
+
+app.get('/api/caja/resumen-cierre', verificarToken, requireJefe, async (req, res) => {
+  try {
+    const sesion = await SesionCaja.findOne({ estado: 'abierta' }).sort({ fechaApertura: -1 });
+    if (!sesion) {
+      return res.status(404).json({ error: 'No hay una sesión de caja abierta' });
+    }
+
+    const fecha = new Date(sesion.fechaApertura).toISOString().split('T')[0];
+    const inicio = new Date(`${fecha}T00:00:00.000Z`);
+    const fin = new Date(`${fecha}T23:59:59.999Z`);
+    const movimientos = await MovimientoCaja.find({ fecha: { $gte: inicio, $lte: fin } });
+
+    const ingresos = movimientos
+      .filter((movimiento) => movimiento.tipo === 'ingreso' && movimiento.concepto !== 'Apertura de caja')
+      .reduce((total, movimiento) => total + movimiento.monto, 0);
+
+    const egresos = movimientos
+      .filter((movimiento) => movimiento.tipo === 'egreso')
+      .reduce((total, movimiento) => total + movimiento.monto, 0);
+
+    const totalEsperado = (sesion.montoApertura || 0) + (sesion.ventasEfectivo || 0) + ingresos - egresos;
+
+    res.json({
+      totalVentas: (sesion.ventasEfectivo || 0) + (sesion.ventasTarjeta || 0) + (sesion.ventasTransferencia || 0),
+      cantidadVentas: 0,
+      ventasEfectivo: sesion.ventasEfectivo || 0,
+      ventasTarjeta: sesion.ventasTarjeta || 0,
+      ventasTransferencia: sesion.ventasTransferencia || 0,
+      ingresos,
+      egresos,
+      totalEsperado
+    });
+  } catch (error) {
+    console.error('Error en GET /api/caja/resumen-cierre:', error);
+    res.status(500).json({ error: 'Error al obtener resumen para cierre' });
   }
 });
 

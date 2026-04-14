@@ -7,7 +7,7 @@ const API_BASE = process.env.REACT_APP_API_URL || '';
 
 class DeudaService {
   private getHeaders(): HeadersInit {
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
     return {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` })
