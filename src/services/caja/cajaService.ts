@@ -48,6 +48,7 @@ class CajaService {
       montoCierre: data.montoCierre ? Number(data.montoCierre) : undefined,
       ventasEfectivo: Number(data.ventasEfectivo || 0),
       ventasTarjeta: Number(data.ventasTarjeta || 0),
+      ventasTransferencia: Number(data.ventasTransferencia || 0),
       ingresos: Number(data.ingresos || 0),
       egresos: Number(data.egresos || 0),
       estado: data.estado

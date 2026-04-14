@@ -16,13 +16,16 @@ class VentasService {
     const totalVendido = ventasPorDia.reduce((sum, dia) => sum + dia.ingresos, 0);
     const cantidadVentas = ventasPorDia.reduce((sum, dia) => sum + dia.cantidad, 0);
     const maxDia = Math.max(...ventasPorDia.map((dia) => dia.ingresos), 0);
+    const efectivo = ventasPorDia.reduce((sum, dia) => sum + (dia.efectivo || 0), 0);
+    const tarjeta = ventasPorDia.reduce((sum, dia) => sum + (dia.tarjeta || 0), 0);
+    const transferencia = ventasPorDia.reduce((sum, dia) => sum + (dia.transferencia || 0), 0);
 
     return {
       totalVendido,
       cantidadVentas,
-      efectivo: Math.round(totalVendido * 0.55),
-      tarjeta: Math.round(totalVendido * 0.3),
-      transferencia: Math.round(totalVendido * 0.15),
+      efectivo,
+      tarjeta,
+      transferencia,
       ventasPorDia: ventasPorDia.map((dia) => ({
         fecha: dia.fecha,
         total: dia.ingresos,

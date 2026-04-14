@@ -133,12 +133,38 @@ const movimientoCajaSchema = new mongoose.Schema({
 });
 const MovimientoCaja = mongoose.model('MovimientoCaja', movimientoCajaSchema);
 
+const ventaItemSchema = new mongoose.Schema({
+  productoId: { type: String, required: true },
+  nombre: { type: String, required: true },
+  codigoBarras: String,
+  categoria: String,
+  cantidad: { type: Number, required: true },
+  precioUnitario: { type: Number, required: true },
+  subtotal: { type: Number, required: true }
+}, { _id: false });
+
+const ventaSchema = new mongoose.Schema({
+  fecha: { type: Date, default: Date.now },
+  items: { type: [ventaItemSchema], required: true },
+  subtotal: { type: Number, required: true },
+  iva: { type: Number, default: 0 },
+  descuentos: { type: Number, default: 0 },
+  total: { type: Number, required: true },
+  metodoPago: { type: String, enum: ['efectivo', 'tarjeta', 'transferencia'], required: true },
+  vendedorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', required: true },
+  vendedorNombre: { type: String, required: true },
+  vendedorEmail: { type: String, required: true },
+  vendedorRol: { type: String, enum: ['jefe', 'empleado'], required: true },
+  estado: { type: String, enum: ['completada', 'cancelada'], default: 'completada' }
+});
+const Venta = mongoose.model('Venta', ventaSchema);
+
 const normalizeProducto = (producto) => {
   if (!producto) return producto;
   const obj = producto.toObject ? producto.toObject() : producto;
   return {
     ...obj,
-    id: obj.id ?? obj._id ?? null,
+    id: obj.id?.toString?.() || obj._id?.toString?.() || obj.id || obj._id || null,
   };
 };
 
@@ -243,6 +269,7 @@ const normalizeSesionCaja = (sesionDoc) => {
     montoCierre: sesion.montoCierre,
     ventasEfectivo: sesion.ventasEfectivo || 0,
     ventasTarjeta: sesion.ventasTarjeta || 0,
+    ventasTransferencia: sesion.ventasTransferencia || 0,
     ingresos: sesion.ingresos || 0,
     egresos: sesion.egresos || 0,
     estado: sesion.estado
@@ -268,6 +295,82 @@ const normalizeMovimientoCaja = (movimientoDoc) => {
     }
   };
 };
+
+const normalizeVenta = (ventaDoc) => {
+  if (!ventaDoc) return null;
+
+  const venta = ventaDoc.toObject ? ventaDoc.toObject() : ventaDoc;
+  return {
+    id: venta._id?.toString?.() || venta.id,
+    fecha: venta.fecha,
+    items: (venta.items || []).map((item) => ({
+      productoId: item.productoId,
+      nombre: item.nombre,
+      codigoBarras: item.codigoBarras,
+      categoria: item.categoria,
+      cantidad: item.cantidad,
+      precioUnitario: item.precioUnitario,
+      subtotal: item.subtotal
+    })),
+    subtotal: venta.subtotal,
+    iva: venta.iva || 0,
+    descuentos: venta.descuentos || 0,
+    total: venta.total,
+    metodoPago: venta.metodoPago,
+    vendedor: {
+      id: venta.vendedorId?.toString?.() || venta.vendedorId,
+      nombre: venta.vendedorNombre,
+      email: venta.vendedorEmail,
+      rol: venta.vendedorRol,
+      activo: true
+    },
+    estado: venta.estado
+  };
+};
+
+const isMongoReady = () => mongoose.connection.readyState === 1;
+
+const buildDayRange = (fecha) => ({
+  inicio: new Date(`${fecha}T00:00:00.000Z`),
+  fin: new Date(`${fecha}T23:59:59.999Z`)
+});
+
+const getVentasEntreFechas = async (inicio, fin) => {
+  if (isMongoReady()) {
+    return Venta.find({ fecha: { $gte: inicio, $lte: fin } }).lean();
+  }
+
+  return ventasRegistradas.filter((venta) => {
+    const fechaVenta = new Date(venta.fecha);
+    return fechaVenta >= inicio && fechaVenta <= fin;
+  });
+};
+
+const resumirVentas = (ventas) => ventas.reduce((acc, venta) => {
+  const totalVenta = Number(venta.total || 0);
+  const cantidadItems = (venta.items || []).reduce((sum, item) => sum + Number(item.cantidad || 0), 0);
+
+  acc.totalVentas += totalVenta;
+  acc.cantidadVentas += 1;
+  acc.productosVendidos += cantidadItems;
+
+  if (venta.metodoPago === 'efectivo') {
+    acc.ventasEfectivo += totalVenta;
+  } else if (venta.metodoPago === 'tarjeta') {
+    acc.ventasTarjeta += totalVenta;
+  } else if (venta.metodoPago === 'transferencia') {
+    acc.ventasTransferencia += totalVenta;
+  }
+
+  return acc;
+}, {
+  totalVentas: 0,
+  cantidadVentas: 0,
+  productosVendidos: 0,
+  ventasEfectivo: 0,
+  ventasTarjeta: 0,
+  ventasTransferencia: 0
+});
 
 // ========== RUTAS DE AUTENTICACIÓN ==========
 app.post('/api/auth/login', async (req, res) => {
@@ -684,10 +787,11 @@ app.get('/api/caja/movimientos', verificarToken, requireJefe, async (req, res) =
 app.get('/api/caja/resumen', verificarToken, requireJefe, async (req, res) => {
   try {
     const fecha = String(req.query.fecha || new Date().toISOString().split('T')[0]);
-    const inicio = new Date(`${fecha}T00:00:00.000Z`);
-    const fin = new Date(`${fecha}T23:59:59.999Z`);
+    const { inicio, fin } = buildDayRange(fecha);
     const sesion = await SesionCaja.findOne({ fechaApertura: { $gte: inicio, $lte: fin } }).sort({ fechaApertura: -1 });
     const movimientos = await MovimientoCaja.find({ fecha: { $gte: inicio, $lte: fin } });
+    const ventas = await getVentasEntreFechas(inicio, fin);
+    const resumenVentas = resumirVentas(ventas);
 
     const ingresos = movimientos
       .filter((movimiento) => movimiento.tipo === 'ingreso' && movimiento.concepto !== 'Apertura de caja')
@@ -697,18 +801,14 @@ app.get('/api/caja/resumen', verificarToken, requireJefe, async (req, res) => {
       .filter((movimiento) => movimiento.tipo === 'egreso')
       .reduce((total, movimiento) => total + movimiento.monto, 0);
 
-    const ventasEfectivo = sesion?.ventasEfectivo || 0;
-    const ventasTarjeta = sesion?.ventasTarjeta || 0;
-    const ventasTransferencia = sesion?.ventasTransferencia || 0;
-    const totalVentas = ventasEfectivo + ventasTarjeta + ventasTransferencia;
-    const totalEnCaja = (sesion?.montoApertura || 0) + ventasEfectivo + ingresos - egresos;
+    const totalEnCaja = (sesion?.montoApertura || 0) + resumenVentas.ventasEfectivo + ingresos - egresos;
 
     res.json({
-      totalVentas,
-      cantidadVentas: 0,
-      ventasEfectivo,
-      ventasTarjeta,
-      ventasTransferencia,
+      totalVentas: resumenVentas.totalVentas,
+      cantidadVentas: resumenVentas.cantidadVentas,
+      ventasEfectivo: resumenVentas.ventasEfectivo,
+      ventasTarjeta: resumenVentas.ventasTarjeta,
+      ventasTransferencia: resumenVentas.ventasTransferencia,
       ingresos,
       egresos,
       totalEnCaja,
@@ -728,9 +828,10 @@ app.get('/api/caja/resumen-cierre', verificarToken, requireJefe, async (req, res
     }
 
     const fecha = new Date(sesion.fechaApertura).toISOString().split('T')[0];
-    const inicio = new Date(`${fecha}T00:00:00.000Z`);
-    const fin = new Date(`${fecha}T23:59:59.999Z`);
+    const { inicio, fin } = buildDayRange(fecha);
     const movimientos = await MovimientoCaja.find({ fecha: { $gte: inicio, $lte: fin } });
+    const ventas = await getVentasEntreFechas(inicio, fin);
+    const resumenVentas = resumirVentas(ventas);
 
     const ingresos = movimientos
       .filter((movimiento) => movimiento.tipo === 'ingreso' && movimiento.concepto !== 'Apertura de caja')
@@ -740,14 +841,14 @@ app.get('/api/caja/resumen-cierre', verificarToken, requireJefe, async (req, res
       .filter((movimiento) => movimiento.tipo === 'egreso')
       .reduce((total, movimiento) => total + movimiento.monto, 0);
 
-    const totalEsperado = (sesion.montoApertura || 0) + (sesion.ventasEfectivo || 0) + ingresos - egresos;
+    const totalEsperado = (sesion.montoApertura || 0) + resumenVentas.ventasEfectivo + ingresos - egresos;
 
     res.json({
-      totalVentas: (sesion.ventasEfectivo || 0) + (sesion.ventasTarjeta || 0) + (sesion.ventasTransferencia || 0),
-      cantidadVentas: 0,
-      ventasEfectivo: sesion.ventasEfectivo || 0,
-      ventasTarjeta: sesion.ventasTarjeta || 0,
-      ventasTransferencia: sesion.ventasTransferencia || 0,
+      totalVentas: resumenVentas.totalVentas,
+      cantidadVentas: resumenVentas.cantidadVentas,
+      ventasEfectivo: resumenVentas.ventasEfectivo,
+      ventasTarjeta: resumenVentas.ventasTarjeta,
+      ventasTransferencia: resumenVentas.ventasTransferencia,
       ingresos,
       egresos,
       totalEsperado
@@ -930,6 +1031,7 @@ let productos = [
   { id: 2, nombre: 'Aceite Gourmet 1L', cantidad: 30, precio: 4500, codigoBarras: '7702002001235', categoria: 'Aceites', imagen: 'https://via.placeholder.com/150x150/28a745/white?text=ACEITE', fechaCreacion: new Date().toISOString() },
   { id: 3, nombre: 'Az�car Incauca 1kg', cantidad: 25, precio: 3200, codigoBarras: '7702003001236', categoria: 'Dulces', imagen: 'https://via.placeholder.com/150x150/ffc107/white?text=AZUCAR', fechaCreacion: new Date().toISOString() }
 ];
+let ventasRegistradas = [];
 
 let dispositivosConectados = [];
 let estadisticas = { productosAgregados: 0, productosActualizados: 0, escaneos: 0, inicioServidor: new Date().toISOString() };
@@ -1082,6 +1184,162 @@ app.put('/api/tienda/productos/:id', async (req, res) => {
   } catch (error) {
     console.error('Error PUT /api/tienda/productos/:id:', error);
     res.status(500).json({ error: 'No se pudo actualizar producto' });
+  }
+});
+
+app.post('/api/ventas', verificarToken, async (req, res) => {
+  try {
+    const { items, subtotal, iva, descuentos, total, metodoPago } = req.body;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'La venta debe incluir al menos un producto' });
+    }
+
+    if (!['efectivo', 'tarjeta', 'transferencia'].includes(metodoPago)) {
+      return res.status(400).json({ error: 'Método de pago inválido' });
+    }
+
+    const vendedor = await Usuario.findById(req.usuario.id);
+    if (!vendedor) {
+      return res.status(404).json({ error: 'Empleado no encontrado' });
+    }
+
+    const itemsNormalizados = [];
+    const productosMongoActualizados = [];
+    const productosMemoriaActualizados = [];
+
+    for (const item of items) {
+      const productoId = String(item.productoId || item.producto?.id || '');
+      const cantidad = Number(item.cantidad || 0);
+
+      if (!productoId || cantidad <= 0) {
+        return res.status(400).json({ error: 'Hay productos inválidos en la venta' });
+      }
+
+      if (isMongoReady()) {
+        const producto = await Producto.findById(productoId);
+        if (!producto) {
+          return res.status(404).json({ error: 'Uno de los productos ya no existe' });
+        }
+
+        const stockActual = Number(producto.cantidad || 0);
+        if (stockActual < cantidad) {
+          return res.status(400).json({ error: `Stock insuficiente para ${producto.nombre}` });
+        }
+
+        const precioUnitario = Number(item.precioUnitario || producto.precioVenta || producto.precio || 0);
+        itemsNormalizados.push({
+          productoId,
+          nombre: producto.nombre,
+          codigoBarras: producto.codigoBarras || '',
+          categoria: producto.categoria || '',
+          cantidad,
+          precioUnitario,
+          subtotal: Number(item.subtotal || cantidad * precioUnitario)
+        });
+        productosMongoActualizados.push({
+          producto,
+          nuevaCantidad: stockActual - cantidad
+        });
+      } else {
+        const index = productos.findIndex((producto) => `${producto.id}` === productoId);
+        if (index === -1) {
+          return res.status(404).json({ error: 'Uno de los productos ya no existe' });
+        }
+
+        const producto = productos[index];
+        const stockActual = Number(producto.cantidad || 0);
+        if (stockActual < cantidad) {
+          return res.status(400).json({ error: `Stock insuficiente para ${producto.nombre}` });
+        }
+
+        const precioUnitario = Number(item.precioUnitario || producto.precioVenta || producto.precio || 0);
+        itemsNormalizados.push({
+          productoId,
+          nombre: producto.nombre,
+          codigoBarras: producto.codigoBarras || '',
+          categoria: producto.categoria || '',
+          cantidad,
+          precioUnitario,
+          subtotal: Number(item.subtotal || cantidad * precioUnitario)
+        });
+        productosMemoriaActualizados.push({
+          index,
+          producto,
+          nuevaCantidad: stockActual - cantidad
+        });
+      }
+    }
+
+    const ventaPayload = {
+      fecha: new Date(),
+      items: itemsNormalizados,
+      subtotal: Number(subtotal || itemsNormalizados.reduce((sum, item) => sum + item.subtotal, 0)),
+      iva: Number(iva || 0),
+      descuentos: Number(descuentos || 0),
+      total: Number(total || 0),
+      metodoPago,
+      vendedorId: vendedor._id,
+      vendedorNombre: vendedor.nombre,
+      vendedorEmail: vendedor.email,
+      vendedorRol: vendedor.rol,
+      estado: 'completada'
+    };
+
+    if (ventaPayload.total <= 0) {
+      return res.status(400).json({ error: 'El total de la venta debe ser mayor a cero' });
+    }
+
+    if (isMongoReady()) {
+      for (const { producto, nuevaCantidad } of productosMongoActualizados) {
+        producto.cantidad = nuevaCantidad;
+        producto.fechaActualizacion = new Date();
+        await producto.save();
+        io.emit('producto-actualizado', normalizeProducto(producto));
+      }
+    } else {
+      productosMemoriaActualizados.forEach(({ index, producto, nuevaCantidad }) => {
+        productos[index] = {
+          ...producto,
+          cantidad: nuevaCantidad,
+          ultimaActualizacion: new Date().toISOString()
+        };
+        io.emit('producto-actualizado', normalizeProducto(productos[index]));
+      });
+    }
+
+    let ventaRegistrada;
+
+    if (isMongoReady()) {
+      ventaRegistrada = await Venta.create(ventaPayload);
+
+      const sesionActiva = await SesionCaja.findOne({ estado: 'abierta' }).sort({ fechaApertura: -1 });
+      if (sesionActiva) {
+        if (metodoPago === 'efectivo') {
+          sesionActiva.ventasEfectivo += ventaPayload.total;
+        } else if (metodoPago === 'tarjeta') {
+          sesionActiva.ventasTarjeta += ventaPayload.total;
+        } else {
+          sesionActiva.ventasTransferencia += ventaPayload.total;
+        }
+
+        await sesionActiva.save();
+      }
+    } else {
+      ventaRegistrada = {
+        ...ventaPayload,
+        id: Date.now().toString(),
+        _id: Date.now().toString()
+      };
+      ventasRegistradas.unshift(ventaRegistrada);
+    }
+
+    const ventaNormalizada = normalizeVenta(ventaRegistrada);
+    io.emit('venta-registrada', ventaNormalizada);
+    res.status(201).json(ventaNormalizada);
+  } catch (error) {
+    console.error('Error POST /api/ventas:', error);
+    res.status(500).json({ error: 'No se pudo registrar la venta' });
   }
 });
 
@@ -1292,26 +1550,49 @@ app.get('/api/reportes/ventas', async (req, res) => {
       return res.status(400).json({ error: 'Se requieren fechas inicio y fin' });
     }
 
-    // Generar datos simulados de ventas por día
     const fechaInicio = new Date(inicio);
     const fechaFin = new Date(fin);
-    const reportes = [];
+    const ventas = await getVentasEntreFechas(fechaInicio, new Date(`${fin}T23:59:59.999Z`));
+    const ventasPorDia = new Map();
 
     for (let d = new Date(fechaInicio); d <= fechaFin; d.setDate(d.getDate() + 1)) {
       const fecha = d.toISOString().split('T')[0];
-      const esFindeSemana = d.getDay() === 0 || d.getDay() === 6;
-      const ventasBase = 15 * (esFindeSemana ? 1.3 : 1);
-      const cantidad = Math.round(ventasBase * (0.7 + Math.random() * 0.6));
-      const ingresos = Math.round(cantidad * 8000 + Math.random() * 8000);
-
-      reportes.push({
+      ventasPorDia.set(fecha, {
         fecha,
-        cantidad,
-        ingresos,
-        ticket_promedio: Math.round(ingresos / cantidad),
-        productos_vendidos: Math.round(cantidad * (2 + Math.random()))
+        cantidad: 0,
+        ingresos: 0,
+        ticket_promedio: 0,
+        productos_vendidos: 0,
+        efectivo: 0,
+        tarjeta: 0,
+        transferencia: 0
       });
     }
+
+    ventas.forEach((venta) => {
+      const fecha = new Date(venta.fecha).toISOString().split('T')[0];
+      const actual = ventasPorDia.get(fecha);
+      if (!actual) {
+        return;
+      }
+
+      actual.cantidad += 1;
+      actual.ingresos += Number(venta.total || 0);
+      actual.productos_vendidos += (venta.items || []).reduce((sum, item) => sum + Number(item.cantidad || 0), 0);
+
+      if (venta.metodoPago === 'efectivo') {
+        actual.efectivo += Number(venta.total || 0);
+      } else if (venta.metodoPago === 'tarjeta') {
+        actual.tarjeta += Number(venta.total || 0);
+      } else if (venta.metodoPago === 'transferencia') {
+        actual.transferencia += Number(venta.total || 0);
+      }
+    });
+
+    const reportes = Array.from(ventasPorDia.values()).map((dia) => ({
+      ...dia,
+      ticket_promedio: dia.cantidad > 0 ? Math.round(dia.ingresos / dia.cantidad) : 0
+    }));
 
     res.json(reportes);
   } catch (error) {
@@ -1325,21 +1606,31 @@ app.get('/api/reportes/productos', async (req, res) => {
   try {
     const { inicio, fin } = req.query;
 
-    // Datos simulados de productos vendidos
-    const productosVendidos = [
-      { nombre: 'Arroz Diana Premium 500g', cantidad: 45, ingresos: 112500, categoria: 'Granos', margen: 30 },
-      { nombre: 'Aceite Gourmet 1L', cantidad: 32, ingresos: 144000, categoria: 'Aceites', margen: 35 },
-      { nombre: 'Azúcar Incauca 1kg', cantidad: 28, ingresos: 89600, categoria: 'Endulzantes', margen: 28 },
-      { nombre: 'Leche Alpina 1L', cantidad: 52, ingresos: 156000, categoria: 'Lácteos', margen: 25 },
-      { nombre: 'Pan Bimbo Integral', cantidad: 38, ingresos: 76000, categoria: 'Panadería', margen: 20 },
-      { nombre: 'Huevos AA x30', cantidad: 25, ingresos: 87500, categoria: 'Proteínas', margen: 22 },
-      { nombre: 'Pollo Pechuga kg', cantidad: 18, ingresos: 270000, categoria: 'Carnes', margen: 40 },
-      { nombre: 'Coca Cola 2L', cantidad: 41, ingresos: 164000, categoria: 'Bebidas', margen: 32 },
-      { nombre: 'Café Pasilla x500g', cantidad: 22, ingresos: 110000, categoria: 'Bebidas', margen: 38 },
-      { nombre: 'Atún lata 170g', cantidad: 35, ingresos: 70000, categoria: 'Conservas', margen: 29 }
-    ];
+    if (!inicio || !fin) {
+      return res.status(400).json({ error: 'Se requieren fechas inicio y fin' });
+    }
 
-    res.json(productosVendidos);
+    const ventas = await getVentasEntreFechas(new Date(inicio), new Date(`${fin}T23:59:59.999Z`));
+    const productosVendidos = new Map();
+
+    ventas.forEach((venta) => {
+      (venta.items || []).forEach((item) => {
+        const key = String(item.productoId || item.nombre);
+        const actual = productosVendidos.get(key) || {
+          id: key,
+          nombre: item.nombre,
+          cantidad: 0,
+          ingresos: 0,
+          categoria: item.categoria || 'Sin categoría'
+        };
+
+        actual.cantidad += Number(item.cantidad || 0);
+        actual.ingresos += Number(item.subtotal || 0);
+        productosVendidos.set(key, actual);
+      });
+    });
+
+    res.json(Array.from(productosVendidos.values()).sort((a, b) => b.ingresos - a.ingresos));
   } catch (error) {
     console.error('Error /api/reportes/productos:', error);
     res.status(500).json({ error: 'Error al obtener reporte de productos' });
@@ -1351,16 +1642,28 @@ app.get('/api/reportes/empleados', async (req, res) => {
   try {
     const { inicio, fin } = req.query;
 
-    // Datos simulados de rendimiento de empleados
-    const empleados = [
-      { nombre: 'Carlos Rodríguez', ventas: 45, ingresos: 360000, comision: 18000 },
-      { nombre: 'María González', ventas: 38, ingresos: 304000, comision: 15200 },
-      { nombre: 'Ana Martínez', ventas: 35, ingresos: 280000, comision: 14000 },
-      { nombre: 'Pedro López', ventas: 42, ingresos: 336000, comision: 16800 },
-      { nombre: 'Laura Sánchez', ventas: 28, ingresos: 224000, comision: 11200 }
-    ];
+    if (!inicio || !fin) {
+      return res.status(400).json({ error: 'Se requieren fechas inicio y fin' });
+    }
 
-    res.json(empleados);
+    const ventas = await getVentasEntreFechas(new Date(inicio), new Date(`${fin}T23:59:59.999Z`));
+    const empleados = new Map();
+
+    ventas.forEach((venta) => {
+      const key = String(venta.vendedorId || venta.vendedorNombre);
+      const actual = empleados.get(key) || {
+        id: key,
+        nombre: venta.vendedorNombre,
+        ventas: 0,
+        ingresos: 0
+      };
+
+      actual.ventas += 1;
+      actual.ingresos += Number(venta.total || 0);
+      empleados.set(key, actual);
+    });
+
+    res.json(Array.from(empleados.values()).sort((a, b) => b.ingresos - a.ingresos));
   } catch (error) {
     console.error('Error /api/reportes/empleados:', error);
     res.status(500).json({ error: 'Error al obtener reporte de empleados' });

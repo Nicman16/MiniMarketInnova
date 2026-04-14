@@ -2,6 +2,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Producto, ItemVenta } from '../../types/pos.types';
 import { productoService } from '../../services/inventario/productoService';
+import { ventaService } from '../../services/ventas/ventaService';
 import { useAuth } from '../../context/AuthContext';
 import EscanerZXing from '../inventario/EscanerZXing';
 import '../../styles/PuntoVenta.css';
@@ -17,25 +18,27 @@ function PuntoVenta() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
   const [descuento, setDescuento] = useState(0);
+  const [metodoPago, setMetodoPago] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo');
+  const [procesandoVenta, setProcesandoVenta] = useState(false);
+
+  const cargarProductos = useCallback(async () => {
+    try {
+      setCargando(true);
+      const datos = await productoService.obtenerProductos();
+      setProductos(datos);
+      setError('');
+    } catch (err: any) {
+      setError('Error al cargar productos');
+      console.error(err);
+    } finally {
+      setCargando(false);
+    }
+  }, []);
 
   // Cargar productos al montar
   useEffect(() => {
-    const cargarProductos = async () => {
-      try {
-        setCargando(true);
-        const datos = await productoService.obtenerProductos();
-        setProductos(datos);
-        setError('');
-      } catch (err: any) {
-        setError('Error al cargar productos');
-        console.error(err);
-      } finally {
-        setCargando(false);
-      }
-    };
-
     cargarProductos();
-  }, []);
+  }, [cargarProductos]);
 
   // Obtener categorías únicas
   const categorias = useMemo(() => {
@@ -81,11 +84,11 @@ function PuntoVenta() {
       }
 
       const nuevoItem: ItemVenta = {
-        id: Number(producto.id),
+        id: producto.id,
         producto: producto,
-        precioUnitario: producto.precio || 0,
+        precioUnitario: producto.precioVenta ?? producto.precio ?? 0,
         cantidad: 1,
-        subtotal: producto.precio || 0
+        subtotal: producto.precioVenta ?? producto.precio ?? 0
       };
 
       return [...carritoActual, nuevoItem];
@@ -93,12 +96,12 @@ function PuntoVenta() {
   }, []);
 
   // Función para remover del carrito
-  const removerDelCarrito = useCallback((id: number) => {
+  const removerDelCarrito = useCallback((id: number | string) => {
     setCarrito(carritoActual => carritoActual.filter(item => item.id !== id));
   }, []);
 
   // Función para actualizar cantidad
-  const actualizarCantidad = useCallback((id: number, nuevaCantidad: number) => {
+  const actualizarCantidad = useCallback((id: number | string, nuevaCantidad: number) => {
     if (nuevaCantidad <= 0) {
       removerDelCarrito(id);
       return;
@@ -132,6 +135,7 @@ function PuntoVenta() {
   const limpiarCarrito = useCallback(() => {
     setCarrito([]);
     setDescuento(0);
+    setMetodoPago('efectivo');
   }, []);
 
   // Manejar código escaneado
@@ -152,9 +156,14 @@ function PuntoVenta() {
   }, [productos, agregarAlCarrito]);
 
   // Procesar venta
-  const procesarVenta = useCallback(() => {
+  const procesarVenta = useCallback(async () => {
     if (carrito.length === 0) {
       alert('El carrito está vacío');
+      return;
+    }
+
+    if (!usuario) {
+      alert('Debe iniciar sesión para registrar una venta');
       return;
     }
     
@@ -163,17 +172,29 @@ function PuntoVenta() {
     );
     
     if (confirmacion) {
-      console.log('🛒 Venta procesada:', {
-        empleado: usuario?.nombre,
-        items: carrito,
-        totales: calcularTotales,
-        fecha: new Date().toISOString()
-      });
-      
-      alert('¡Venta procesada exitosamente!');
-      limpiarCarrito();
+      try {
+        setProcesandoVenta(true);
+
+        await ventaService.registrarVenta({
+          items: carrito,
+          subtotal: calcularTotales.subtotal,
+          iva: calcularTotales.iva,
+          descuentos: calcularTotales.descuentoAplicado,
+          total: calcularTotales.total,
+          metodoPago
+        });
+
+        await cargarProductos();
+        alert('¡Venta procesada exitosamente!');
+        limpiarCarrito();
+      } catch (ventaError) {
+        alert(ventaError instanceof Error ? ventaError.message : 'No se pudo registrar la venta');
+        console.error(ventaError);
+      } finally {
+        setProcesandoVenta(false);
+      }
     }
-  }, [carrito, calcularTotales, limpiarCarrito, usuario]);
+  }, [calcularTotales, carrito, cargarProductos, limpiarCarrito, metodoPago, usuario]);
 
   if (cargando) {
     return (
@@ -215,9 +236,7 @@ function PuntoVenta() {
             />
             <button 
               onClick={() => setEscanerActivo(!escanerActivo)}
-              style={{
-                background: escanerActivo ? 'rgba(255, 107, 157, 0.3)' : 'rgba(0, 212, 255, 0.3)'
-              }}
+              className={`scanner-toggle ${escanerActivo ? 'activo' : ''}`}
             >
               {escanerActivo ? '❌' : '📱'}
             </button>
@@ -225,7 +244,7 @@ function PuntoVenta() {
 
           {/* Escáner */}
           {escanerActivo && (
-            <div style={{ borderRadius: '12px', overflow: 'hidden', marginBottom: '0.5rem' }}>
+            <div className="scanner-wrapper">
               <EscanerZXing 
                 onScan={manejarCodigoEscaneado}
                 onProductoEncontrado={agregarAlCarrito}
@@ -252,7 +271,7 @@ function PuntoVenta() {
           {/* Lista de productos */}
           <div className="productos-lista">
             {productosFiltrados.length === 0 ? (
-              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '2rem', color: 'rgba(255,255,255,0.5)' }}>
+              <div className="productos-vacios">
                 No hay productos disponibles
               </div>
             ) : (
@@ -334,16 +353,20 @@ function PuntoVenta() {
               max="100"
               value={descuento}
               onChange={(e) => setDescuento(Math.min(100, Math.max(0, Number(e.target.value))))}
-              style={{
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: 'white',
-                padding: '0.5rem',
-                borderRadius: '8px',
-                marginTop: '0.75rem',
-                width: '100%'
-              }}
+              className="resumen-input"
             />
+
+            <select
+              value={metodoPago}
+              onChange={(e) => setMetodoPago(e.target.value as 'efectivo' | 'tarjeta' | 'transferencia')}
+              aria-label="Método de pago"
+              title="Método de pago"
+              className="resumen-input"
+            >
+              <option value="efectivo">Efectivo</option>
+              <option value="tarjeta">Tarjeta</option>
+              <option value="transferencia">Transferencia</option>
+            </select>
           </div>
 
           {/* Botones */}
@@ -351,14 +374,14 @@ function PuntoVenta() {
             <button 
               className="btn-accion btn-procesar"
               onClick={procesarVenta}
-              disabled={carrito.length === 0}
+              disabled={carrito.length === 0 || procesandoVenta}
             >
-              ✅ Procesar Venta
+              {procesandoVenta ? '⏳ Procesando...' : '✅ Procesar Venta'}
             </button>
             <button 
               className="btn-accion btn-limpiar"
               onClick={limpiarCarrito}
-              disabled={carrito.length === 0}
+              disabled={carrito.length === 0 || procesandoVenta}
             >
               🗑️ Limpiar Carrito
             </button>

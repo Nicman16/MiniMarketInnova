@@ -9,6 +9,7 @@
 /* ========= HEADER ========= */
 .pos-header {
   background: rgba(15, 23, 42, 0.8);
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   padding: 1.5rem 2rem;
   display: flex;
@@ -24,8 +25,8 @@
   font-size: 2rem;
   font-weight: 800;
   background: linear-gradient(135deg, #00d4ff, #ff6b9d);
-  background-clip: text;
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -44,6 +45,7 @@
   color: #00d4ff;
   font-weight: 600;
   font-size: 0.9rem;
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
 
@@ -72,6 +74,7 @@
 /* ========= PANEL DE PRODUCTOS ========= */
 .productos-panel {
   background: rgba(255, 255, 255, 0.02);
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
@@ -125,6 +128,16 @@
 .productos-busca button:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0, 212, 255, 0.4);
+}
+
+.scanner-toggle.activo {
+  background: rgba(255, 107, 157, 0.3);
+}
+
+.scanner-wrapper {
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
 }
 
 .productos-lista {
@@ -224,6 +237,7 @@
 /* ========= CARRITO/RESUMEN ========= */
 .carrito-panel {
   background: rgba(255, 255, 255, 0.02);
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
@@ -345,6 +359,13 @@
   font-size: 0.95rem;
 }
 
+.productos-vacios {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
 /* RESUMEN */
 .carrito-resumen {
   border-top: 2px solid rgba(255, 255, 255, 0.1);
@@ -385,6 +406,26 @@
 
 .resumen-valor {
   font-weight: 700;
+}
+
+.resumen-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-top: 0.75rem;
+  width: 100%;
+}
+
+.resumen-input:focus {
+  outline: none;
+  border-color: rgba(0, 212, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.12);
+}
+
+.resumen-input option {
+  color: #111827;
 }
 
 /* ========= BOTONES ========= */

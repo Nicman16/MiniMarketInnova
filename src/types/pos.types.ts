@@ -43,7 +43,7 @@ export interface Producto {
 }
 
 export interface ItemVenta {
-  id: number;
+  id: number | string;
   producto: Producto;
   cantidad: number;
   precioUnitario: number;
@@ -83,6 +83,7 @@ export interface SesionCaja {
   montoCierre?: number;
   ventasEfectivo: number;
   ventasTarjeta: number;
+  ventasTransferencia: number;
   ingresos: number;
   egresos: number;
   estado: 'abierta' | 'cerrada';
