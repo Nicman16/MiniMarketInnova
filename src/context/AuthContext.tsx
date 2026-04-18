@@ -44,7 +44,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
 
       if (!response.ok) {
-        throw new Error('Credenciales inválidas');
+        const error = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        console.error(`Status: ${response.status}, Error:`, error);
+        throw new Error(`Credenciales inválidas (${response.status}): ${error.error || 'Error desconocido'}`);
       }
 
       const data: LoginResponse = await response.json();
