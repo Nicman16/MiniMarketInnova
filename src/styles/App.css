@@ -1517,3 +1517,184 @@
     font-size: 0.8rem;
   }
 }
+
+/* ========================================================
+   MOBILE / CAPACITOR — Bottom Navigation Bar
+   ======================================================== */
+
+/* Safe area para notch y barra de navegación de Android/iOS */
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --bottom-nav-height: 68px;
+}
+
+/* En móvil: ocultar el menú de la navbar superior, mostrar bottom nav */
+@media (max-width: 768px) {
+  .navbar {
+    margin: 0;
+    border-radius: 0;
+    padding: 0.8rem 1rem;
+    padding-top: calc(0.8rem + var(--safe-area-top));
+    position: sticky;
+    top: 0;
+  }
+
+  .navbar-menu {
+    display: none;
+  }
+
+  .navbar-user .user-details {
+    display: none;
+  }
+
+  .logout-btn span:last-child {
+    display: none;
+  }
+
+  .logout-btn {
+    padding: 0.6rem;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .main-content {
+    padding-bottom: calc(var(--bottom-nav-height) + var(--safe-area-bottom));
+  }
+}
+
+/* Bottom Nav — oculto en desktop */
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(var(--bottom-nav-height) + var(--safe-area-bottom));
+    padding-bottom: var(--safe-area-bottom);
+    background: rgba(15, 15, 35, 0.95);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 200;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    min-width: 56px;
+    min-height: 56px;
+    padding: 0.4rem 0.6rem;
+    border-radius: 16px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .bottom-nav-item::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 24px;
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #00d4ff, #ff6b9d);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .bottom-nav-item.active::before {
+    transform: translateX(-50%) scaleX(1);
+  }
+
+  .bottom-nav-item.active {
+    background: rgba(0, 212, 255, 0.1);
+  }
+
+  .bottom-nav-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .bottom-nav-item.active .bottom-nav-icon {
+    transform: translateY(-2px) scale(1.15);
+  }
+
+  .bottom-nav-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    transition: color 0.25s;
+  }
+
+  .bottom-nav-item.active .bottom-nav-label {
+    background: linear-gradient(90deg, #00d4ff, #ff6b9d);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+/* ======= Touch targets y scroll en módulos ======= */
+@media (max-width: 768px) {
+  /* Todos los botones de acción deben tener al menos 44px */
+  button,
+  .btn,
+  [role="button"] {
+    min-height: 44px;
+  }
+
+  /* Scroll suave en contenedores */
+  .main-content {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* Tablas horizontales con scroll en móvil */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Cards más compactas en móvil */
+  .metric-card-large {
+    padding: 1.2rem;
+  }
+
+  .dashboard-container {
+    padding: 1rem;
+  }
+
+  /* Sin hover effects en táctil para mejor rendimiento */
+  .metric-card-large:hover {
+    transform: none;
+  }
+
+  .nav-item:hover:not(:disabled) {
+    transform: none;
+  }
+}
+

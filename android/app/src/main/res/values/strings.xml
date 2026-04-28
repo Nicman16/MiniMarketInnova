@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MiniMarket Innova</string>
+    <string name="title_activity_main">MiniMarket Innova</string>
+    <string name="package_name">com.minimarket.innova</string>
+    <string name="custom_url_scheme">com.minimarket.innova</string>
+</resources>

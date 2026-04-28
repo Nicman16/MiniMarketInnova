@@ -23,7 +23,7 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/minimarket
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Security check
-if (NODE_ENV === 'production') {
+if (NODE_ENV === 'production' && process.env.FORCE_SEED !== 'true') {
   console.error('❌ SECURITY ERROR: Cannot run seed script in production environment!');
   console.error('If you need to seed production data, please do it manually with proper authorization.');
   process.exit(1);

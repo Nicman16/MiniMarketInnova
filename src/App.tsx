@@ -168,6 +168,61 @@ function DashboardContent() {
       <main className="main-content">
         {renderPagina()}
       </main>
+
+      {/* BOTTOM NAV — solo visible en móvil */}
+      <nav className="bottom-nav">
+        <button
+          className={`bottom-nav-item ${paginaActual === 'dashboard' ? 'active' : ''}`}
+          onClick={() => cambiarPagina('dashboard')}
+        >
+          <span className="bottom-nav-icon">📊</span>
+          <span className="bottom-nav-label">Dashboard</span>
+        </button>
+
+        <button
+          className={`bottom-nav-item ${paginaActual === 'punto-venta' ? 'active' : ''}`}
+          onClick={() => cambiarPagina('punto-venta')}
+        >
+          <span className="bottom-nav-icon">🛒</span>
+          <span className="bottom-nav-label">Venta</span>
+        </button>
+
+        {isJefe && (
+          <>
+            <button
+              className={`bottom-nav-item ${paginaActual === 'inventario' ? 'active' : ''}`}
+              onClick={() => cambiarPagina('inventario')}
+            >
+              <span className="bottom-nav-icon">📦</span>
+              <span className="bottom-nav-label">Inventario</span>
+            </button>
+
+            <button
+              className={`bottom-nav-item ${paginaActual === 'caja' ? 'active' : ''}`}
+              onClick={() => cambiarPagina('caja')}
+            >
+              <span className="bottom-nav-icon">💵</span>
+              <span className="bottom-nav-label">Caja</span>
+            </button>
+
+            <button
+              className={`bottom-nav-item ${['fiado','reportes','empleados'].includes(paginaActual) ? 'active' : ''}`}
+              onClick={() => {
+                const siguiente = paginaActual === 'fiado' ? 'reportes'
+                  : paginaActual === 'reportes' ? 'empleados' : 'fiado';
+                cambiarPagina(siguiente);
+              }}
+            >
+              <span className="bottom-nav-icon">
+                {paginaActual === 'reportes' ? '📑' : paginaActual === 'empleados' ? '👥' : '💳'}
+              </span>
+              <span className="bottom-nav-label">
+                {paginaActual === 'reportes' ? 'Reportes' : paginaActual === 'empleados' ? 'Equipo' : 'Fiado'}
+              </span>
+            </button>
+          </>
+        )}
+      </nav>
     </div>
   );
 }
