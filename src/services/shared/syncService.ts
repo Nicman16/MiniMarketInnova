@@ -11,9 +11,18 @@ class SyncService {
     this.conectar();
   }
 
+  private getAuthToken(): string {
+    return localStorage.getItem('token') || '';
+  }
+
+  private sanitizeUrl(url: string): string {
+    return url.replace(/\/$/, '');
+  }
+
   private conectar() {
     // Detectar entorno y configurar URL del servidor
     const serverUrl = this.getServerUrl();
+    const token = this.getAuthToken();
     
     console.log('🔗 Conectando a:', serverUrl);
     
@@ -24,19 +33,34 @@ class SyncService {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5  
+      reconnectionAttempts: 5,
+      auth: token ? { token } : undefined
     });
 
     this.setupListeners();
   }
 
   private getServerUrl(): string {
-    // En Railway, usa la misma URL
-    if (process.env.NODE_ENV === 'production') {
-      return window.location.origin;
+    const configuredUrl = (process.env.REACT_APP_API_URL || '').trim();
+    if (configuredUrl) {
+      return this.sanitizeUrl(configuredUrl);
     }
-    
-    // En desarrollo local
+
+    const origin = window.location.origin;
+    const isHttpOrigin = origin.startsWith('http://') || origin.startsWith('https://');
+
+    if (process.env.NODE_ENV === 'production') {
+      // En móvil híbrida, origin puede ser capacitor://localhost o ionic://localhost.
+      // Por eso se recomienda configurar REACT_APP_API_URL en producción.
+      if (isHttpOrigin) {
+        return this.sanitizeUrl(origin);
+      }
+
+      console.warn('⚠️ REACT_APP_API_URL no está configurada en producción. Usando localhost como fallback.');
+      return 'http://localhost:3001';
+    }
+
+    // En desarrollo local web
     return 'http://localhost:3001';
   }
 
@@ -249,8 +273,17 @@ class SyncService {
 
   reconectar() {
     if (this.socket) {
+      const token = this.getAuthToken();
+      this.socket.auth = token ? { token } : {};
       this.socket.disconnect();
       this.socket.connect();
+    }
+  }
+
+  actualizarToken() {
+    if (this.socket) {
+      const token = this.getAuthToken();
+      this.socket.auth = token ? { token } : {};
     }
   }
 

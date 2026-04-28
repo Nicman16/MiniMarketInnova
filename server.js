@@ -13,6 +13,28 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const server = http.createServer(app);
 
+const parseAllowedOrigins = () => {
+  const defaults = [
+    'http://localhost:3002',
+    'http://localhost:3001',
+    'http://localhost',
+    'capacitor://localhost',
+    'ionic://localhost'
+  ];
+
+  const fromEnv = (process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set([...defaults, ...fromEnv]));
+};
+
+const ALLOWED_ORIGINS = parseAllowedOrigins();
+const isAllowedOrigin = (origin) => !origin || ALLOWED_ORIGINS.includes(origin);
+
+console.log('🌐 CORS habilitado para orígenes:', ALLOWED_ORIGINS.join(', '));
+
 // Conexión a MongoDB
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/minimarket';
 const DISPLAY_URI = MONGO_URI.replace(/:\/\/.*@/, '://***:***@').split('?')[0];
@@ -170,7 +192,13 @@ const normalizeProducto = (producto) => {
 
 const io = socketIo(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3002',
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`Origen no permitido por CORS: ${origin || 'N/A'}`));
+    },
     methods: ['GET', 'POST'],
     credentials: true
   },
@@ -182,7 +210,13 @@ app.use(helmet());
 
 // CORS configuration (restrict origin instead of *)
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3002',
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Origen no permitido por CORS: ${origin || 'N/A'}`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

@@ -144,6 +144,101 @@ CORS_ORIGIN=https://<tu-app>.up.railway.app
 Si usas una sola app en Railway (frontend servido por Express + API en el mismo servicio),
 deja `REACT_APP_API_URL` sin definir: el frontend consumirá `/api/...` en el mismo dominio automáticamente.
 
+## 📱 Web + Móvil Híbrida en Tiempo Real (Railway + Vercel + Capacitor)
+
+### Arquitectura recomendada
+
+- Backend/API + Socket.IO en Railway
+- MongoDB en Railway o Atlas
+- Frontend web en Vercel
+- App móvil híbrida (Android/iOS) con Capacitor usando la misma API
+
+### Variables necesarias
+
+En Railway (`Settings > Variables`):
+
+```env
+NODE_ENV=production
+JWT_SECRET=<secreto-fuerte>
+MONGO_URI=<tu-uri-mongo>
+CORS_ORIGIN=https://<tu-web>.vercel.app,capacitor://localhost,ionic://localhost
+```
+
+En Vercel (proyecto frontend):
+
+```env
+REACT_APP_API_URL=https://<tu-api>.up.railway.app
+```
+
+En build móvil (Capacitor):
+
+```env
+REACT_APP_API_URL=https://<tu-api>.up.railway.app
+```
+
+### Flujo en tiempo real
+
+El sistema ya usa Socket.IO para eventos de negocio como:
+
+- `producto-agregado`
+- `producto-actualizado`
+- `producto-eliminado`
+- `venta-registrada`
+- `caja-abierta`
+- `caja-cerrada`
+- `movimiento-caja`
+
+La sincronización recomendada es:
+
+1. Crear/editar por REST (`/api/...`)
+2. Actualizar pantallas por eventos Socket.IO
+3. Reintentar automáticamente al reconectar
+
+### Crear app Android/iOS con Capacitor
+
+1. Instalar Capacitor:
+
+```bash
+npm install @capacitor/core @capacitor/cli
+```
+
+2. Inicializar proyecto móvil:
+
+```bash
+npx cap init MiniMarketInnova com.minimarket.innova --web-dir=build
+```
+
+3. Generar build web:
+
+```bash
+npm run build
+```
+
+4. Agregar plataformas:
+
+```bash
+npx cap add android
+npx cap add ios
+```
+
+5. Sincronizar cambios:
+
+```bash
+npx cap sync
+```
+
+6. Abrir IDE nativo:
+
+```bash
+npx cap open android
+npx cap open ios
+```
+
+### Nota importante para móvil
+
+En iOS/Android, el origen puede ser `capacitor://localhost` o `ionic://localhost`, por eso el backend debe permitir esos orígenes en `CORS_ORIGIN`.
+Además, define `REACT_APP_API_URL` para que el socket y la API apunten a Railway en producción.
+
 ### URL de producción
 
 Después del despliegue, Railway te dará una URL como:
