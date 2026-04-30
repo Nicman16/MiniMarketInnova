@@ -1,2 +1,35 @@
 node_modules
 build
+
+# Variables de entorno - nunca subir al repo
+.env
+.env.production
+.env.local
+
+# Android / Capacitor
+ios/
+dist/
+android/.gradle/
+android/.idea/
+android/build/
+android/app/build/
+android/local.properties
+android/capacitor-cordova-android-plugins/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+

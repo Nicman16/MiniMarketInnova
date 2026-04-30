@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Usuario, LoginResponse } from '../types/pos.types';
+import { getApiBase } from '../services/shared/apiConfig';
 
 interface AuthContextType {
   usuario: Usuario | null;
@@ -37,7 +38,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (email: string, contraseña: string) => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${getApiBase()}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, contraseña })

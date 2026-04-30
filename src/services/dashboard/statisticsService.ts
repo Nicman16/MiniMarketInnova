@@ -1,10 +1,13 @@
 // src/services/dashboard/statisticsService.ts
+import { getApiBase } from '../shared/apiConfig';
+
+const API_BASE = getApiBase();
 
 export const statisticsService = {
   // Obtener estadísticas avanzadas
   async obtenerEstadisticasAvanzadas(periodo: '7d' | '30d' | '90d' = '30d') {
     try {
-      const response = await fetch(`/api/stats/advanced?periodo=${periodo}`);
+      const response = await fetch(`${API_BASE}/api/stats/advanced?periodo=${periodo}`);
       if (!response.ok) throw new Error('Error al obtener estadísticas avanzadas');
       return await response.json();
     } catch (error) {
@@ -13,10 +16,10 @@ export const statisticsService = {
     }
   },
 
-  // Obtener ventas por período
+  // Obtener ventas por periodo
   async obtenerVentasPorPeriodo(fechaInicio: string, fechaFin: string) {
     try {
-      const response = await fetch(`/api/stats/ventas?inicio=${fechaInicio}&fin=${fechaFin}`);
+      const response = await fetch(`${API_BASE}/api/reportes/ventas?inicio=${fechaInicio}&fin=${fechaFin}`);
       if (!response.ok) throw new Error('Error al obtener ventas');
       return await response.json();
     } catch (error) {
@@ -28,7 +31,7 @@ export const statisticsService = {
   // Obtener productos más vendidos
   async obtenerProductosMasVendidos(limite: number = 10) {
     try {
-      const response = await fetch(`/api/stats/productos-vendidos?limite=${limite}`);
+      const response = await fetch(`${API_BASE}/api/stats/productos-vendidos?limite=${limite}`);
       if (!response.ok) throw new Error('Error al obtener productos vendidos');
       return await response.json();
     } catch (error) {
@@ -40,7 +43,7 @@ export const statisticsService = {
   // Obtener información de deudas
   async obtenerEstadisticasDeudas() {
     try {
-      const response = await fetch('/api/stats/deudas');
+      const response = await fetch(`${API_BASE}/api/stats/deudas`);
       if (!response.ok) throw new Error('Error al obtener deudas');
       return await response.json();
     } catch (error) {
@@ -52,7 +55,7 @@ export const statisticsService = {
   // Obtener margen de ganancia
   async obtenerMargenes() {
     try {
-      const response = await fetch('/api/stats/margenes');
+      const response = await fetch(`${API_BASE}/api/stats/margenes`);
       if (!response.ok) throw new Error('Error al obtener márgenes');
       return await response.json();
     } catch (error) {
@@ -64,7 +67,7 @@ export const statisticsService = {
   // Obtener resumen ejecutivo
   async obtenerResumenEjecutivo() {
     try {
-      const response = await fetch('/api/stats/resumen');
+      const response = await fetch(`${API_BASE}/api/stats/resumen`);
       if (!response.ok) throw new Error('Error al obtener resumen');
       return await response.json();
     } catch (error) {

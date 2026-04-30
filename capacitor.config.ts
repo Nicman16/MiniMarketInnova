@@ -5,8 +5,7 @@ const config: CapacitorConfig = {
   appName: 'MiniMarket Innova',
   webDir: 'build',
   server: {
-    // En desarrollo apunta al servidor local; en producción usa el build estático
-    // Descomenta la línea de abajo para desarrollo con hot-reload:
+    // Descomenta esto si quieres probar con hot-reload en red local.
     // url: 'http://192.168.X.X:3002',
     // cleartext: true,
   },

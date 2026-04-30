@@ -1,4 +1,5 @@
 import { Empleado } from '../../types/pos.types';
+import { getApiBase } from '../shared/apiConfig';
 
 type EmpleadoPayload = {
   nombre: string;
@@ -15,6 +16,10 @@ class AuthService {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {})
     };
+  }
+
+  private getUrl(path: string): string {
+    return `${getApiBase()}${path}`;
   }
 
   private async request<T>(url: string, options: RequestInit = {}): Promise<T> {
@@ -53,7 +58,7 @@ class AuthService {
     const token = localStorage.getItem('token');
     if (!token) return null;
 
-    const usuario = await this.request<any>('/api/auth/me');
+    const usuario = await this.request<any>(this.getUrl('/api/auth/me'));
     return this.toEmpleado(usuario);
   }
 
@@ -75,7 +80,7 @@ class AuthService {
   }
 
   async obtenerEmpleados(): Promise<Empleado[]> {
-    const empleados = await this.request<any[]>('/api/empleados');
+    const empleados = await this.request<any[]>(this.getUrl('/api/empleados'));
     return empleados.map((empleado) => this.toEmpleado(empleado));
   }
 
@@ -85,7 +90,7 @@ class AuthService {
   }
 
   async crearEmpleado(datos: EmpleadoPayload): Promise<Empleado> {
-    const empleado = await this.request<any>('/api/empleados', {
+    const empleado = await this.request<any>(this.getUrl('/api/empleados'), {
       method: 'POST',
       body: JSON.stringify(datos)
     });
@@ -94,7 +99,7 @@ class AuthService {
   }
 
   async actualizarEmpleado(empleado: Empleado): Promise<Empleado> {
-    const empleadoActualizado = await this.request<any>(`/api/empleados/${empleado.id}`, {
+    const empleadoActualizado = await this.request<any>(this.getUrl(`/api/empleados/${empleado.id}`), {
       method: 'PUT',
       body: JSON.stringify({
         nombre: empleado.nombre,
@@ -109,7 +114,7 @@ class AuthService {
   }
 
   async toggleEstadoEmpleado(empleadoId: string): Promise<Empleado> {
-    const empleado = await this.request<any>(`/api/empleados/${empleadoId}/toggle-estado`, {
+    const empleado = await this.request<any>(this.getUrl(`/api/empleados/${empleadoId}/toggle-estado`), {
       method: 'PATCH'
     });
 
@@ -117,7 +122,7 @@ class AuthService {
   }
 
   async eliminarEmpleado(empleadoId: string): Promise<void> {
-    await this.request<void>(`/api/empleados/${empleadoId}`, {
+    await this.request<void>(this.getUrl(`/api/empleados/${empleadoId}`), {
       method: 'DELETE'
     });
   }

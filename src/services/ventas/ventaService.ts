@@ -1,4 +1,5 @@
 import { ItemVenta, Venta } from '../../types/pos.types';
+import { getApiBase } from '../shared/apiConfig';
 
 interface RegistrarVentaPayload {
   items: ItemVenta[];
@@ -36,8 +37,12 @@ class VentaService {
     return response.json();
   }
 
+  private getUrl(path: string): string {
+    return `${getApiBase()}${path}`;
+  }
+
   async registrarVenta(payload: RegistrarVentaPayload): Promise<Venta> {
-    return this.request<Venta>('/api/ventas', {
+    return this.request<Venta>(this.getUrl('/api/ventas'), {
       method: 'POST',
       body: JSON.stringify({
         ...payload,

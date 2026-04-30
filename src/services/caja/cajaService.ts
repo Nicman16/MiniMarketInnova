@@ -1,4 +1,5 @@
 import { SesionCaja, MovimientoCaja, Empleado } from '../../types/pos.types';
+import { getApiBase } from '../shared/apiConfig';
 
 class CajaService {
   private getHeaders(): HeadersInit {
@@ -25,6 +26,10 @@ class CajaService {
     }
 
     return response.json();
+  }
+
+  private getUrl(path: string): string {
+    return `${getApiBase()}${path}`;
   }
 
   private toEmpleado(data: any): Empleado {
@@ -67,17 +72,17 @@ class CajaService {
   }
 
   async obtenerEmpleados(): Promise<Empleado[]> {
-    const empleados = await this.request<any[]>('/api/empleados');
+    const empleados = await this.request<any[]>(this.getUrl('/api/empleados'));
     return empleados.map((empleado) => this.toEmpleado(empleado));
   }
 
   async obtenerSesionActiva(): Promise<SesionCaja | null> {
-    const sesion = await this.request<any | null>('/api/caja/sesion-activa');
+    const sesion = await this.request<any | null>(this.getUrl('/api/caja/sesion-activa'));
     return sesion ? this.toSesionCaja(sesion) : null;
   }
 
   async abrirCaja(datos: { empleadoId: string; pin: string; montoApertura: number }): Promise<SesionCaja> {
-    const sesion = await this.request<any>('/api/caja/abrir', {
+    const sesion = await this.request<any>(this.getUrl('/api/caja/abrir'), {
       method: 'POST',
       body: JSON.stringify(datos)
     });
@@ -86,7 +91,7 @@ class CajaService {
   }
 
   async cerrarCaja(sesionId: string, montoCierre: number): Promise<SesionCaja> {
-    const sesion = await this.request<any>(`/api/caja/${sesionId}/cerrar`, {
+    const sesion = await this.request<any>(this.getUrl(`/api/caja/${sesionId}/cerrar`), {
       method: 'POST',
       body: JSON.stringify({ montoCierre })
     });
@@ -100,7 +105,7 @@ class CajaService {
     concepto: string;
     empleado: Empleado;
   }): Promise<MovimientoCaja> {
-    const movimiento = await this.request<any>('/api/caja/movimiento', {
+    const movimiento = await this.request<any>(this.getUrl('/api/caja/movimiento'), {
       method: 'POST',
       body: JSON.stringify({
         tipo: datos.tipo,
@@ -115,17 +120,17 @@ class CajaService {
 
   async obtenerMovimientosDia(fecha?: string): Promise<MovimientoCaja[]> {
     const fechaBuscar = fecha || new Date().toISOString().split('T')[0];
-    const movimientos = await this.request<any[]>(`/api/caja/movimientos?fecha=${fechaBuscar}`);
+    const movimientos = await this.request<any[]>(this.getUrl(`/api/caja/movimientos?fecha=${fechaBuscar}`));
     return movimientos.map((movimiento) => this.toMovimientoCaja(movimiento));
   }
 
   async obtenerResumenDia(fecha?: string): Promise<any> {
     const fechaBuscar = fecha || new Date().toISOString().split('T')[0];
-    return this.request<any>(`/api/caja/resumen?fecha=${fechaBuscar}`);
+    return this.request<any>(this.getUrl(`/api/caja/resumen?fecha=${fechaBuscar}`));
   }
 
   async obtenerResumenParaCierre(): Promise<any> {
-    return this.request<any>('/api/caja/resumen-cierre');
+    return this.request<any>(this.getUrl('/api/caja/resumen-cierre'));
   }
 }
 

@@ -1,13 +1,13 @@
-# Documentación del Proyecto
+﻿# Documentacion Del Proyecto
 
 ## Estructura
 
-- `reference/`: resúmenes rápidos de operación.
-- `reports/`: reportes de implementación, seguridad y verificación.
-- `planning/`: pendientes y planificación funcional.
-- `reviews/`: análisis técnicos y evaluaciones manuales.
+- `reference/`: guias rapidas y material de consulta.
+- `reports/`: reportes tecnicos, de implementacion y verificacion.
+- `planning/`: pendientes y notas de planificacion.
+- `reviews/`: revisiones tecnicas y observaciones manuales.
 
-## Índice rápido
+## Indice Rapido
 
 - `reference/QUICK_REFERENCE.md`
 - `reports/ESTADISTICAS_IMPLEMENTADAS.md`
@@ -17,12 +17,9 @@
 - `planning/MEJORAS_PENDIENTES.md`
 - `reviews/WORKTREE_REVIEW.md`
 
-## Criterio de organización
+## Criterio De Organizacion
 
-El root del repositorio se mantiene reservado para:
+La raiz del repositorio queda reservada para configuracion del proyecto,
+codigo ejecutable principal y el README principal.
 
-- configuración del proyecto
-- código ejecutable principal
-- README principal
-
-Todo lo documental o auxiliar se mueve fuera del root para que el mantenimiento sea más simple en un proyecto grande.
+Todo el material documental o auxiliar se mantiene dentro de `docs/`.

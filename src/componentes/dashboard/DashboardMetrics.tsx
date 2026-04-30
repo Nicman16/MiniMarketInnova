@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getApiBase } from '../../services/shared/apiConfig';
 
 interface Estadisticas {
   productosAgregados: number;
@@ -21,7 +22,7 @@ function DashboardMetrics() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch('/api/stats');
+        const response = await fetch(`${getApiBase()}/api/stats`);
         if (!response.ok) {
           throw new Error('No se pudieron cargar las métricas');
         }

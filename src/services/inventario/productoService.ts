@@ -1,11 +1,14 @@
 // src/services/inventario/productoService.ts
 import { Producto } from '../../types/pos.types';
+import { getApiBase } from '../shared/apiConfig';
+
+const API_BASE = getApiBase();
 
 export const productoService = {
   // Obtener todos los productos
   async obtenerProductos(): Promise<Producto[]> {
     try {
-      const response = await fetch('/api/tienda/productos');
+      const response = await fetch(`${API_BASE}/api/tienda/productos`);
       if (!response.ok) throw new Error('Error al obtener productos');
       return await response.json();
     } catch (error) {
@@ -17,7 +20,7 @@ export const productoService = {
   // Obtener productos por categoría
   async obtenerProductosPorCategoria(categoria: string): Promise<Producto[]> {
     try {
-      const response = await fetch(`/api/tienda/productos?categoria=${encodeURIComponent(categoria)}`);
+      const response = await fetch(`${API_BASE}/api/tienda/productos?categoria=${encodeURIComponent(categoria)}`);
       if (!response.ok) throw new Error('Error al obtener productos');
       return await response.json();
     } catch (error) {
@@ -29,7 +32,7 @@ export const productoService = {
   // Crear nuevo producto
   async crearProducto(producto: Omit<Producto, 'id'>): Promise<Producto> {
     try {
-      const response = await fetch('/api/tienda/productos', {
+      const response = await fetch(`${API_BASE}/api/tienda/productos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(producto)
@@ -45,7 +48,7 @@ export const productoService = {
   // Actualizar producto
   async actualizarProducto(id: string | number, cambios: Partial<Producto>): Promise<Producto> {
     try {
-      const response = await fetch(`/api/tienda/productos/${id}`, {
+      const response = await fetch(`${API_BASE}/api/tienda/productos/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cambios)
