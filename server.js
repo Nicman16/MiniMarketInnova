@@ -4,11 +4,14 @@ const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 const app = express();
 const server = http.createServer(app);
@@ -32,6 +35,26 @@ const parseAllowedOrigins = () => {
 
 const ALLOWED_ORIGINS = parseAllowedOrigins();
 const isAllowedOrigin = (origin) => !origin || ALLOWED_ORIGINS.includes(origin);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const smtpConfigured = !!(process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASS && process.env.SMTP_FROM);
+
+let smtpTransporter = null;
+const getSmtpTransporter = () => {
+  if (!smtpConfigured) return null;
+  if (smtpTransporter) return smtpTransporter;
+
+  smtpTransporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT),
+    secure: Number(process.env.SMTP_PORT) === 465,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+
+  return smtpTransporter;
+};
 
 console.log('🌐 CORS habilitado para orígenes:', ALLOWED_ORIGINS.join(', '));
 
@@ -90,6 +113,9 @@ const usuarioSchema = new mongoose.Schema({
   pin: { type: String, unique: true, sparse: true },
   rol: { type: String, enum: ['jefe', 'empleado'], default: 'empleado' },
   estado: { type: String, enum: ['activo', 'inactivo'], default: 'activo' },
+  emailVerificado: { type: Boolean, default: false },
+  tokenVerificacionHash: String,
+  tokenVerificacionExpira: Date,
   fechaCreacion: { type: Date, default: Date.now },
   ultimoAcceso: Date
 });
@@ -278,10 +304,76 @@ const normalizeEmpleado = (usuarioDoc) => {
     email: usuario.email,
     rol: usuario.rol,
     activo: usuario.estado === 'activo',
+    emailVerificado: !!usuario.emailVerificado,
     pin: usuario.pin || '',
     fechaCreacion: usuario.fechaCreacion,
     ultimoAcceso: usuario.ultimoAcceso
   };
+};
+
+const hashVerificationToken = (token) =>
+  crypto.createHash('sha256').update(token).digest('hex');
+
+const createVerificationToken = () => {
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  return {
+    rawToken,
+    tokenHash: hashVerificationToken(rawToken),
+    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24)
+  };
+};
+
+const getAppUrl = () => {
+  const configuredUrl = process.env.APP_URL || process.env.REACT_APP_API_URL;
+  return (configuredUrl || 'http://localhost:3002').replace(/\/$/, '');
+};
+
+const sendVerificationEmail = async ({ email, nombre, token }) => {
+  const activationLink = `${getAppUrl()}/activar?token=${token}`;
+
+  if (resend && process.env.RESEND_FROM_EMAIL) {
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL,
+      to: email,
+      subject: 'Activa tu cuenta de MiniMarket Innova',
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #1f2937;">
+          <h2>Hola ${nombre || 'usuario'},</h2>
+          <p>Tu cuenta ya fue creada en MiniMarket Innova.</p>
+          <p>Para activar tu acceso y definir tu contraseña, usa este enlace:</p>
+          <p><a href="${activationLink}">${activationLink}</a></p>
+          <p>Este enlace vence en 24 horas.</p>
+        </div>
+      `
+    });
+
+    return { sent: true, provider: 'resend', activationLink };
+  }
+
+  const smtpTransport = getSmtpTransporter();
+  if (smtpTransport) {
+    await smtpTransport.sendMail({
+      from: process.env.SMTP_FROM,
+      to: email,
+      subject: 'Activa tu cuenta de MiniMarket Innova',
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #1f2937;">
+          <h2>Hola ${nombre || 'usuario'},</h2>
+          <p>Tu cuenta ya fue creada en MiniMarket Innova.</p>
+          <p>Para activar tu acceso y definir tu contraseña, usa este enlace:</p>
+          <p><a href="${activationLink}">${activationLink}</a></p>
+          <p>Este enlace vence en 24 horas.</p>
+        </div>
+      `
+    });
+
+    return { sent: true, provider: 'smtp', activationLink };
+  }
+
+  console.warn(`⚠️ Correo no enviado a ${email}. Configura Resend o SMTP.`);
+  console.warn(`🔗 Enlace de activación: ${activationLink}`);
+
+  return { sent: false, provider: 'manual', activationLink };
 };
 
 const normalizeSesionCaja = (sesionDoc) => {
@@ -421,6 +513,14 @@ app.post('/api/auth/login', async (req, res) => {
     if (!usuario) {
       return res.status(401).json({ error: 'Usuario o contraseña inválidos' });
     }
+
+    if (usuario.estado !== 'activo') {
+      return res.status(403).json({ error: 'La cuenta está inactiva' });
+    }
+
+    if (!usuario.emailVerificado) {
+      return res.status(403).json({ error: 'Debes verificar tu correo antes de iniciar sesión' });
+    }
     
     // Verificar contraseña
     const esValida = await bcrypt.compare(contraseña, usuario.contraseña);
@@ -454,52 +554,42 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.post('/api/auth/registro', async (req, res) => {
+  return res.status(403).json({ error: 'El registro público está deshabilitado. Un jefe debe crear la cuenta.' });
+});
+
+app.post('/api/auth/activar', async (req, res) => {
   try {
-    const { nombre, email, contraseña, rol = 'empleado' } = req.body;
-    
-    if (!nombre || !email || !contraseña) {
-      return res.status(400).json({ error: 'Nombre, email y contraseña son requeridos' });
+    const { token, contraseña } = req.body;
+
+    if (!token || !contraseña) {
+      return res.status(400).json({ error: 'Token y contraseña son requeridos' });
     }
-    
-    // Verificar si el usuario ya existe
-    const usuarioExistente = await Usuario.findOne({ email });
-    if (usuarioExistente) {
-      return res.status(400).json({ error: 'El email ya está registrado' });
+
+    if (String(contraseña).length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
     }
-    
-    // Hash de la contraseña
+
+    const tokenHash = hashVerificationToken(token);
+    const usuario = await Usuario.findOne({
+      tokenVerificacionHash: tokenHash,
+      tokenVerificacionExpira: { $gt: new Date() }
+    });
+
+    if (!usuario) {
+      return res.status(400).json({ error: 'El enlace de activación no es válido o ya venció' });
+    }
+
     const salt = await bcrypt.genSalt(10);
-    const contraseniaHasheada = await bcrypt.hash(contraseña, salt);
-    
-    // Crear nuevo usuario
-    const nuevoUsuario = new Usuario({
-      nombre,
-      email,
-      contraseña: contraseniaHasheada,
-      rol,
-      estado: 'activo'
-    });
-    
-    await nuevoUsuario.save();
-    
-    // Generar token
-    const token = jwt.sign(
-      { id: nuevoUsuario._id, email: nuevoUsuario.email, rol: nuevoUsuario.rol },
-      process.env.JWT_SECRET || 'tu_clave_secreta_aqui',
-      { expiresIn: '7d' }
-    );
-    
-    const usuarioSinPassword = nuevoUsuario.toObject();
-    delete usuarioSinPassword.contraseña;
-    
-    res.status(201).json({
-      token,
-      usuario: usuarioSinPassword,
-      mensaje: 'Usuario registrado exitosamente'
-    });
+    usuario.contraseña = await bcrypt.hash(contraseña, salt);
+    usuario.emailVerificado = true;
+    usuario.tokenVerificacionHash = undefined;
+    usuario.tokenVerificacionExpira = undefined;
+    await usuario.save();
+
+    res.json({ mensaje: 'Cuenta activada correctamente. Ya puedes iniciar sesión.' });
   } catch (error) {
-    console.error('Error en registro:', error);
-    res.status(500).json({ error: 'Error al registrar usuario' });
+    console.error('Error en activación:', error);
+    res.status(500).json({ error: 'Error al activar la cuenta' });
   }
 });
 
@@ -547,9 +637,10 @@ app.post('/api/empleados', verificarToken, requireJefe, async (req, res) => {
       return res.status(400).json({ error: 'Ya existe un empleado con ese PIN' });
     }
 
-    const passwordTemporal = `Temp${pin}!${Date.now().toString().slice(-4)}`;
+    const passwordTemporal = crypto.randomBytes(24).toString('hex');
     const salt = await bcrypt.genSalt(10);
     const contraseniaHasheada = await bcrypt.hash(passwordTemporal, salt);
+    const verification = createVerificationToken();
 
     const nuevoEmpleado = await Usuario.create({
       nombre,
@@ -557,10 +648,23 @@ app.post('/api/empleados', verificarToken, requireJefe, async (req, res) => {
       contraseña: contraseniaHasheada,
       pin,
       rol,
-      estado: 'activo'
+      estado: 'activo',
+      emailVerificado: false,
+      tokenVerificacionHash: verification.tokenHash,
+      tokenVerificacionExpira: verification.expiresAt
     });
 
-    res.status(201).json(normalizeEmpleado(nuevoEmpleado));
+    const emailResult = await sendVerificationEmail({
+      email,
+      nombre,
+      token: verification.rawToken
+    });
+
+    res.status(201).json({
+      ...normalizeEmpleado(nuevoEmpleado),
+      invitacionEnviada: emailResult.sent,
+      activationLink: emailResult.activationLink
+    });
   } catch (error) {
     console.error('Error en POST /api/empleados:', error);
     res.status(500).json({ error: 'Error al crear empleado' });

@@ -50,6 +50,9 @@ class AuthService {
       email: data.email,
       rol: data.rol,
       activo: typeof data.activo === 'boolean' ? data.activo : data.estado === 'activo',
+      emailVerificado: !!data.emailVerificado,
+      invitacionEnviada: !!data.invitacionEnviada,
+      activationLink: data.activationLink,
       pin: data.pin || ''
     };
   }

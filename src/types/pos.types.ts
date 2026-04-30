@@ -8,6 +8,7 @@ export interface Usuario {
   contraseña?: string; // No se envía al frontend
   rol: 'jefe' | 'empleado';
   estado: 'activo' | 'inactivo';
+  emailVerificado?: boolean;
   fechaCreacion: string;
   ultimoAcceso?: string;
 }
@@ -95,6 +96,9 @@ export interface Empleado {
   email: string;
   rol: 'jefe' | 'empleado';
   activo: boolean;
+  emailVerificado?: boolean;
+  invitacionEnviada?: boolean;
+  activationLink?: string;
   pin?: string;
   deudaAcumulada?: number;
 }

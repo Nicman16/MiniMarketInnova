@@ -41,7 +41,7 @@ function Empleados() {
 
   const crearEmpleado = async () => {
     if (!nuevoEmpleado.nombre || !nuevoEmpleado.email || !nuevoEmpleado.pin) {
-      alert('Complete todos los campos obligatorios');
+      alert('Completa nombre, correo y PIN');
       return;
     }
 
@@ -55,7 +55,12 @@ function Empleados() {
       setEmpleados([...empleados, empleado]);
       setNuevoEmpleado({ nombre: '', email: '', rol: 'empleado', pin: '' });
       setModalAbierto(false);
-      alert('✅ Empleado creado correctamente');
+      const mensaje = empleado.invitacionEnviada
+        ? '✅ Cuenta creada y correo de activación enviado'
+        : empleado.activationLink
+          ? `✅ Cuenta creada. Enlace de activación: ${empleado.activationLink}`
+          : '✅ Cuenta creada. Revisa la configuración del correo.';
+      alert(mensaje);
     } catch (error: any) {
       alert('Error al crear empleado: ' + error.message);
     }
@@ -176,6 +181,9 @@ function Empleados() {
                 <span className={`badge ${empleado.rol}`}>
                   {empleado.rol === 'jefe' ? '👑 Jefe' : '👤 Empleado'}
                 </span>
+                <span className={`badge ${empleado.emailVerificado ? 'activo' : 'inactivo'}`}>
+                  {empleado.emailVerificado ? '📧 Verificado' : '✉️ Pendiente'}
+                </span>
                 <span className={`badge ${empleado.activo ? 'activo' : 'inactivo'}`}>
                   {empleado.activo ? '🟢 Activo' : '🔴 Inactivo'}
                 </span>
@@ -270,7 +278,7 @@ function Empleados() {
                   <input
                     id="pin-empleado"
                     type="text"
-                    placeholder="1234"
+                    placeholder="PIN de caja"
                     maxLength={4}
                     value={empleadoEditando ? empleadoEditando.pin || '' : nuevoEmpleado.pin}
                     onChange={(e) => {
@@ -291,11 +299,11 @@ function Empleados() {
                 </div>
 
                 <div className="permisos-info">
-                  <h4>📋 Permisos por rol:</h4>
+                  <h4>📋 Acceso y permisos:</h4>
                   <ul>
-                    <li><strong>🛒 Vendedor:</strong> Ventas, consultar inventario</li>
-                    <li><strong>🔧 Supervisor:</strong> Vendedor + gestión inventario + reportes</li>
-                    <li><strong>👑 Admin:</strong> Acceso completo + gestión empleados</li>
+                    <li><strong>📧 Correo:</strong> se usa para iniciar sesión y activar la cuenta.</li>
+                    <li><strong>🔐 PIN:</strong> se mantiene para operaciones internas de caja.</li>
+                    <li><strong>👑 Jefe:</strong> puede crear, editar y administrar usuarios.</li>
                   </ul>
                 </div>
               </div>

@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { getApiBase } from '../../services/shared/apiConfig';
 import '../../styles/Login.css';
 
 function Login() {
   const { login } = useAuth();
+  const params = new URLSearchParams(window.location.search);
+  const activationToken = params.get('token') || '';
+  const isActivationMode = window.location.pathname === '/activar' || !!activationToken;
   const [email, setEmail] = useState('');
   const [contraseña, setContraseña] = useState('');
+  const [confirmarContraseña, setConfirmarContraseña] = useState('');
+  const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
 
@@ -27,6 +33,47 @@ function Login() {
     }
   };
 
+  const handleActivacion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setMensaje('');
+    setCargando(true);
+
+    try {
+      if (!activationToken) {
+        throw new Error('Falta el token de activación');
+      }
+
+      if (!contraseña || contraseña.length < 8) {
+        throw new Error('La contraseña debe tener al menos 8 caracteres');
+      }
+
+      if (contraseña !== confirmarContraseña) {
+        throw new Error('Las contraseñas no coinciden');
+      }
+
+      const response = await fetch(`${getApiBase()}/api/auth/activar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: activationToken, contraseña })
+      });
+
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || 'No se pudo activar la cuenta');
+      }
+
+      setMensaje(data?.mensaje || 'Cuenta activada correctamente');
+      setContraseña('');
+      setConfirmarContraseña('');
+      window.history.replaceState({}, document.title, '/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al activar la cuenta');
+    } finally {
+      setCargando(false);
+    }
+  };
+
   return (
     <div className="login-container">
       <div className="login-card">
@@ -37,21 +84,23 @@ function Login() {
         </div>
 
         <div className="login-body">
-          <h3>Iniciar Sesión</h3>
+          <h3>{isActivationMode ? 'Activar Cuenta' : 'Iniciar Sesión'}</h3>
 
           <div className="login-form">
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="email">📧 Correo Electrónico</label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="usuario@minimarket.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={cargando}
-                />
-              </div>
+            <form onSubmit={isActivationMode ? handleActivacion : handleSubmit}>
+              {!isActivationMode && (
+                <div className="form-group">
+                  <label htmlFor="email">📧 Correo Electrónico</label>
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="usuario@minimarket.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={cargando}
+                  />
+                </div>
+              )}
 
               <div className="form-group">
                 <label htmlFor="contraseña">🔐 Contraseña</label>
@@ -65,6 +114,21 @@ function Login() {
                 />
               </div>
 
+              {isActivationMode && (
+                <div className="form-group">
+                  <label htmlFor="confirmar-contraseña">🔐 Confirmar Contraseña</label>
+                  <input
+                    id="confirmar-contraseña"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmarContraseña}
+                    onChange={(e) => setConfirmarContraseña(e.target.value)}
+                    disabled={cargando}
+                  />
+                </div>
+              )}
+
+              {mensaje && <div className="success-message">✅ {mensaje}</div>}
               {error && <div className="error-message">⚠️ {error}</div>}
 
               <button
@@ -72,16 +136,19 @@ function Login() {
                 className="login-btn"
                 disabled={cargando}
               >
-                {cargando ? '⏳ Iniciando Sesión...' : '🚀 Iniciar Sesión'}
+                {cargando
+                  ? isActivationMode ? '⏳ Activando Cuenta...' : '⏳ Iniciando Sesión...'
+                  : isActivationMode ? '✅ Activar Cuenta' : '🚀 Iniciar Sesión'}
               </button>
             </form>
           </div>
 
           <div className="demo-accounts">
-            <h4>💡 Entorno de Demostración</h4>
+            <h4>{isActivationMode ? '📬 Activación por correo' : '🔐 Acceso por correo'}</h4>
             <p>
-              Ejecuta <strong>npm run seed:demo</strong> en desarrollo para crear usuarios demo.<br/>
-              Después inicia sesión manualmente con las cuentas generadas por el script.
+              {isActivationMode
+                ? 'Define tu contraseña para terminar la activación de la cuenta.'
+                : 'El acceso principal ahora se hace con correo y contraseña. Las cuentas nuevas se activan por correo.'}
             </p>
           </div>
         </div>
