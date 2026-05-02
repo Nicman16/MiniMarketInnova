@@ -56,8 +56,8 @@ class SyncService {
         return this.sanitizeUrl(origin);
       }
 
-      console.warn('⚠️ REACT_APP_API_URL no está configurada en producción. Usando localhost como fallback.');
-      return 'http://localhost:3001';
+      console.warn('⚠️ REACT_APP_API_URL no está configurada en producción. Se usará conexión relativa al mismo origen.');
+      return '';
     }
 
     // En desarrollo local web
