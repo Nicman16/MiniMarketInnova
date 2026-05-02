@@ -232,7 +232,18 @@ const io = socketIo(server, {
 });
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'", "ws:", "wss:"],
+      workerSrc: ["'self'", "blob:"],
+    },
+  },
+}));
 
 // CORS configuration (restrict origin instead of *)
 const corsOptions = {
