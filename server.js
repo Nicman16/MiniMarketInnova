@@ -501,9 +501,10 @@ const resumirVentas = (ventas) => ventas.reduce((acc, venta) => {
 // ========== RUTAS DE AUTENTICACIÓN ==========
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { email, contraseña } = req.body;
+    const { email, contraseña, password } = req.body;
+    const passwordInput = contraseña || password;
     
-    if (!email || !contraseña) {
+    if (!email || !passwordInput) {
       return res.status(400).json({ error: 'Email y contraseña son requeridos' });
     }
     
@@ -523,7 +524,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
     
     // Verificar contraseña
-    const esValida = await bcrypt.compare(contraseña, usuario.contraseña);
+    const esValida = await bcrypt.compare(passwordInput, usuario.contraseña);
     if (!esValida) {
       return res.status(401).json({ error: 'Usuario o contraseña inválidos' });
     }
@@ -559,13 +560,14 @@ app.post('/api/auth/registro', async (req, res) => {
 
 app.post('/api/auth/activar', async (req, res) => {
   try {
-    const { token, contraseña } = req.body;
+    const { token, contraseña, password } = req.body;
+    const passwordInput = contraseña || password;
 
-    if (!token || !contraseña) {
+    if (!token || !passwordInput) {
       return res.status(400).json({ error: 'Token y contraseña son requeridos' });
     }
 
-    if (String(contraseña).length < 8) {
+    if (String(passwordInput).length < 8) {
       return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
     }
 
@@ -580,7 +582,7 @@ app.post('/api/auth/activar', async (req, res) => {
     }
 
     const salt = await bcrypt.genSalt(10);
-    usuario.contraseña = await bcrypt.hash(contraseña, salt);
+    usuario.contraseña = await bcrypt.hash(passwordInput, salt);
     usuario.emailVerificado = true;
     usuario.tokenVerificacionHash = undefined;
     usuario.tokenVerificacionExpira = undefined;
