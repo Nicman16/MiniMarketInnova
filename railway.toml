@@ -8,7 +8,7 @@ ccacheSize = "2G"
 enableCoreutils = true
 
 [deploy]
-startCommand = "npm start"
+startCommand = "npm run start:railway"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"

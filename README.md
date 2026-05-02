@@ -248,6 +248,33 @@ https://minimarketinnova-production.up.railway.app
 
 ## 📊 API Endpoints
 
+## 🗂️ Estructura del Proyecto
+
+El backend quedó centralizado en la carpeta `backend/` para mantener una separación limpia:
+
+```text
+backend/
+   server.js
+   config/
+   middleware/
+   models/
+   routes/
+   socket/
+   utils/
+   state.js
+src/
+   ...frontend React...
+```
+
+Comandos útiles:
+
+```bash
+npm run dev:server   # backend (backend/server.js)
+npm run dev          # frontend
+npm run dev:all      # backend + frontend
+npm start            # producción (backend/server.js)
+```
+
 ### Autenticación
 - `POST /api/auth/login` - Login con email/contraseña
 - `GET /api/auth/me` - Información del usuario actual
@@ -297,6 +324,15 @@ Contraseña: DemoJefe2024!
 
 ```
 📁 MiniMarket Innova/
+├── 📁 backend/             # Backend Node/Express modular
+│   ├── 📁 config/
+│   ├── 📁 middleware/
+│   ├── 📁 models/
+│   ├── 📁 routes/
+│   ├── 📁 socket/
+│   ├── 📁 utils/
+│   ├── 📄 state.js
+│   └── 📄 server.js        # Entry point backend
 ├── 📁 src/
 │   ├── 📁 componentes/
 │   │   ├── 📁 auth/        # Login y acceso
@@ -319,8 +355,6 @@ Contraseña: DemoJefe2024!
 │   └── 📁 types/           # Tipos TypeScript
 ├── 📁 docs/                # Documentación técnica y reportes
 ├── 📁 scripts/             # Scripts de soporte
-├── 📁 notebooks/           # Exploración y pruebas
-├── 📄 server.js            # Backend Express
 ├── 📄 railway.toml         # Config Railway
 └── 📄 package.json         # Dependencias y scripts
 ```
@@ -328,11 +362,14 @@ Contraseña: DemoJefe2024!
 ## 🔧 Scripts Disponibles
 
 ```bash
-npm run dev          # Desarrollo completo
+npm run dev          # Solo frontend (CRA)
 npm run dev:server   # Solo backend
 npm run dev:all      # Frontend + backend
+npm run start:local  # Backend local (NODE_ENV=development)
+npm run start:staging # Backend staging
+npm run start:railway # Backend para Railway/producción
 npm run build        # Build producción
-npm start           # Servidor producción
+npm start            # Alias de start:railway
 npm run seed:demo    # Crea usuarios demo en desarrollo
 ```
 
