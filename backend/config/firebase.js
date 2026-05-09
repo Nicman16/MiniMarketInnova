@@ -1,16 +1,35 @@
 const admin = require('firebase-admin');
+const fs = require('fs');
 const path = require('path');
 
 let _db = null;
 let _ready = false;
 
+const cargarCredencial = () => {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+    return JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+  }
+
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    const json = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8');
+    return JSON.parse(json);
+  }
+
+  const keyPath = path.join(__dirname, '../serviceAccountKey.json');
+  if (fs.existsSync(keyPath)) {
+    return require(keyPath);
+  }
+
+  throw new Error('No se encontro credencial de Firebase. Define FIREBASE_SERVICE_ACCOUNT_JSON o FIREBASE_SERVICE_ACCOUNT_BASE64, o agrega backend/serviceAccountKey.json');
+};
+
 const conectar = async (onConnected) => {
   try {
-    const serviceAccount = require(path.join(__dirname, '../serviceAccountKey.json'));
+    const serviceAccount = cargarCredencial();
 
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
-    });
+    if (!admin.apps.length) {
+      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    }
 
     _db = admin.firestore();
     _ready = true;
@@ -20,6 +39,7 @@ const conectar = async (onConnected) => {
 
     if (onConnected) await onConnected();
   } catch (err) {
+    _ready = false;
     console.error('❌ No se pudo conectar a Firebase:', err.message);
   }
 };
