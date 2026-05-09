@@ -1,16 +1,16 @@
-// Funciones que convierten documentos de MongoDB a objetos limpios para la API
+// Funciones que convierten documentos de Firestore a objetos limpios para la API
+// Los docs de Firestore ya son plain objects con `id` (string), no `_id`
 
 const normalizeProducto = (producto) => {
   if (!producto) return producto;
-  const obj = producto.toObject ? producto.toObject() : producto;
-  return { ...obj, id: obj.id?.toString?.() || obj._id?.toString?.() || obj.id || obj._id || null };
+  return { ...producto };
 };
 
 const normalizeEmpleado = (usuarioDoc) => {
   if (!usuarioDoc) return null;
-  const u = usuarioDoc.toObject ? usuarioDoc.toObject() : usuarioDoc;
+  const u = usuarioDoc;
   return {
-    id: u._id?.toString?.() || u.id,
+    id: u.id,
     nombre: u.nombre,
     email: u.email,
     rol: u.rol,
@@ -26,10 +26,10 @@ const normalizeEmpleado = (usuarioDoc) => {
 
 const normalizeSesionCaja = (sesionDoc) => {
   if (!sesionDoc) return null;
-  const s = sesionDoc.toObject ? sesionDoc.toObject() : sesionDoc;
+  const s = sesionDoc;
   return {
-    id: s._id?.toString?.() || s.id,
-    empleado: { id: s.empleadoId?.toString?.() || s.empleadoId, nombre: s.empleadoNombre, email: s.empleadoEmail, rol: s.empleadoRol, activo: true },
+    id: s.id,
+    empleado: { id: s.empleadoId, nombre: s.empleadoNombre, email: s.empleadoEmail, rol: s.empleadoRol, activo: true },
     fechaApertura: s.fechaApertura,
     fechaCierre: s.fechaCierre,
     montoApertura: s.montoApertura,

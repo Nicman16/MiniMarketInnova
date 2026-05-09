@@ -1,13 +1,20 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const { verificarToken } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/security');
-const Usuario = require('../models/Usuario');
+const { getDb } = require('../config/firebase');
 const { hashVerificationToken, createVerificationToken, sendVerificationEmail } = require('../utils/email');
 
 const router = express.Router();
+
+const getUsuarioPorEmail = async (email) => {
+  const db = getDb();
+  const snap = await db.collection('usuarios').where('email', '==', email).limit(1).get();
+  if (snap.empty) return null;
+  const doc = snap.docs[0];
+  return { id: doc.id, ...doc.data() };
+};
 
 // POST /api/auth/login
 router.post('/login', authLimiter, async (req, res) => {
@@ -19,7 +26,7 @@ router.post('/login', authLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Email y contraseña son requeridos' });
     }
 
-    const usuario = await Usuario.findOne({ email });
+    const usuario = await getUsuarioPorEmail(email.toLowerCase());
     if (!usuario) {
       console.error(`[LOGIN FAIL] email=${email} | reason=user_not_found`);
       return res.status(401).json({ error: 'Usuario o contraseña inválidos' });
@@ -31,7 +38,7 @@ router.post('/login', authLimiter, async (req, res) => {
     }
 
     if (!usuario.emailVerificado) {
-      console.error(`[LOGIN FAIL] email=${email} | reason=email_not_verified | emailVerificado=${usuario.emailVerificado}`);
+      console.error(`[LOGIN FAIL] email=${email} | reason=email_not_verified`);
       return res.status(403).json({ error: 'Debes verificar tu correo antes de iniciar sesión' });
     }
 
@@ -42,17 +49,13 @@ router.post('/login', authLimiter, async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: usuario._id, email: usuario.email, rol: usuario.rol },
+      { id: usuario.id, email: usuario.email, rol: usuario.rol },
       process.env.JWT_SECRET || 'tu_clave_secreta_aqui',
       { expiresIn: '7d' }
     );
 
-    usuario.ultimoAcceso = new Date();
-    await usuario.save();
-
-    const usuarioSinPassword = usuario.toObject();
-    delete usuarioSinPassword.contraseña;
-
+    await getDb().collection('usuarios').doc(usuario.id).update({ ultimoAcceso: new Date() });
+    const { contraseña: _, ...usuarioSinPassword } = usuario;
     res.json({ token, usuario: usuarioSinPassword });
   } catch (error) {
     console.error('Error en login:', error);
@@ -79,22 +82,28 @@ router.post('/activar', async (req, res) => {
       return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
     }
 
+    const db = getDb();
     const tokenHash = hashVerificationToken(token);
-    const usuario = await Usuario.findOne({
-      tokenVerificacionHash: tokenHash,
-      tokenVerificacionExpira: { $gt: new Date() }
-    });
+    const snap = await db.collection('usuarios').where('tokenVerificacionHash', '==', tokenHash).limit(1).get();
+    if (snap.empty) {
+      return res.status(400).json({ error: 'El enlace de activación no es válido o ya venció' });
+    }
+    const docRef = snap.docs[0];
+    const usuario = docRef.data();
+    const expira = usuario.tokenVerificacionExpira?.toDate ? usuario.tokenVerificacionExpira.toDate() : new Date(usuario.tokenVerificacionExpira);
 
-    if (!usuario) {
+    if (expira < new Date()) {
       return res.status(400).json({ error: 'El enlace de activación no es válido o ya venció' });
     }
 
     const salt = await bcrypt.genSalt(10);
-    usuario.contraseña = await bcrypt.hash(passwordInput, salt);
-    usuario.emailVerificado = true;
-    usuario.tokenVerificacionHash = undefined;
-    usuario.tokenVerificacionExpira = undefined;
-    await usuario.save();
+    const contraseniaHasheada = await bcrypt.hash(passwordInput, salt);
+    await db.collection('usuarios').doc(docRef.id).update({
+      contraseña: contraseniaHasheada,
+      emailVerificado: true,
+      tokenVerificacionHash: null,
+      tokenVerificacionExpira: null
+    });
 
     res.json({ mensaje: 'Cuenta activada correctamente. Ya puedes iniciar sesión.' });
   } catch (error) {
@@ -106,7 +115,10 @@ router.post('/activar', async (req, res) => {
 // GET /api/auth/me
 router.get('/me', verificarToken, async (req, res) => {
   try {
-    const usuario = await Usuario.findById(req.usuario.id).select('-contraseña');
+    const db = getDb();
+    const doc = await db.collection('usuarios').doc(req.usuario.id).get();
+    if (!doc.exists) return res.status(404).json({ error: 'Usuario no encontrado' });
+    const { contraseña: _, ...usuario } = { id: doc.id, ...doc.data() };
     res.json(usuario);
   } catch (error) {
     console.error('Error en /api/auth/me:', error);

@@ -1,7 +1,6 @@
 const express = require('express');
 const { verificarToken } = require('../middleware/auth');
-const Deuda = require('../models/Deuda');
-const TransaccionDeuda = require('../models/TransaccionDeuda');
+const { getDb, firestoreDoc, firestoreDocs } = require('../config/firebase');
 
 const router = express.Router();
 
@@ -9,18 +8,13 @@ const router = express.Router();
 router.post('/crear', verificarToken, async (req, res) => {
   try {
     const { tipo, referencia, nombrePersona, monto, razon } = req.body;
-
     if (!tipo || !referencia || !nombrePersona || !monto) {
       return res.status(400).json({ error: 'Faltan campos requeridos' });
     }
-
-    const nuevaDeuda = await Deuda.create({
-      tipo, referencia, nombrePersona, monto,
-      razon: razon || 'Sin especificar',
-      saldo: monto, fecha: new Date()
-    });
-
-    res.status(201).json({ mensaje: 'Deuda creada exitosamente', deuda: nuevaDeuda });
+    const db = getDb();
+    const data = { tipo, referencia, nombrePersona, monto: Number(monto), razon: razon || 'Sin especificar', saldo: Number(monto), estado: 'pendiente', fecha: new Date() };
+    const docRef = await db.collection('deudas').add(data);
+    res.status(201).json({ mensaje: 'Deuda creada exitosamente', deuda: { id: docRef.id, ...data } });
   } catch (error) {
     console.error('Error crear deuda:', error);
     res.status(500).json({ error: 'Error al crear deuda' });
@@ -31,12 +25,12 @@ router.post('/crear', verificarToken, async (req, res) => {
 router.get('/lista', verificarToken, async (req, res) => {
   try {
     const { tipo, estado } = req.query;
-    const filtro = {};
-    if (tipo) filtro.tipo = tipo;
-    if (estado) filtro.estado = estado;
-
-    const deudas = await Deuda.find(filtro).sort({ fecha: -1 });
-    res.json(deudas);
+    const db = getDb();
+    let query = db.collection('deudas').orderBy('fecha', 'desc');
+    if (tipo) query = query.where('tipo', '==', tipo);
+    if (estado) query = query.where('estado', '==', estado);
+    const snap = await query.get();
+    res.json(firestoreDocs(snap));
   } catch (error) {
     console.error('Error obtener deudas:', error);
     res.status(500).json({ error: 'Error al obtener deudas' });
@@ -47,8 +41,10 @@ router.get('/lista', verificarToken, async (req, res) => {
 router.get('/persona/:referencia', verificarToken, async (req, res) => {
   try {
     const { referencia } = req.params;
-    const deudas = await Deuda.find({ referencia }).sort({ fecha: -1 });
-    const deudaPendiente = deudas.reduce((sum, d) => sum + (d.saldo || 0), 0);
+    const db = getDb();
+    const snap = await db.collection('deudas').where('referencia', '==', referencia).orderBy('fecha', 'desc').get();
+    const deudas = firestoreDocs(snap);
+    const deudaPendiente = deudas.reduce((sum, d) => sum + Number(d.saldo || 0), 0);
     res.json({ deudas, totalDeuda: deudaPendiente });
   } catch (error) {
     console.error('Error obtener deudas de persona:', error);
@@ -60,8 +56,9 @@ router.get('/persona/:referencia', verificarToken, async (req, res) => {
 router.get('/:deudaId/transacciones', verificarToken, async (req, res) => {
   try {
     const { deudaId } = req.params;
-    const transacciones = await TransaccionDeuda.find({ deudaId }).sort({ fecha: -1 });
-    res.json(transacciones);
+    const db = getDb();
+    const snap = await db.collection('transaccionesDeuda').where('deudaId', '==', deudaId).orderBy('fecha', 'desc').get();
+    res.json(firestoreDocs(snap));
   } catch (error) {
     console.error('Error obtener transacciones:', error);
     res.status(500).json({ error: 'Error al obtener transacciones' });
@@ -72,39 +69,31 @@ router.get('/:deudaId/transacciones', verificarToken, async (req, res) => {
 router.post('/transaccion', verificarToken, async (req, res) => {
   try {
     const { deudaId, tipo, monto, razon, empleadoRegistro } = req.body;
-
     if (!deudaId || !tipo || !monto) {
       return res.status(400).json({ error: 'Faltan campos requeridos' });
     }
+    const db = getDb();
+    const deudaRef = db.collection('deudas').doc(deudaId);
+    const deudaDoc = await deudaRef.get();
+    if (!deudaDoc.exists) return res.status(404).json({ error: 'Deuda no encontrada' });
+    const deuda = firestoreDoc(deudaDoc);
 
-    const deuda = await Deuda.findById(deudaId);
-    if (!deuda) return res.status(404).json({ error: 'Deuda no encontrada' });
-
-    const nuevaTransaccion = await TransaccionDeuda.create({
-      deudaId, tipo, monto,
-      razon: razon || 'Sin especificar',
-      empleadoRegistro: empleadoRegistro || req.usuario.email,
-      fecha: new Date()
-    });
-
-    if (tipo === 'cargo') {
-      deuda.saldo += monto;
-      deuda.estado = 'parcial';
-    } else if (tipo === 'abono') {
-      deuda.saldo -= monto;
-      if (deuda.saldo <= 0) {
-        deuda.estado = 'pagada';
-        deuda.saldo = 0;
-      } else {
-        deuda.estado = 'parcial';
-      }
+    let nuevoSaldo = Number(deuda.saldo || 0);
+    let nuevoEstado = deuda.estado || 'pendiente';
+    if (tipo === 'cargo') { nuevoSaldo += Number(monto); nuevoEstado = 'parcial'; }
+    else if (tipo === 'abono') {
+      nuevoSaldo -= Number(monto);
+      if (nuevoSaldo < 0) nuevoSaldo = 0;
+      nuevoEstado = nuevoSaldo <= 0 ? 'pagada' : 'parcial';
     }
-    await deuda.save();
 
-    res.status(201).json({ mensaje: 'Transacción registrada', transaccion: nuevaTransaccion, nuevoSaldo: deuda.saldo, estado: deuda.estado });
+    const transData = { deudaId, tipo, monto: Number(monto), razon: razon || 'Sin especificar', empleadoRegistro: empleadoRegistro || req.usuario.email, fecha: new Date() };
+    const transRef = await db.collection('transaccionesDeuda').add(transData);
+    await deudaRef.update({ saldo: nuevoSaldo, estado: nuevoEstado });
+    res.status(201).json({ mensaje: 'Transaccion registrada', transaccion: { id: transRef.id, ...transData }, nuevoSaldo, estado: nuevoEstado });
   } catch (error) {
-    console.error('Error registrar transacción:', error);
-    res.status(500).json({ error: 'Error al registrar transacción' });
+    console.error('Error registrar transaccion:', error);
+    res.status(500).json({ error: 'Error al registrar transaccion' });
   }
 });
 
@@ -113,11 +102,12 @@ router.put('/:deudaId', verificarToken, async (req, res) => {
   try {
     const { deudaId } = req.params;
     const { estado } = req.body;
-
-    const deuda = await Deuda.findByIdAndUpdate(deudaId, { estado }, { new: true });
-    if (!deuda) return res.status(404).json({ error: 'Deuda no encontrada' });
-
-    res.json({ mensaje: 'Deuda actualizada', deuda });
+    const db = getDb();
+    const deudaRef = db.collection('deudas').doc(deudaId);
+    const deudaDoc = await deudaRef.get();
+    if (!deudaDoc.exists) return res.status(404).json({ error: 'Deuda no encontrada' });
+    await deudaRef.update({ estado });
+    res.json({ mensaje: 'Deuda actualizada', deuda: { ...firestoreDoc(deudaDoc), estado } });
   } catch (error) {
     console.error('Error actualizar deuda:', error);
     res.status(500).json({ error: 'Error al actualizar deuda' });

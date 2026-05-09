@@ -1,22 +1,20 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const Producto = require('../models/Producto');
+const { getDb, firestoreDoc, firestoreDocs } = require('../config/firebase');
 const { normalizeProducto } = require('../utils/normalize');
 const { emit } = require('../socket/io');
 const state = require('../state');
 
 const router = express.Router();
 
-const mongoListo = () => mongoose.connection.readyState === 1;
-
 // GET /api/productos
 router.get('/productos', async (req, res) => {
   try {
-    if (mongoListo()) {
-      const todos = await Producto.find().lean();
-      return res.json(todos.map(normalizeProducto));
+    const db = getDb();
+    if (db) {
+      const snap = await db.collection('productos').get();
+      return res.json(firestoreDocs(snap).map(normalizeProducto));
     }
-    return res.json(state.productos.map(normalizeProducto));
+    res.json(state.productos.map(normalizeProducto));
   } catch (error) {
     console.error('Error /api/productos:', error);
     res.status(500).json({ error: 'No se pudieron obtener productos' });
@@ -27,13 +25,13 @@ router.get('/productos', async (req, res) => {
 router.get('/tienda/productos', async (req, res) => {
   try {
     const { categoria } = req.query;
-    const filtro = categoria ? { categoria } : {};
-
-    if (mongoListo()) {
-      const result = await Producto.find(filtro).lean();
-      return res.json(result.map(normalizeProducto));
+    const db = getDb();
+    if (db) {
+      let query = db.collection('productos');
+      if (categoria) query = query.where('categoria', '==', categoria);
+      const snap = await query.get();
+      return res.json(firestoreDocs(snap).map(normalizeProducto));
     }
-
     const result = categoria ? state.productos.filter((p) => p.categoria === categoria) : state.productos;
     res.json(result.map(normalizeProducto));
   } catch (error) {
@@ -46,10 +44,11 @@ router.get('/tienda/productos', async (req, res) => {
 router.post('/tienda/productos', async (req, res) => {
   try {
     const payload = req.body;
-    if (!payload || !payload.nombre) return res.status(400).json({ error: 'Producto inválido' });
+    if (!payload.nombre) return res.status(400).json({ error: 'El nombre es requerido' });
 
-    if (mongoListo()) {
-      const nuevo = await Producto.create({
+    const db = getDb();
+    if (db) {
+      const data = {
         nombre: payload.nombre, cantidad: payload.cantidad || 0,
         precio: payload.precio || 0, codigoBarras: payload.codigoBarras || '',
         categoria: payload.categoria || '', imagen: payload.imagen || '',
@@ -58,22 +57,26 @@ router.post('/tienda/productos', async (req, res) => {
         margen: payload.margen || 0, ubicacion: payload.ubicacion || '',
         descripcion: payload.descripcion || '', estado: payload.estado || 'activo',
         fechaActualizacion: new Date()
-      });
-      state.productos = await Producto.find().lean();
+      };
+      const docRef = await db.collection('productos').add(data);
+      const nuevo = { id: docRef.id, ...data };
+      const snap = await db.collection('productos').get();
+      state.productos = firestoreDocs(snap);
       const productoNormalizado = normalizeProducto(nuevo);
       state.estadisticas.productosAgregados++;
       emit('producto-agregado', productoNormalizado);
       return res.status(201).json(productoNormalizado);
     }
 
-    const nuevoProducto = { ...payload, id: Date.now(), fechaCreacion: new Date().toISOString(), ultimaActualizacion: new Date().toISOString() };
-    state.productos.push(nuevoProducto);
+    const nuevo = { id: Date.now().toString(), ...payload, fechaActualizacion: new Date().toISOString() };
+    state.productos.push(nuevo);
+    const productoNormalizado = normalizeProducto(nuevo);
     state.estadisticas.productosAgregados++;
-    emit('producto-agregado', nuevoProducto);
-    return res.status(201).json(nuevoProducto);
+    emit('producto-agregado', productoNormalizado);
+    res.status(201).json(productoNormalizado);
   } catch (error) {
     console.error('Error POST /api/tienda/productos:', error);
-    res.status(500).json({ error: 'No se pudo crear producto' });
+    res.status(500).json({ error: 'No se pudo agregar el producto' });
   }
 });
 
@@ -82,16 +85,16 @@ router.put('/tienda/productos/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const cambios = req.body;
-
-    if (mongoListo()) {
-      const actualizado = await Producto.findByIdAndUpdate(
-        id, { ...cambios, fechaActualizacion: new Date(), ultimaActualizacion: new Date().toISOString() },
-        { new: true }
-      );
-
-      if (!actualizado) return res.status(404).json({ error: 'Producto no encontrado' });
-
-      state.productos = await Producto.find().lean();
+    const db = getDb();
+    if (db) {
+      const docRef = db.collection('productos').doc(id);
+      const docSnap = await docRef.get();
+      if (!docSnap.exists) return res.status(404).json({ error: 'Producto no encontrado' });
+      await docRef.update({ ...cambios, fechaActualizacion: new Date() });
+      const updatedSnap = await docRef.get();
+      const actualizado = firestoreDoc(updatedSnap);
+      const snap = await db.collection('productos').get();
+      state.productos = firestoreDocs(snap);
       const productoNormalizado = normalizeProducto(actualizado);
       state.estadisticas.productosActualizados++;
       emit('producto-actualizado', productoNormalizado);
@@ -100,15 +103,41 @@ router.put('/tienda/productos/:id', async (req, res) => {
 
     const index = state.productos.findIndex((p) => `${p.id}` === `${id}`);
     if (index === -1) return res.status(404).json({ error: 'Producto no encontrado' });
-
-    const actualizado = { ...state.productos[index], ...cambios, ultimaActualizacion: new Date().toISOString() };
-    state.productos[index] = actualizado;
+    state.productos[index] = { ...state.productos[index], ...cambios, ultimaActualizacion: new Date().toISOString() };
+    const productoNormalizado = normalizeProducto(state.productos[index]);
     state.estadisticas.productosActualizados++;
-    emit('producto-actualizado', actualizado);
-    return res.json(actualizado);
+    emit('producto-actualizado', productoNormalizado);
+    res.json(productoNormalizado);
   } catch (error) {
     console.error('Error PUT /api/tienda/productos/:id:', error);
-    res.status(500).json({ error: 'No se pudo actualizar producto' });
+    res.status(500).json({ error: 'No se pudo actualizar el producto' });
+  }
+});
+
+// DELETE /api/tienda/productos/:id
+router.delete('/tienda/productos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = getDb();
+    if (db) {
+      const docRef = db.collection('productos').doc(id);
+      const docSnap = await docRef.get();
+      if (!docSnap.exists) return res.status(404).json({ error: 'Producto no encontrado' });
+      await docRef.delete();
+      const snap = await db.collection('productos').get();
+      state.productos = firestoreDocs(snap);
+      emit('producto-eliminado', { id });
+      return res.json({ mensaje: 'Producto eliminado', id });
+    }
+
+    const index = state.productos.findIndex((p) => `${p.id}` === `${id}`);
+    if (index === -1) return res.status(404).json({ error: 'Producto no encontrado' });
+    state.productos.splice(index, 1);
+    emit('producto-eliminado', { id });
+    res.json({ mensaje: 'Producto eliminado', id });
+  } catch (error) {
+    console.error('Error DELETE /api/tienda/productos/:id:', error);
+    res.status(500).json({ error: 'No se pudo eliminar el producto' });
   }
 });
 

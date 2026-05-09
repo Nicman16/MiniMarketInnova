@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { verificarToken, requireJefe } = require('../middleware/auth');
-const Usuario = require('../models/Usuario');
+const { getDb, firestoreDoc, firestoreDocs } = require('../config/firebase');
 const { createVerificationToken, sendVerificationEmail } = require('../utils/email');
 const { normalizeEmpleado } = require('../utils/normalize');
 
@@ -11,7 +11,9 @@ const router = express.Router();
 // GET /api/empleados
 router.get('/', verificarToken, requireJefe, async (req, res) => {
   try {
-    const usuarios = await Usuario.find().select('-contraseña').sort({ fechaCreacion: -1 });
+    const db = getDb();
+    const snap = await db.collection('usuarios').orderBy('fechaCreacion', 'desc').get();
+    const usuarios = firestoreDocs(snap).map(({ contraseña: _, ...u }) => u);
     res.json(usuarios.map(normalizeEmpleado));
   } catch (error) {
     console.error('Error en GET /api/empleados:', error);
@@ -32,13 +34,14 @@ router.post('/', verificarToken, requireJefe, async (req, res) => {
       return res.status(400).json({ error: 'El PIN debe tener al menos 4 dígitos' });
     }
 
-    const usuarioExistente = await Usuario.findOne({ email });
-    if (usuarioExistente) {
+    const db = getDb();
+    const emailSnap = await db.collection('usuarios').where('email', '==', email).limit(1).get();
+    if (!emailSnap.empty) {
       return res.status(400).json({ error: 'Ya existe un empleado con ese email' });
     }
 
-    const pinExistente = await Usuario.findOne({ pin });
-    if (pinExistente) {
+    const pinSnap = await db.collection('usuarios').where('pin', '==', pin).limit(1).get();
+    if (!pinSnap.empty) {
       return res.status(400).json({ error: 'Ya existe un empleado con ese PIN' });
     }
 
@@ -47,16 +50,18 @@ router.post('/', verificarToken, requireJefe, async (req, res) => {
     const contraseniaHasheada = await bcrypt.hash(passwordTemporal, salt);
     const verification = createVerificationToken();
 
-    const nuevoEmpleado = await Usuario.create({
+    const docRef = await db.collection('usuarios').add({
       nombre, email,
       contraseña: contraseniaHasheada,
       pin, rol,
       estado: 'activo',
       emailVerificado: false,
       tokenVerificacionHash: verification.tokenHash,
-      tokenVerificacionExpira: verification.expiresAt
+      tokenVerificacionExpira: verification.expiresAt,
+      fechaCreacion: new Date()
     });
 
+    const nuevoEmpleado = { id: docRef.id, nombre, email, pin, rol, estado: 'activo', emailVerificado: false, fechaCreacion: new Date() };
     const emailResult = await sendVerificationEmail({ email, nombre, token: verification.rawToken });
 
     res.status(201).json({
@@ -76,28 +81,32 @@ router.put('/:id', verificarToken, requireJefe, async (req, res) => {
     const { id } = req.params;
     const { nombre, email, rol, pin, activo } = req.body;
 
-    const empleado = await Usuario.findById(id);
-    if (!empleado) return res.status(404).json({ error: 'Empleado no encontrado' });
+    const db = getDb();
+    const docSnap = await db.collection('usuarios').doc(id).get();
+    if (!docSnap.exists) return res.status(404).json({ error: 'Empleado no encontrado' });
+    const empleado = firestoreDoc(docSnap);
+    const cambios = {};
 
     if (email && email !== empleado.email) {
-      const emailExistente = await Usuario.findOne({ email, _id: { $ne: id } });
-      if (emailExistente) return res.status(400).json({ error: 'Ya existe un empleado con ese email' });
-      empleado.email = email;
+      const emailSnap = await db.collection('usuarios').where('email', '==', email).limit(1).get();
+      if (!emailSnap.empty && emailSnap.docs[0].id !== id) return res.status(400).json({ error: 'Ya existe un empleado con ese email' });
+      cambios.email = email;
     }
 
     if (pin && pin !== empleado.pin) {
       if (String(pin).length < 4) return res.status(400).json({ error: 'El PIN debe tener al menos 4 dígitos' });
-      const pinExistente = await Usuario.findOne({ pin, _id: { $ne: id } });
-      if (pinExistente) return res.status(400).json({ error: 'Ya existe un empleado con ese PIN' });
-      empleado.pin = pin;
+      const pinSnap = await db.collection('usuarios').where('pin', '==', pin).limit(1).get();
+      if (!pinSnap.empty && pinSnap.docs[0].id !== id) return res.status(400).json({ error: 'Ya existe un empleado con ese PIN' });
+      cambios.pin = pin;
     }
 
-    if (typeof nombre === 'string') empleado.nombre = nombre;
-    if (rol === 'jefe' || rol === 'empleado') empleado.rol = rol;
-    if (typeof activo === 'boolean') empleado.estado = activo ? 'activo' : 'inactivo';
+    if (typeof nombre === 'string') cambios.nombre = nombre;
+    if (rol === 'jefe' || rol === 'empleado') cambios.rol = rol;
+    if (typeof activo === 'boolean') cambios.estado = activo ? 'activo' : 'inactivo';
 
-    await empleado.save();
-    res.json(normalizeEmpleado(empleado));
+    await db.collection('usuarios').doc(id).update(cambios);
+    const actualizado = { ...empleado, ...cambios };
+    res.json(normalizeEmpleado(actualizado));
   } catch (error) {
     console.error('Error en PUT /api/empleados/:id:', error);
     res.status(500).json({ error: 'Error al actualizar empleado' });
@@ -108,19 +117,21 @@ router.put('/:id', verificarToken, requireJefe, async (req, res) => {
 router.patch('/:id/toggle-estado', verificarToken, requireJefe, async (req, res) => {
   try {
     const { id } = req.params;
-    const empleado = await Usuario.findById(id);
-    if (!empleado) return res.status(404).json({ error: 'Empleado no encontrado' });
+    const db = getDb();
+    const docSnap = await db.collection('usuarios').doc(id).get();
+    if (!docSnap.exists) return res.status(404).json({ error: 'Empleado no encontrado' });
+    const empleado = firestoreDoc(docSnap);
 
     if (empleado.rol === 'jefe' && empleado.estado === 'activo') {
-      const jefesActivos = await Usuario.countDocuments({ rol: 'jefe', estado: 'activo' });
-      if (jefesActivos <= 1) {
+      const jefesSnap = await db.collection('usuarios').where('rol', '==', 'jefe').where('estado', '==', 'activo').get();
+      if (jefesSnap.size <= 1) {
         return res.status(400).json({ error: 'No se puede desactivar el último jefe' });
       }
     }
 
-    empleado.estado = empleado.estado === 'activo' ? 'inactivo' : 'activo';
-    await empleado.save();
-    res.json(normalizeEmpleado(empleado));
+    const nuevoEstado = empleado.estado === 'activo' ? 'inactivo' : 'activo';
+    await db.collection('usuarios').doc(id).update({ estado: nuevoEstado });
+    res.json(normalizeEmpleado({ ...empleado, estado: nuevoEstado }));
   } catch (error) {
     console.error('Error en PATCH /api/empleados/:id/toggle-estado:', error);
     res.status(500).json({ error: 'Error al cambiar estado del empleado' });
@@ -136,17 +147,19 @@ router.delete('/:id', verificarToken, requireJefe, async (req, res) => {
       return res.status(400).json({ error: 'No puedes eliminar tu propio usuario' });
     }
 
-    const empleado = await Usuario.findById(id);
-    if (!empleado) return res.status(404).json({ error: 'Empleado no encontrado' });
+    const db = getDb();
+    const docSnap = await db.collection('usuarios').doc(id).get();
+    if (!docSnap.exists) return res.status(404).json({ error: 'Empleado no encontrado' });
+    const empleado = firestoreDoc(docSnap);
 
     if (empleado.rol === 'jefe') {
-      const totalJefes = await Usuario.countDocuments({ rol: 'jefe' });
-      if (totalJefes <= 1) {
+      const jefesSnap = await db.collection('usuarios').where('rol', '==', 'jefe').get();
+      if (jefesSnap.size <= 1) {
         return res.status(400).json({ error: 'No se puede eliminar el último jefe' });
       }
     }
 
-    await Usuario.findByIdAndDelete(id);
+    await db.collection('usuarios').doc(id).delete();
     res.status(204).send();
   } catch (error) {
     console.error('Error en DELETE /api/empleados/:id:', error);

@@ -1,6 +1,5 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const Deuda = require('../models/Deuda');
+const { getDb, firestoreDocs } = require('../config/firebase');
 const { getVentasEntreFechas, resumirVentas, buildDayRange } = require('../utils/ventasHelper');
 const state = require('../state');
 
@@ -67,8 +66,10 @@ router.get('/productos-vendidos', (req, res) => {
 // GET /api/stats/deudas
 router.get('/deudas', async (req, res) => {
   try {
-    if (mongoose.connection.readyState === 1) {
-      const deudas = await Deuda.find();
+    const db = getDb();
+    if (db) {
+      const snap = await db.collection('deudas').get();
+      const deudas = firestoreDocs(snap);
       const totalDeuda = deudas.reduce((sum, d) => sum + d.saldo, 0);
       return res.json({
         totalDeuda, totalRegistros: deudas.length,
@@ -109,10 +110,12 @@ router.get('/resumen', async (req, res) => {
   try {
     let deudaTotal = 0;
     let registrosDeuda = 0;
-    if (mongoose.connection.readyState === 1) {
-      const deudas = await Deuda.find();
-      deudaTotal = deudas.reduce((sum, d) => sum + d.saldo, 0);
-      registrosDeuda = deudas.length;
+    const db = getDb();
+    if (db) {
+      const snap = await db.collection('deudas').get();
+      const deudas = firestoreDocs(snap);
+      deudaTotal = deudas.reduce((sum, d) => sum + Number(d.saldo || 0), 0);
+      registrosDeuda = snap.size;
     }
     res.json({
       fecha: new Date().toISOString(),

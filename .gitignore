@@ -6,6 +6,10 @@ build
 .env.production
 .env.local
 
+# Firebase - credenciales privadas (NUNCA subir)
+serviceAccountKey.json
+*-firebase-adminsdk-*.json
+
 # Android / Capacitor
 ios/
 dist/

@@ -1,5 +1,4 @@
-const { isMongoReady } = require('../config/env');
-const Venta = require('../models/Venta');
+const { getDb } = require('../config/firebase');
 const state = require('../state');
 
 const buildDayRange = (fecha) => ({
@@ -8,8 +7,13 @@ const buildDayRange = (fecha) => ({
 });
 
 const getVentasEntreFechas = async (inicio, fin) => {
-  if (isMongoReady()) {
-    return Venta.find({ fecha: { $gte: inicio, $lte: fin } }).lean();
+  const db = getDb();
+  if (db) {
+    const snapshot = await db.collection('ventas')
+      .where('fecha', '>=', inicio)
+      .where('fecha', '<=', fin)
+      .get();
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
   }
   return state.ventasRegistradas.filter((v) => {
     const f = new Date(v.fecha);

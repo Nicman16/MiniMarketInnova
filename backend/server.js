@@ -5,7 +5,8 @@ const socketIo = require('socket.io');
 const path = require('path');
 
 const { ALLOWED_ORIGINS, isAllowedOrigin } = require('./config/env');
-const db = require('./config/db');
+const firebase = require('./config/firebase');
+const { getDb, firestoreDocs } = require('./config/firebase');
 const state = require('./state');
 const { setIo } = require('./socket/io');
 const { setupSocket } = require('./socket/index');
@@ -20,8 +21,6 @@ const productosRoutes = require('./routes/productos');
 const ventasRoutes = require('./routes/ventas');
 const statsRoutes = require('./routes/stats');
 const reportesRoutes = require('./routes/reportes');
-
-const Producto = require('./models/Producto');
 
 const app = express();
 const server = http.createServer(app);
@@ -85,24 +84,26 @@ if (process.env.NODE_ENV === 'production') {
 
 const inicializarProductosBD = async () => {
   try {
-    const count = await Producto.countDocuments();
-    if (count === 0) {
+    const db = getDb();
+    const snap = await db.collection('productos').get();
+    if (snap.empty) {
       const semilla = [
-        { nombre: 'Arroz Diana 500g', cantidad: 50, precio: 2500, codigoBarras: '7702001001234', categoria: 'Granos' },
-        { nombre: 'Aceite Gourmet 1L', cantidad: 30, precio: 4500, codigoBarras: '7702002001235', categoria: 'Aceites' },
-        { nombre: 'Azúcar Incauca 1kg', cantidad: 25, precio: 3200, codigoBarras: '7702003001236', categoria: 'Dulces' }
+        { nombre: 'Arroz Diana 500g', cantidad: 50, precio: 2500, precioVenta: 2800, codigoBarras: '7702001001234', categoria: 'Granos', estado: 'activo' },
+        { nombre: 'Aceite Gourmet 1L', cantidad: 30, precio: 4500, precioVenta: 4900, codigoBarras: '7702002001235', categoria: 'Aceites', estado: 'activo' },
+        { nombre: 'Azúcar Incauca 1kg', cantidad: 25, precio: 3200, precioVenta: 3500, codigoBarras: '7702003001236', categoria: 'Dulces', estado: 'activo' }
       ];
-      await Producto.insertMany(semilla);
-      console.log('✅ Semilla de productos insertada en MongoDB');
+      for (const p of semilla) await db.collection('productos').add(p);
+      console.log('✅ Semilla de productos insertada en Firestore');
     }
-    state.productos = await Producto.find().lean();
-    console.log(`✅ Productos cargados desde MongoDB: ${state.productos.length}`);
+    const todos = await db.collection('productos').get();
+    state.productos = firestoreDocs(todos);
+    console.log(`✅ Productos cargados desde Firestore: ${state.productos.length}`);
   } catch (err) {
-    console.error('Error inicializando productos en MongoDB:', err);
+    console.error('Error inicializando productos en Firestore:', err);
   }
 };
 
-db.conectar(inicializarProductosBD);
+firebase.conectar(inicializarProductosBD);
 
 process.on('uncaughtException', (error) => { console.error('Error no manejado:', error); });
 process.on('unhandledRejection', (reason) => { console.error('Promesa rechazada no manejada:', reason); });
