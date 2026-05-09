@@ -1,5 +1,4 @@
-const mongoose = require('mongoose');
-const Producto = require('../models/Producto');
+const { getDb } = require('../config/firebase');
 const { normalizeProducto } = require('../utils/normalize');
 const state = require('../state');
 
@@ -23,13 +22,16 @@ const setupSocket = (io) => {
         if (!producto?.nombre) return;
         let nuevo = { ...producto, id: Date.now(), fechaCreacion: new Date().toISOString(), modificado: true };
 
-        if (mongoose.connection.readyState === 1) {
-          const doc = await Producto.create({
+        const db = getDb();
+        if (db) {
+          const data = {
             nombre: producto.nombre, cantidad: producto.cantidad || 0,
             precio: producto.precio || 0, codigoBarras: producto.codigoBarras || '',
-            categoria: producto.categoria || '', imagen: producto.imagen || ''
-          });
-          nuevo = doc.toObject();
+            categoria: producto.categoria || '', imagen: producto.imagen || '',
+            estado: 'activo', fechaCreacion: new Date()
+          };
+          const docRef = await db.collection('productos').add(data);
+          nuevo = { id: docRef.id, ...data };
         }
 
         state.productos.push(nuevo);
@@ -49,14 +51,13 @@ const setupSocket = (io) => {
         const actualizado = { ...producto, fechaActualizacion: new Date().toISOString(), modificado: true };
         state.productos[index] = actualizado;
 
-        if (mongoose.connection.readyState === 1) {
-          await Producto.findOneAndUpdate(
-            { _id: producto._id || producto.id },
-            { nombre: producto.nombre, cantidad: producto.cantidad, precio: producto.precio,
-              codigoBarras: producto.codigoBarras, categoria: producto.categoria, imagen: producto.imagen,
-              fechaActualizacion: new Date() },
-            { new: true, upsert: false }
-          );
+        const db = getDb();
+        if (db) {
+          await db.collection('productos').doc(producto.id).update({
+            nombre: producto.nombre, cantidad: producto.cantidad, precio: producto.precio,
+            codigoBarras: producto.codigoBarras, categoria: producto.categoria, imagen: producto.imagen,
+            fechaActualizacion: new Date()
+          });
         }
 
         state.estadisticas.productosActualizados++;
@@ -71,8 +72,9 @@ const setupSocket = (io) => {
     socket.on('eliminar-producto', async (id) => {
       try {
         state.productos = state.productos.filter((p) => p.id !== id);
-        if (mongoose.connection.readyState === 1) {
-          await Producto.findByIdAndDelete(id).catch(() => null);
+        const db = getDb();
+        if (db) {
+          await db.collection('productos').doc(id).delete().catch(() => null);
         }
         io.emit('producto-eliminado', id);
       } catch (err) {
