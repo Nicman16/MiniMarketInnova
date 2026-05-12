@@ -23,8 +23,8 @@ value = "false"
 
 # IMPORTANTE: Configura estas variables en el dashboard de Railway
 # Variables requeridas:
-# JWT_SECRET=tu_clave_secreta_segura_aqui
+# JWT_SECRET=genera_una_clave_larga_y_segura_de_32+_caracteres
 # FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
 # (alternativa) FIREBASE_SERVICE_ACCOUNT_BASE64=base64_del_json
 # CORS_ORIGIN=https://minimarketinnova-production.up.railway.app,capacitor://localhost,ionic://localhost
-# APP_URL=minimarketinnova-production.up.railway.app
+# APP_URL=https://minimarketinnova-production.up.railway.app
