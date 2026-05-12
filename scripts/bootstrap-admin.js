@@ -33,14 +33,49 @@ async function main() {
   const snap = await db.collection('usuarios').where('email', '==', email).limit(1).get();
 
   if (!snap.empty) {
-    await snap.docs[0].ref.update({
+    const docRef = snap.docs[0].ref;
+    await docRef.update({
       nombre, contraseña: contraseñaHash, rol: 'jefe', estado: 'activo',
       emailVerificado: true, tokenVerificacionHash: null, tokenVerificacionExpira: null
     });
+
+    let authUser;
+    try {
+      authUser = await admin.auth().getUserByEmail(email);
+      await admin.auth().updateUser(authUser.uid, {
+        displayName: nombre,
+        password,
+        emailVerified: true,
+        disabled: false
+      });
+    } catch (error) {
+      if (error && error.code === 'auth/user-not-found') {
+        authUser = await admin.auth().createUser({
+          email,
+          password,
+          displayName: nombre,
+          emailVerified: true,
+          disabled: false
+        });
+      } else {
+        throw error;
+      }
+    }
+
+    await docRef.update({ firebaseUid: authUser.uid });
     console.log(`✅ Jefe actualizado: ${email}`);
   } else {
+    const authUser = await admin.auth().createUser({
+      email,
+      password,
+      displayName: nombre,
+      emailVerified: true,
+      disabled: false
+    });
+
     await db.collection('usuarios').add({
       nombre, email, contraseña: contraseñaHash, pin: null,
+      firebaseUid: authUser.uid,
       rol: 'jefe', estado: 'activo', emailVerificado: true,
       tokenVerificacionHash: null, tokenVerificacionExpira: null,
       fechaCreacion: new Date(), ultimoAcceso: null

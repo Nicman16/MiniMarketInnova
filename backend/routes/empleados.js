@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { verificarToken, requireJefe } = require('../middleware/auth');
 const { getDb, firestoreDoc, firestoreDocs } = require('../config/firebase');
 const { createVerificationToken, sendVerificationEmail } = require('../utils/email');
+const { upsertAuthUser } = require('../utils/firebaseAuthSync');
 const { normalizeEmpleado } = require('../utils/normalize');
 
 const router = express.Router();
@@ -50,10 +51,19 @@ router.post('/', verificarToken, requireJefe, async (req, res) => {
     const contraseniaHasheada = await bcrypt.hash(passwordTemporal, salt);
     const verification = createVerificationToken();
 
+    const authUser = await upsertAuthUser({
+      email,
+      password: passwordTemporal,
+      displayName: nombre,
+      emailVerified: false,
+      disabled: false
+    });
+
     const docRef = await db.collection('usuarios').add({
       nombre, email,
       contraseña: contraseniaHasheada,
       pin, rol,
+      firebaseUid: authUser.uid,
       estado: 'activo',
       emailVerificado: false,
       tokenVerificacionHash: verification.tokenHash,

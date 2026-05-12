@@ -5,6 +5,7 @@ const { verificarToken } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/security');
 const { getDb } = require('../config/firebase');
 const { hashVerificationToken, createVerificationToken, sendVerificationEmail } = require('../utils/email');
+const { updateAuthAfterActivation } = require('../utils/firebaseAuthSync');
 
 const router = express.Router();
 
@@ -103,6 +104,11 @@ router.post('/activar', async (req, res) => {
       emailVerificado: true,
       tokenVerificacionHash: null,
       tokenVerificacionExpira: null
+    });
+
+    await updateAuthAfterActivation({
+      email: usuario.email,
+      password: passwordInput
     });
 
     res.json({ mensaje: 'Cuenta activada correctamente. Ya puedes iniciar sesión.' });
