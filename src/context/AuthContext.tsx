@@ -38,11 +38,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (email: string, contraseña: string) => {
     try {
-      const response = await fetch(`${getApiBase()}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, contraseña })
-      });
+      const base = getApiBase();
+      const payload = JSON.stringify({ email, contraseña });
+      const candidates = [
+        `${base}/api/auth/login`,
+        `${window.location.origin}/api/auth/login`
+      ].filter((u, i, arr) => u && arr.indexOf(u) === i);
+
+      let response: Response | null = null;
+      for (const url of candidates) {
+        const attempt = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload
+        });
+
+        response = attempt;
+        if (attempt.status !== 404) break;
+      }
+
+      if (!response) {
+        throw new Error('No fue posible contactar el servicio de autenticación');
+      }
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Error desconocido' }));
