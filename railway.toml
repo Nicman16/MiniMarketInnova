@@ -23,5 +23,8 @@ value = "false"
 
 # IMPORTANTE: Configura estas variables en el dashboard de Railway
 # Variables requeridas:
-# MONGO_URI=tu_uri_de_mongodb_atlas_aqui
 # JWT_SECRET=tu_clave_secreta_segura_aqui
+# FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
+# (alternativa) FIREBASE_SERVICE_ACCOUNT_BASE64=base64_del_json
+# CORS_ORIGIN=https://minimarketinnova-production.up.railway.app,capacitor://localhost,ionic://localhost
+# APP_URL=minimarketinnova-production.up.railway.app
