@@ -20,10 +20,11 @@ if (!email || !password) {
 }
 
 async function main() {
-async function main() {
   const keyPath = path.join(__dirname, '..', 'backend', 'serviceAccountKey.json');
   const serviceAccount = require(keyPath);
-  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  if (!admin.apps.length) {
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  }
   const db = admin.firestore();
 
   const salt = await bcrypt.genSalt(10);
@@ -50,12 +51,7 @@ async function main() {
   process.exit(0);
 }
 
-main().catch(async (error) => {
+main().catch((error) => {
   console.error('❌ Error configurando jefe principal:', error);
-  try {
-    await mongoose.disconnect();
-  } catch (disconnectError) {
-    // no-op
-  }
   process.exit(1);
 });
