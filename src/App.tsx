@@ -76,6 +76,17 @@ function DashboardContent() {
     );
   };
 
+  const accesosRapidos = [
+    { key: 'punto-venta', label: 'Venta', icon: <ShoppingCart size={16} /> },
+    { key: 'dashboard', label: 'Panel', icon: <LayoutDashboard size={16} /> },
+    ...(isJefe
+      ? [
+          { key: 'inventario', label: 'Inventario', icon: <Package size={16} /> },
+          { key: 'caja', label: 'Caja', icon: <BadgeDollarSign size={16} /> }
+        ]
+      : [])
+  ];
+
   return (
     <div className="app">
       {/* NAVBAR */}
@@ -166,6 +177,22 @@ function DashboardContent() {
 
       {/* CONTENIDO PRINCIPAL */}
       <main className="main-content">
+        <section className="quick-access" aria-label="Accesos rápidos">
+          <span className="quick-access-title">Acceso rápido:</span>
+          <div className="quick-access-actions">
+            {accesosRapidos.map((item) => (
+              <button
+                key={item.key}
+                className={`quick-access-btn ${paginaActual === item.key ? 'active' : ''}`}
+                onClick={() => cambiarPagina(item.key)}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
         {renderPagina()}
       </main>
 

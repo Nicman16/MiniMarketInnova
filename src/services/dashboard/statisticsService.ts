@@ -1,30 +1,11 @@
 // src/services/dashboard/statisticsService.ts
-import { getApiBase } from '../shared/apiConfig';
-
-const API_BASE = getApiBase();
-
-const fetchJson = async (url: string) => {
-  const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-  const contentType = response.headers.get('content-type') || '';
-  const raw = await response.text();
-  if (!contentType.includes('application/json')) {
-    throw new Error(`Respuesta no JSON en ${url}`);
-  }
-
-  try {
-    return JSON.parse(raw);
-  } catch {
-    throw new Error(`JSON inválido en ${url}`);
-  }
-};
+import { fetchApiJson } from '../shared/httpClient';
 
 export const statisticsService = {
   // Obtener estadísticas avanzadas
-  async obtenerEstadisticasAvanzadas(periodo: '7d' | '30d' | '90d' = '30d') {
+  async obtenerEstadisticasAvanzadas(periodo: '7d' | '30d' | '90d' = '30d'): Promise<any> {
     try {
-      return await fetchJson(`${API_BASE}/api/stats/advanced?periodo=${periodo}`);
+      return await fetchApiJson(`/api/stats/advanced?periodo=${periodo}`);
     } catch (error) {
       console.error('Error en obtenerEstadisticasAvanzadas:', error);
       return null;
@@ -32,9 +13,9 @@ export const statisticsService = {
   },
 
   // Obtener ventas por periodo
-  async obtenerVentasPorPeriodo(fechaInicio: string, fechaFin: string) {
+  async obtenerVentasPorPeriodo(fechaInicio: string, fechaFin: string): Promise<any[]> {
     try {
-      return await fetchJson(`${API_BASE}/api/reportes/ventas?inicio=${fechaInicio}&fin=${fechaFin}`);
+      return await fetchApiJson(`/api/reportes/ventas?inicio=${fechaInicio}&fin=${fechaFin}`);
     } catch (error) {
       console.error('Error en obtenerVentasPorPeriodo:', error);
       return [];
@@ -42,9 +23,9 @@ export const statisticsService = {
   },
 
   // Obtener productos más vendidos
-  async obtenerProductosMasVendidos(limite: number = 10) {
+  async obtenerProductosMasVendidos(limite: number = 10): Promise<any[]> {
     try {
-      return await fetchJson(`${API_BASE}/api/stats/productos-vendidos?limite=${limite}`);
+      return await fetchApiJson(`/api/stats/productos-vendidos?limite=${limite}`);
     } catch (error) {
       console.error('Error en obtenerProductosMasVendidos:', error);
       return [];
@@ -52,9 +33,9 @@ export const statisticsService = {
   },
 
   // Obtener información de deudas
-  async obtenerEstadisticasDeudas() {
+  async obtenerEstadisticasDeudas(): Promise<any> {
     try {
-      return await fetchJson(`${API_BASE}/api/stats/deudas`);
+      return await fetchApiJson('/api/stats/deudas');
     } catch (error) {
       console.error('Error en obtenerEstadisticasDeudas:', error);
       return null;
@@ -62,9 +43,9 @@ export const statisticsService = {
   },
 
   // Obtener margen de ganancia
-  async obtenerMargenes() {
+  async obtenerMargenes(): Promise<any> {
     try {
-      return await fetchJson(`${API_BASE}/api/stats/margenes`);
+      return await fetchApiJson('/api/stats/margenes');
     } catch (error) {
       console.error('Error en obtenerMargenes:', error);
       return null;
@@ -72,9 +53,9 @@ export const statisticsService = {
   },
 
   // Obtener resumen ejecutivo
-  async obtenerResumenEjecutivo() {
+  async obtenerResumenEjecutivo(): Promise<any> {
     try {
-      return await fetchJson(`${API_BASE}/api/stats/resumen`);
+      return await fetchApiJson('/api/stats/resumen');
     } catch (error) {
       console.error('Error en obtenerResumenEjecutivo:', error);
       return null;

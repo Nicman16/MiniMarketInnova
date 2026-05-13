@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { getSessionVersion } = require('../config/sessionVersion');
 
 // Verifica que el request tenga un JWT válido
 const verificarToken = (req, res, next) => {
@@ -7,6 +8,10 @@ const verificarToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'tu_clave_secreta_aqui');
+    const currentSessionVersion = getSessionVersion();
+    if (decoded.sessionVersion !== currentSessionVersion) {
+      return res.status(401).json({ error: 'Sesion expirada por actualizacion de seguridad. Inicia sesion nuevamente.' });
+    }
     req.usuario = decoded;
     next();
   } catch {

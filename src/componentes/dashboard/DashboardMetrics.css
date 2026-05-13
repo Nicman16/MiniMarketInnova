@@ -250,3 +250,14 @@
     transform: translateY(0);
   }
 }
+
+.metrics-warning-banner {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 193, 7, 0.35);
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.18), rgba(0, 123, 255, 0.14));
+  color: #fff2cc;
+  font-size: 0.9rem;
+  font-weight: 600;
+}

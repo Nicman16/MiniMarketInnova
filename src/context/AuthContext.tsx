@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Usuario, LoginResponse } from '../types/pos.types';
 import { getApiBase } from '../services/shared/apiConfig';
+import { fetchApiJson } from '../services/shared/httpClient';
 
 interface AuthContextType {
   usuario: Usuario | null;
@@ -35,6 +36,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     }
   }, []);
+
+  useEffect(() => {
+    const validarSesion = async () => {
+      if (!token) return;
+
+      try {
+        await fetchApiJson('/api/auth/me', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      } catch {
+        setUsuario(null);
+        setToken(null);
+        localStorage.removeItem('token');
+        localStorage.removeItem('usuario');
+      }
+    };
+
+    validarSesion();
+  }, [token]);
 
   const login = async (email: string, contraseña: string) => {
     try {

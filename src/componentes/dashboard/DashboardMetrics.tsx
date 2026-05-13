@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { getApiBase } from '../../services/shared/apiConfig';
+import React, { useCallback, useEffect, useState } from 'react';
+import { fetchApiJson } from '../../services/shared/httpClient';
 
 interface Estadisticas {
   productosAgregados: number;
@@ -19,48 +19,35 @@ function DashboardMetrics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch(`${getApiBase()}/api/stats`, { cache: 'no-store' });
-        if (!response.ok) {
-          throw new Error('No se pudieron cargar las métricas');
-        }
+  const fallbackStats: StatsResponse = {
+    productos: 1247,
+    dispositivos: 8,
+    estadisticas: {
+      productosAgregados: 45,
+      productosActualizados: 23,
+      escaneos: 156,
+      inicioServidor: new Date().toISOString()
+    }
+  };
 
-        const contentType = response.headers.get('content-type') || '';
-        const raw = await response.text();
-        if (!contentType.includes('application/json')) {
-          throw new Error(`Respuesta no JSON (${contentType || 'sin content-type'})`);
-        }
+  const fetchStats = useCallback(async () => {
+    setLoading(true);
+    setError('');
 
-        let data: StatsResponse;
-        try {
-          data = JSON.parse(raw);
-        } catch {
-          throw new Error('Respuesta JSON inválida en /api/stats');
-        }
-
-        setStats(data);
-      } catch (err: any) {
-        setError(err.message || 'Error al cargar métricas');
-        // Datos de ejemplo para desarrollo
-        setStats({
-          productos: 1247,
-          dispositivos: 8,
-          estadisticas: {
-            productosAgregados: 45,
-            productosActualizados: 23,
-            escaneos: 156,
-            inicioServidor: new Date().toISOString()
-          }
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
+    try {
+      const data = await fetchApiJson<StatsResponse>('/api/stats');
+      setStats(data);
+    } catch (err: any) {
+      setError(err.message || 'Error al cargar métricas');
+      setStats(fallbackStats);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   if (loading) {
     return (
@@ -73,13 +60,13 @@ function DashboardMetrics() {
     );
   }
 
-  if (error || !stats) {
+  if (!stats) {
     return (
       <div className="dashboard-container">
         <div className="error-container">
           <div className="error-icon">⚠️</div>
           <p>No fue posible cargar métricas: {error}</p>
-          <button onClick={() => window.location.reload()} className="retry-btn">
+          <button onClick={fetchStats} className="retry-btn">
             Reintentar
           </button>
         </div>
@@ -93,6 +80,12 @@ function DashboardMetrics() {
 
   return (
     <div className="dashboard-container">
+      {error && (
+        <div className="metrics-warning-banner">
+          Mostrando métricas de respaldo temporalmente. Causa detectada: {error}
+        </div>
+      )}
+
       {/* HEADER DEL DASHBOARD */}
       <div className="dashboard-header">
         <div className="header-content">
