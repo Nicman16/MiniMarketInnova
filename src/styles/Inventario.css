@@ -3,10 +3,10 @@
 /* ========= VARIABLES CSS ========= */
 :root {
   /* Colores principales */
-  --primary-color: #667eea;
-  --primary-dark: #5a67d8;
-  --primary-light: #7c8cf0;
-  --secondary-color: #764ba2;
+  --primary-color: #007bff;
+  --primary-dark: #005bb7;
+  --primary-light: #4da3ff;
+  --secondary-color: #003366;
   
   /* Estados */
   --success-color: #48bb78;
@@ -58,7 +58,7 @@
 /* ========= CONTENEDOR PRINCIPAL ========= */
 .inventario-container {
   min-height: calc(100vh - 80px);
-  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 50%, #e2e8f0 100%);
+  background: linear-gradient(135deg, #f4f7f6 0%, #e9eff7 50%, #dce7f5 100%);
   padding: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   position: relative;
@@ -80,7 +80,7 @@
 
 /* ========= HEADER ========= */
 .inventario-header {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  background: linear-gradient(135deg, #0a3f72 0%, #007bff 100%);
   color: white;
   padding: var(--spacing-xl);
   box-shadow: var(--shadow-lg);
@@ -91,6 +91,9 @@
 }
 
 .header-title h1 {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
   font-size: 2.5rem;
   font-weight: 800;
   margin: 0 0 var(--spacing-sm) 0;
@@ -99,6 +102,11 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.header-title h1 svg {
+  color: white;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.22));
 }
 
 .header-title p {
@@ -117,6 +125,9 @@
 }
 
 .nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   background: rgba(255, 255, 255, 0.15);
   border: 2px solid rgba(255, 255, 255, 0.2);
   color: white;
@@ -171,11 +182,22 @@
 .search-box {
   min-width: 300px;
   flex: 1;
+  position: relative;
+}
+
+.search-input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  pointer-events: none;
 }
 
 .search-input {
   width: 100%;
   padding: var(--spacing-md) var(--spacing-lg);
+  padding-left: 2.7rem;
   border: 2px solid var(--gray-200);
   border-radius: var(--border-radius-lg);
   font-size: 1rem;
@@ -214,6 +236,9 @@
 }
 
 .btn-scanner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   background: linear-gradient(135deg, var(--info-color), var(--primary-color));
   color: white;
   border: none;
@@ -231,6 +256,9 @@
 }
 
 .btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   background: linear-gradient(135deg, var(--success-color), var(--success-light));
   color: white;
   border: none;
@@ -249,12 +277,34 @@
 
 /* ========= ESCÁNER ========= */
 .scanner-container {
-  background: var(--gray-800);
+  background: linear-gradient(180deg, #243449 0%, #1f2d40 100%);
   border-radius: var(--border-radius-xl);
   padding: var(--spacing-xl);
   margin-bottom: var(--spacing-xl);
   box-shadow: var(--shadow-xl);
   border: 2px solid var(--gray-700);
+}
+
+.scanner-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.9rem;
+  color: #e5f0ff;
+}
+
+.scanner-intro h3 {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1rem;
+}
+
+.scanner-intro p {
+  margin: 0;
+  color: rgba(229, 240, 255, 0.85);
+  font-size: 0.9rem;
 }
 
 /* ========= ESTADÍSTICAS RESUMEN ========= */
@@ -372,8 +422,14 @@
 }
 
 .stat-icon {
-  font-size: 3rem;
-  opacity: 0.8;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 123, 255, 0.12);
+  color: #005bb7;
 }
 
 .stat-info {

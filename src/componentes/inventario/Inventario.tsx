@@ -1,5 +1,18 @@
 // src/componentes/Inventario.tsx - Sistema completo
 import React, { useState, useEffect } from 'react';
+import {
+  Barcode,
+  Box,
+  Boxes,
+  Building2,
+  ChartNoAxesColumn,
+  CircleCheckBig,
+  CirclePlus,
+  Search,
+  TriangleAlert,
+  Wallet,
+  QrCode
+} from 'lucide-react';
 import '../../styles/Inventario.css';
 import { Producto } from '../../types/pos.types';
 import EscanerZXing from './EscanerZXing';
@@ -305,7 +318,7 @@ function Inventario() {
       {/* Header con navegación */}
       <header className="inventario-header">
         <div className="header-title">
-          <h1>📦 Sistema de Inventario</h1>
+          <h1><Boxes size={28} /> Sistema de Inventario</h1>
           <p>Gestión completa de productos y proveedores</p>
         </div>
         
@@ -314,19 +327,19 @@ function Inventario() {
             className={`nav-btn ${vistaActual === 'productos' ? 'active' : ''}`}
             onClick={() => setVistaActual('productos')}
           >
-            📦 Productos
+            <Box size={16} /> Productos
           </button>
           <button 
             className={`nav-btn ${vistaActual === 'proveedores' ? 'active' : ''}`}
             onClick={() => setVistaActual('proveedores')}
           >
-            🏢 Proveedores
+            <Building2 size={16} /> Proveedores
           </button>
           <button 
             className={`nav-btn ${vistaActual === 'estadisticas' ? 'active' : ''}`}
             onClick={() => setVistaActual('estadisticas')}
           >
-            📊 Estadísticas
+            <ChartNoAxesColumn size={16} /> Estadísticas
           </button>
         </nav>
       </header>
@@ -340,11 +353,12 @@ function Inventario() {
               <div className="search-box">
                 <input
                   type="text"
-                  placeholder="🔍 Buscar por nombre o código..."
+                  placeholder="Buscar por nombre o código..."
                   value={filtros.busqueda}
                   onChange={(e) => setFiltros({...filtros, busqueda: e.target.value})}
                   className="search-input"
                 />
+                <Search size={16} className="search-input-icon" />
               </div>
               
               <select
@@ -392,13 +406,13 @@ function Inventario() {
                 className="btn-scanner"
                 onClick={() => setEscanerActivo(!escanerActivo)}
               >
-                {escanerActivo ? '❌ Cerrar' : '📱 Escáner'}
+                {escanerActivo ? <><TriangleAlert size={16} /> Cerrar Escáner</> : <><QrCode size={16} /><Barcode size={16} /> Escáner QR y Barras</>}
               </button>
               <button 
                 className="btn-add"
                 onClick={abrirModalAgregar}
               >
-                ➕ Nuevo Producto
+                <CirclePlus size={16} /> Nuevo Producto
               </button>
             </div>
           </div>
@@ -406,6 +420,10 @@ function Inventario() {
           {/* Escáner */}
           {escanerActivo && (
             <div className="scanner-container">
+              <div className="scanner-intro">
+                <h3><QrCode size={18} /> Escáner inteligente</h3>
+                <p>Compatible con códigos de barras y QR, estilo app móvil: detecta, vibra y autocompleta.</p>
+              </div>
               <EscanerZXing 
                 onScan={manejarEscaneo}
                 onProductoEncontrado={manejarProductoEncontrado}
@@ -419,28 +437,28 @@ function Inventario() {
           {/* Resumen rápido */}
           <div className="stats-summary">
             <div className="stat-card">
-              <div className="stat-icon">📦</div>
+              <div className="stat-icon"><Box size={22} /></div>
               <div className="stat-info">
                 <span className="stat-number">{estadisticas.totalProductos}</span>
                 <span className="stat-label">Total Productos</span>
               </div>
             </div>
             <div className="stat-card">
-              <div className="stat-icon">✅</div>
+              <div className="stat-icon"><CircleCheckBig size={22} /></div>
               <div className="stat-info">
                 <span className="stat-number">{estadisticas.productosActivos}</span>
                 <span className="stat-label">Activos</span>
               </div>
             </div>
             <div className="stat-card danger">
-              <div className="stat-icon">⚠️</div>
+              <div className="stat-icon"><TriangleAlert size={22} /></div>
               <div className="stat-info">
                 <span className="stat-number">{estadisticas.productosAgotados}</span>
                 <span className="stat-label">Stock Bajo</span>
               </div>
             </div>
             <div className="stat-card">
-              <div className="stat-icon">💰</div>
+              <div className="stat-icon"><Wallet size={22} /></div>
               <div className="stat-info">
                 <span className="stat-number">${estadisticas.valorInventario.toLocaleString()}</span>
                 <span className="stat-label">Valor Total</span>

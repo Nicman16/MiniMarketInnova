@@ -35,6 +35,9 @@ function EscanerZXing({
     null
   );
   const [cargandoAPI, setCargandoAPI] = useState(false);
+  const [tipoEscaneo, setTipoEscaneo] = useState<"todos" | "solo-barras" | "solo-qr">("todos");
+  const [ultimoFormato, setUltimoFormato] = useState<string>("");
+  const [autoPausa, setAutoPausa] = useState(true);
 
   // Base de datos de códigos de barras conocidos
   const baseDatosCodigosBarras = {
@@ -4291,9 +4294,20 @@ function EscanerZXing({
         (result: Result | null, error?: Error) => {
           if (result) {
             const codigo = result.getText();
+            const formato = result.getBarcodeFormat().toString();
+
+            if (tipoEscaneo === "solo-qr" && formato !== "QR_CODE") {
+              return;
+            }
+
+            if (tipoEscaneo === "solo-barras" && formato === "QR_CODE") {
+              return;
+            }
 
             // Evitar escaneos duplicados rápidos
             if (codigo !== ultimoEscaneo) {
+              setUltimoFormato(formato);
+
               // Vibración en dispositivos móviles
               if ("vibrate" in navigator) {
                 navigator.vibrate([100, 50, 100]);
@@ -4305,6 +4319,12 @@ function EscanerZXing({
               setTimeout(() => {
                 setUltimoEscaneo("");
               }, 2000);
+
+              if (autoPausa) {
+                setTimeout(() => {
+                  detenerEscaneo();
+                }, 250);
+              }
             }
           }
 
@@ -4331,6 +4351,16 @@ function EscanerZXing({
     const codigo = prompt("Ingresa el código de barras:");
     if (codigo?.trim()) {
       procesarCodigoEscaneado(codigo.trim());
+    }
+  };
+
+  const reiniciarCamara = async () => {
+    detenerEscaneo();
+    await verificarPermisos();
+    if (isActive) {
+      setTimeout(() => {
+        iniciarEscaneo();
+      }, 200);
     }
   };
 
@@ -4447,6 +4477,22 @@ function EscanerZXing({
       )}
 
       <div className="escaner-controls">
+        <select
+          id="tipo-escaneo"
+          aria-label="Tipo de escaneo"
+          className="input"
+          value={tipoEscaneo}
+          onChange={(e) => setTipoEscaneo(e.target.value as "todos" | "solo-barras" | "solo-qr")}
+        >
+          <option value="todos">Escanear QR y código de barras</option>
+          <option value="solo-barras">Solo código de barras</option>
+          <option value="solo-qr">Solo QR</option>
+        </select>
+
+        <button className="button" onClick={() => setAutoPausa((v) => !v)}>
+          {autoPausa ? "⏸️ Pausa automática: ON" : "▶️ Pausa automática: OFF"}
+        </button>
+
         {/* Selector de cámara - solo mostrar si hay múltiples dispositivos */}
         {dispositivos.length > 1 && (
           <select
@@ -4474,8 +4520,12 @@ function EscanerZXing({
           🎲 Código de Prueba
         </button>
 
-        <button className="button" onClick={() => window.location.reload()}>
+        <button className="button" onClick={reiniciarCamara}>
           🔄 Reiniciar Cámara
+        </button>
+
+        <button className="button primary" onClick={iniciarEscaneo}>
+          📷 Reanudar Escáner
         </button>
       </div>
 
@@ -4495,6 +4545,11 @@ function EscanerZXing({
         {ultimoEscaneo && (
           <p>
             <strong>Último escaneado:</strong> {ultimoEscaneo}
+          </p>
+        )}
+        {ultimoFormato && (
+          <p>
+            <strong>Formato detectado:</strong> {ultimoFormato}
           </p>
         )}
       </div>
