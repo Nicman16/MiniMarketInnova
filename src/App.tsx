@@ -17,62 +17,45 @@ function DashboardContent() {
   const [isTransitioning, setIsTransitioning] = React.useState(false);
 
   const cambiarPagina = (nuevaPagina: string) => {
-    console.log('Intentando cambiar página de', paginaActual, 'a', nuevaPagina);
     if (nuevaPagina === paginaActual) {
-      console.log('Página ya es la actual, no cambiando');
       return;
     }
 
     setIsTransitioning(true);
-    console.log('Iniciando transición...');
 
     setTimeout(() => {
-      console.log('Cambiando páginaActual a:', nuevaPagina);
       setPaginaActual(nuevaPagina);
       setIsTransitioning(false);
-      console.log('Transición completada');
     }, 150);
   };
 
   const renderPagina = () => {
-    console.log('Renderizando página:', paginaActual, 'isJefe:', isJefe, 'isTransitioning:', isTransitioning);
-
     let paginaComponent;
     switch (paginaActual) {
       case 'dashboard':
-        console.log('Renderizando DashboardMetrics');
         paginaComponent = <DashboardMetrics />;
         break;
       case 'punto-venta':
-        console.log('Renderizando PuntoVenta');
         paginaComponent = <PuntoVenta />;
         break;
       case 'inventario':
-        console.log('Renderizando Inventario, isJefe:', isJefe);
         paginaComponent = isJefe ? <Inventario /> : <div className="sin-permiso">❌ Solo administradores pueden acceder al inventario</div>;
         break;
       case 'fiado':
-        console.log('Renderizando Fiado, isJefe:', isJefe);
         paginaComponent = isJefe ? <Fiado /> : <div className="sin-permiso">❌ Solo administradores pueden acceder al sistema Fiado</div>;
         break;
       case 'caja':
-        console.log('Renderizando ControlCaja, isJefe:', isJefe);
         paginaComponent = isJefe ? <ControlCaja /> : <div className="sin-permiso">❌ Solo administradores pueden acceder al control de caja</div>;
         break;
       case 'reportes':
-        console.log('Renderizando Reportes, isJefe:', isJefe);
         paginaComponent = isJefe ? <Reportes /> : <div className="sin-permiso">❌ Solo administradores pueden acceder a reportes</div>;
         break;
       case 'empleados':
-        console.log('Renderizando Empleados, isJefe:', isJefe);
         paginaComponent = isJefe ? <Empleados /> : <div className="sin-permiso">❌ Solo administradores pueden acceder a empleados</div>;
         break;
       default:
-        console.log('Página por defecto, renderizando DashboardMetrics');
         paginaComponent = <DashboardMetrics />;
     }
-
-    console.log('Componente a renderizar:', paginaComponent ? 'Componente válido' : 'Componente nulo');
 
     return (
       <div className={`page-container ${isTransitioning ? 'page-transitioning' : 'page-active'}`}>
