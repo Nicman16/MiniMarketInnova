@@ -279,7 +279,7 @@ router.get('/resumen', async (req, res) => {
       },
       salud: {
         stockBajo: productos.filter((p) => Number(p.cantidad || p.stock || 0) <= Number(p.stockMinimo || 0)).length,
-        alertas: 0
+        alertas: productos.filter((p) => Number(p.cantidad || p.stock || 0) <= Number(p.stockMinimo || 0)).length
       }
     });
   } catch (error) {

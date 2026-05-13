@@ -15,6 +15,7 @@ interface StatsResponse {
 }
 
 interface ResumenResponse {
+  fecha?: string;
   ventas?: {
     hoy?: number;
     promedioDiario?: number;
@@ -22,6 +23,7 @@ interface ResumenResponse {
   };
   salud?: {
     alertas?: number;
+    stockBajo?: number;
   };
 }
 
@@ -95,9 +97,122 @@ function DashboardMetrics() {
     return new Intl.NumberFormat('es-ES').format(value);
   };
 
+  const formatUptime = (inicioServidor: string) => {
+    const inicio = new Date(inicioServidor).getTime();
+    if (Number.isNaN(inicio)) {
+      return '0h';
+    }
+
+    const diff = Math.max(0, Date.now() - inicio);
+    const totalMinutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    if (hours <= 0) {
+      return `${minutes} min`;
+    }
+
+    return `${hours}h ${minutes}m`;
+  };
+
+  const buildMetricState = (value: number, options: {
+    positiveLabel: string;
+    emptyLabel: string;
+    warningLabel?: string;
+    warningWhen?: boolean;
+  }) => {
+    if (options.warningWhen) {
+      return {
+        tone: 'warning',
+        icon: '⚠️',
+        label: options.warningLabel || options.positiveLabel
+      };
+    }
+
+    if (value > 0) {
+      return {
+        tone: 'positive',
+        icon: '↗️',
+        label: options.positiveLabel
+      };
+    }
+
+    return {
+      tone: 'inactive',
+      icon: '•',
+      label: options.emptyLabel
+    };
+  };
+
+  const buildStatusState = (mode: 'online' | 'warning' | 'inactive', label: string) => ({
+    mode,
+    label
+  });
+
   const ventasHoy = Number(resumen?.ventas?.hoy || 0);
   const tendenciaVentas = Number(resumen?.ventas?.tendencia || 0);
   const alertas = Number(resumen?.salud?.alertas || 0);
+  const stockBajo = Number(resumen?.salud?.stockBajo || 0);
+  const uptime = formatUptime(stats.estadisticas.inicioServidor);
+
+  const inventarioState = buildMetricState(stats.estadisticas.productosAgregados, {
+    positiveLabel: `${formatNumber(stats.estadisticas.productosAgregados)} altas en esta sesión`,
+    emptyLabel: 'Sin altas registradas en esta sesión'
+  });
+
+  const ventasState = ventasHoy > 0
+    ? {
+        tone: tendenciaVentas < 0 ? 'warning' : 'positive',
+        icon: tendenciaVentas < 0 ? '↘️' : '↗️',
+        label: tendenciaVentas === 0
+          ? `${formatNumber(ventasHoy)} ventas registradas hoy`
+          : `${Math.abs(tendenciaVentas).toFixed(1)}% vs promedio reciente`
+      }
+    : {
+        tone: 'inactive',
+        icon: '•',
+        label: 'Sin ventas registradas hoy'
+      };
+
+  const dispositivosState = buildMetricState(stats.dispositivos, {
+    positiveLabel: `${formatNumber(stats.dispositivos)} conectados ahora`,
+    emptyLabel: 'Sin dispositivos reportados'
+  });
+
+  const uptimeState = {
+    tone: 'neutral',
+    icon: '🕐',
+    label: 'Tiempo continuo desde el último reinicio'
+  };
+
+  const productosAgregadosState = buildMetricState(stats.estadisticas.productosAgregados, {
+    positiveLabel: 'Hubo altas en la sesión',
+    emptyLabel: 'Sin productos agregados aún'
+  });
+
+  const actualizacionesState = buildMetricState(stats.estadisticas.productosActualizados, {
+    positiveLabel: 'Cambios aplicados en la sesión',
+    emptyLabel: 'Sin actualizaciones registradas'
+  });
+
+  const escaneosState = buildMetricState(stats.estadisticas.escaneos, {
+    positiveLabel: 'Lecturas registradas en la sesión',
+    emptyLabel: 'Sin escaneos todavía'
+  });
+
+  const alertasState = buildMetricState(alertas, {
+    positiveLabel: `${formatNumber(alertas)} alerta${alertas === 1 ? '' : 's'} activa${alertas === 1 ? '' : 's'}`,
+    emptyLabel: 'Sin alertas activas',
+    warningLabel: `${formatNumber(stockBajo)} producto${stockBajo === 1 ? '' : 's'} con stock bajo`,
+    warningWhen: stockBajo > 0
+  });
+
+  const dbStatus = buildStatusState(error ? 'warning' : 'online', error ? 'Con fallback temporal' : 'Con datos sincronizados');
+  const apiStatus = buildStatusState(error ? 'warning' : 'online', error ? 'Respuesta degradada' : 'Operativo');
+  const syncStatus = buildStatusState(
+    resumen?.fecha ? 'online' : 'inactive',
+    resumen?.fecha ? 'Actualizado hace instantes' : 'Sin marca de sincronización'
+  );
 
   return (
     <div className="dashboard-container">
@@ -138,9 +253,9 @@ function DashboardMetrics() {
             </div>
           </div>
           <div className="metric-value-large">{formatNumber(stats.productos)}</div>
-          <div className="metric-change positive">
-            <span className="change-icon">↗️</span>
-            <span>+12% esta semana</span>
+          <div className={`metric-change ${inventarioState.tone}`}>
+            <span className="change-icon">{inventarioState.icon}</span>
+            <span>{inventarioState.label}</span>
           </div>
         </div>
 
@@ -149,13 +264,13 @@ function DashboardMetrics() {
             <div className="metric-icon-large">💰</div>
             <div className="metric-info">
               <h3>Ventas del Día</h3>
-              <p>Ingresos generados</p>
+              <p>Transacciones registradas hoy</p>
             </div>
           </div>
           <div className="metric-value-large">{formatNumber(ventasHoy)}</div>
-          <div className={`metric-change ${tendenciaVentas >= 0 ? 'positive' : 'negative'}`}>
-            <span className="change-icon">{tendenciaVentas >= 0 ? '↗️' : '↘️'}</span>
-            <span>{Math.abs(tendenciaVentas).toFixed(1)}% vs periodo anterior</span>
+          <div className={`metric-change ${ventasState.tone}`}>
+            <span className="change-icon">{ventasState.icon}</span>
+            <span>{ventasState.label}</span>
           </div>
         </div>
 
@@ -168,9 +283,9 @@ function DashboardMetrics() {
             </div>
           </div>
           <div className="metric-value-large">{stats.dispositivos}</div>
-          <div className="metric-change neutral">
-            <span className="change-icon">➡️</span>
-            <span>Estable</span>
+          <div className={`metric-change ${dispositivosState.tone}`}>
+            <span className="change-icon">{dispositivosState.icon}</span>
+            <span>{dispositivosState.label}</span>
           </div>
         </div>
 
@@ -182,10 +297,10 @@ function DashboardMetrics() {
               <p>Horas de funcionamiento</p>
             </div>
           </div>
-          <div className="metric-value-large">{Math.floor((Date.now() - new Date(stats.estadisticas.inicioServidor).getTime()) / (1000 * 60 * 60))}</div>
-          <div className="metric-change neutral">
-            <span className="change-icon">🕐</span>
-            <span>Continuo</span>
+          <div className="metric-value-large">{uptime}</div>
+          <div className={`metric-change ${uptimeState.tone}`}>
+            <span className="change-icon">{uptimeState.icon}</span>
+            <span>{uptimeState.label}</span>
           </div>
         </div>
       </div>
@@ -198,7 +313,7 @@ function DashboardMetrics() {
             <div className="metric-content">
               <div className="metric-label">Productos Agregados</div>
               <div className="metric-value">{formatNumber(stats.estadisticas.productosAgregados)}</div>
-              <div className="metric-trend positive">Hoy</div>
+              <div className={`metric-trend ${productosAgregadosState.tone}`}>{productosAgregadosState.label}</div>
             </div>
           </div>
 
@@ -207,7 +322,7 @@ function DashboardMetrics() {
             <div className="metric-content">
               <div className="metric-label">Actualizaciones</div>
               <div className="metric-value">{formatNumber(stats.estadisticas.productosActualizados)}</div>
-              <div className="metric-trend positive">Hoy</div>
+              <div className={`metric-trend ${actualizacionesState.tone}`}>{actualizacionesState.label}</div>
             </div>
           </div>
 
@@ -216,7 +331,7 @@ function DashboardMetrics() {
             <div className="metric-content">
               <div className="metric-label">Escaneos</div>
               <div className="metric-value">{formatNumber(stats.estadisticas.escaneos)}</div>
-              <div className="metric-trend positive">Sesión</div>
+              <div className={`metric-trend ${escaneosState.tone}`}>{escaneosState.label}</div>
             </div>
           </div>
 
@@ -225,7 +340,7 @@ function DashboardMetrics() {
             <div className="metric-content">
               <div className="metric-label">Alertas</div>
               <div className="metric-value">{formatNumber(alertas)}</div>
-              <div className={`metric-trend ${alertas > 0 ? 'warning' : 'positive'}`}>{alertas > 0 ? 'Activas' : 'Sin alertas'}</div>
+              <div className={`metric-trend ${alertasState.tone}`}>{alertasState.label}</div>
             </div>
           </div>
         </div>
@@ -235,20 +350,20 @@ function DashboardMetrics() {
       <div className="system-status">
         <h3 className="section-title">Estado del Sistema</h3>
         <div className="status-indicators">
-          <div className="status-item online">
+          <div className={`status-item ${dbStatus.mode}`}>
             <div className="status-dot"></div>
             <span>Base de Datos</span>
-            <span className="status-desc">Conectado</span>
+            <span className="status-desc">{dbStatus.label}</span>
           </div>
-          <div className="status-item online">
+          <div className={`status-item ${apiStatus.mode}`}>
             <div className="status-dot"></div>
             <span>Servidor API</span>
-            <span className="status-desc">Operativo</span>
+            <span className="status-desc">{apiStatus.label}</span>
           </div>
-          <div className="status-item warning">
+          <div className={`status-item ${syncStatus.mode}`}>
             <div className="status-dot"></div>
             <span>Sincronización</span>
-            <span className="status-desc">5 min atrás</span>
+            <span className="status-desc">{syncStatus.label}</span>
           </div>
         </div>
       </div>

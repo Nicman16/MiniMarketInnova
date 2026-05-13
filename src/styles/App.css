@@ -570,6 +570,14 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
+.metric-change.warning {
+  color: #fbbf24;
+}
+
+.metric-change.inactive {
+  color: rgba(255, 255, 255, 0.45);
+}
+
 .change-icon {
   font-size: 1.1rem;
 }
@@ -669,6 +677,12 @@
   color: #f59e0b;
 }
 
+.metric-trend.neutral,
+.metric-trend.inactive {
+  background: rgba(148, 163, 184, 0.14);
+  color: #cbd5e1;
+}
+
 /* ESTADO DEL SISTEMA */
 .system-status {
   background: rgba(255, 255, 255, 0.02);
@@ -732,6 +746,10 @@
   border-color: rgba(251, 191, 36, 0.3);
 }
 
+.status-item.inactive {
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
 .status-dot {
   width: 12px;
   height: 12px;
@@ -741,6 +759,10 @@
 
 .status-item.warning .status-dot {
   background: #f59e0b;
+}
+
+.status-item.inactive .status-dot {
+  background: #94a3b8;
 }
 
 .status-item span:first-of-type {
