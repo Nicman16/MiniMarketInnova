@@ -4,6 +4,8 @@
   padding: 24px;
   max-width: 1400px;
   margin: 0 auto;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  min-height: 100vh;
 }
 
 .fiado-header {
@@ -12,15 +14,19 @@
 
 .fiado-header h1 {
   font-size: 32px;
-  font-weight: bold;
-  color: #333;
+  font-weight: 700;
+  background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0 0 8px 0;
 }
 
 .fiado-header .subtitulo {
-  color: #666;
+  color: #64748B;
   font-size: 14px;
   margin: 0;
+  font-weight: 500;
 }
 
 /* Estadísticas */
@@ -33,24 +39,47 @@
 
 .stat-card {
   background: white;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #E0E7FF;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #2563EB 0%, #1D4ED8 100%);
+}
+
+.stat-card:hover {
+  border-color: #2563EB;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+  transform: translateY(-2px);
 }
 
 .stat-card h3 {
-  font-size: 14px;
-  color: #666;
+  font-size: 13px;
+  color: #64748B;
   margin: 0 0 12px 0;
   text-transform: uppercase;
   font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .stat-value {
   font-size: 28px;
-  font-weight: bold;
-  color: #2196F3;
+  font-weight: 700;
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0;
 }
 
@@ -71,15 +100,24 @@
 
 .filtros select {
   padding: 10px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid #E0E7FF;
   border-radius: 6px;
   font-size: 14px;
   background: white;
   cursor: pointer;
+  transition: all 0.2s ease;
+  color: #334155;
 }
 
 .filtros select:hover {
-  border-color: #2196F3;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.filtros select:focus {
+  outline: none;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 /* Botones */
@@ -97,34 +135,42 @@
 }
 
 .btn-primary {
-  background: #2196F3;
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
   color: white;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
 }
 
 .btn-primary:hover {
-  background: #1976D2;
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
 }
 
 .btn-secondary {
-  background: #f5f5f5;
-  color: #333;
-  border: 1px solid #ddd;
+  background: white;
+  color: #2563EB;
+  border: 1px solid #E0E7FF;
 }
 
 .btn-secondary:hover {
-  background: #efefef;
+  background: #F0F9FF;
+  border-color: #2563EB;
 }
 
 .btn-info {
-  background: #4CAF50;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
   color: white;
   padding: 8px 16px;
   font-size: 13px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
 }
 
 .btn-info:hover {
-  background: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
 }
 
 /* Deudas Grid */
@@ -140,22 +186,23 @@
 
 .deuda-card {
   background: white;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #E0E7FF;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
   transition: all 0.3s ease;
 }
 
 .deuda-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  border-color: #2196F3;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.15);
+  border-color: #2563EB;
+  transform: translateY(-4px);
 }
 
 .deuda-header {
   padding: 16px;
-  background: #f9f9f9;
-  border-bottom: 1px solid #e0e0e0;
+  background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+  border-bottom: 1px solid #E0E7FF;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -172,13 +219,14 @@
 .deuda-info h3 {
   margin: 0;
   font-size: 16px;
-  color: #333;
+  color: #1E293B;
+  font-weight: 600;
 }
 
 .deuda-tipo {
   margin: 4px 0 0 0;
   font-size: 12px;
-  color: #999;
+  color: #94A3B8;
 }
 
 .status-badge {
@@ -207,25 +255,28 @@
 
 .deuda-body .label {
   font-size: 12px;
-  color: #999;
+  color: #94A3B8;
   text-transform: uppercase;
 }
 
 .deuda-body .valor {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: #1E293B;
 }
 
 .deuda-monto .valor,
 .deuda-saldo .valor {
   font-size: 16px;
-  color: #2196F3;
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .deuda-footer {
   padding: 12px 16px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid #F0F0F0;
   text-align: center;
 }
 
@@ -233,7 +284,7 @@
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: #999;
+  color: #94A3B8;
 }
 
 .empty-state p {
@@ -245,18 +296,19 @@
   text-align: center;
   padding: 40px;
   font-size: 16px;
-  color: #666;
+  color: #64748B;
 }
 
 /* Error Banner */
 .error-banner {
-  background: #ffebee;
-  border: 1px solid #ef5350;
-  color: #c62828;
+  background: linear-gradient(135deg, #FEE2E2 0%, #FEC2C2 100%);
+  border: 1px solid #FECACA;
+  color: #991B1B;
   padding: 12px 16px;
   border-radius: 6px;
   margin-bottom: 20px;
   font-size: 14px;
+  font-weight: 500;
 }
 
 /* Modales */
@@ -266,7 +318,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -277,7 +329,7 @@
 .modal {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(37, 99, 235, 0.2);
   max-width: 500px;
   width: 100%;
   max-height: 90vh;
@@ -290,16 +342,20 @@
 
 .modal-header {
   padding: 20px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #E0E7FF;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
 }
 
 .modal-header h2 {
   margin: 0;
   font-size: 20px;
-  color: #333;
+  background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .close-btn {
@@ -307,17 +363,19 @@
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #999;
+  color: #94A3B8;
   padding: 0;
   width: 30px;
   height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .close-btn:hover {
-  color: #333;
+  color: #2563EB;
+  transform: scale(1.1);
 }
 
 .modal-body {
@@ -333,40 +391,43 @@
   font-size: 14px;
   font-weight: 600;
   margin-bottom: 6px;
-  color: #333;
+  color: #1E293B;
 }
 
 .form-group input,
 .form-group select {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid #E0E7FF;
   border-radius: 6px;
   font-size: 14px;
   font-family: inherit;
+  transition: all 0.2s ease;
 }
 
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #2196F3;
-  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .modal-footer {
   padding: 16px 20px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid #E0E7FF;
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+  background: #F8FAFC;
 }
 
 /* Resumen de deuda */
 .deuda-resumen {
-  background: #f5f5f5;
+  background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
   padding: 16px;
   border-radius: 8px;
   margin-bottom: 20px;
+  border: 1px solid #E0E7FF;
 }
 
 .resumen-item {
@@ -377,12 +438,15 @@
 
 .resumen-item span {
   font-size: 14px;
-  color: #666;
+  color: #64748B;
 }
 
 .resumen-item strong {
   font-size: 16px;
-  color: #2196F3;
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Transacciones lista */
@@ -390,7 +454,7 @@
 .nueva-transaccion h3 {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: #1E293B;
   margin-top: 20px;
   margin-bottom: 12px;
 }
@@ -405,19 +469,24 @@
   display: flex;
   align-items: center;
   padding: 12px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #E0E7FF;
   border-radius: 6px;
   margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.txn:hover {
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
 }
 
 .txn.cargo {
-  background: #fff3cd;
-  border-color: #ffc107;
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  border-color: #FCD34D;
 }
 
 .txn.abono {
-  background: #d4edda;
-  border-color: #28a745;
+  background: linear-gradient(135deg, #DCFCE7 0%, #BBFBBB 100%);
+  border-color: #86EFAC;
 }
 
 .txn-tipo {
@@ -436,13 +505,13 @@
 
 .txn-razon {
   font-size: 14px;
-  color: #333;
+  color: #1E293B;
   font-weight: 600;
 }
 
 .txn-fecha {
   font-size: 12px;
-  color: #999;
+  color: #94A3B8;
 }
 
 .txn-monto {
