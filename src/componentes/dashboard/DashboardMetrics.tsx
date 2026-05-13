@@ -22,11 +22,24 @@ function DashboardMetrics() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch(`${getApiBase()}/api/stats`);
+        const response = await fetch(`${getApiBase()}/api/stats`, { cache: 'no-store' });
         if (!response.ok) {
           throw new Error('No se pudieron cargar las métricas');
         }
-        const data: StatsResponse = await response.json();
+
+        const contentType = response.headers.get('content-type') || '';
+        const raw = await response.text();
+        if (!contentType.includes('application/json')) {
+          throw new Error(`Respuesta no JSON (${contentType || 'sin content-type'})`);
+        }
+
+        let data: StatsResponse;
+        try {
+          data = JSON.parse(raw);
+        } catch {
+          throw new Error('Respuesta JSON inválida en /api/stats');
+        }
+
         setStats(data);
       } catch (err: any) {
         setError(err.message || 'Error al cargar métricas');
