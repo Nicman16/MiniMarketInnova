@@ -202,6 +202,17 @@
   overflow: hidden;
 }
 
+.nav-item-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.nav-icon {
+  flex-shrink: 0;
+  opacity: 0.95;
+}
+
 .nav-item::before {
   content: '';
   position: absolute;
@@ -300,6 +311,13 @@
   color: rgba(255, 255, 255, 0.7);
   font-weight: 500;
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.role-icon {
+  flex-shrink: 0;
 }
 
 .logout-btn {
@@ -1626,7 +1644,7 @@
     width: 24px;
     height: 3px;
     border-radius: 2px;
-    background: linear-gradient(90deg, #00d4ff, #ff6b9d);
+    background: linear-gradient(90deg, #007bff, #6fb5ff);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
@@ -1635,17 +1653,22 @@
   }
 
   .bottom-nav-item.active {
-    background: rgba(0, 212, 255, 0.1);
+    background: rgba(0, 123, 255, 0.14);
   }
 
   .bottom-nav-icon {
-    font-size: 1.4rem;
+    font-size: 1.1rem;
     line-height: 1;
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.78);
   }
 
   .bottom-nav-item.active .bottom-nav-icon {
     transform: translateY(-2px) scale(1.15);
+    color: #cfe6ff;
   }
 
   .bottom-nav-label {
@@ -1658,7 +1681,7 @@
   }
 
   .bottom-nav-item.active .bottom-nav-label {
-    background: linear-gradient(90deg, #00d4ff, #ff6b9d);
+    background: linear-gradient(90deg, #8cc5ff, #d4e9ff);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;

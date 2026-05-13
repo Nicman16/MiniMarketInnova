@@ -1,4 +1,16 @@
 import React from 'react';
+import {
+  BadgeDollarSign,
+  Briefcase,
+  CircleUserRound,
+  LayoutDashboard,
+  LogOut,
+  Package,
+  ReceiptText,
+  ShoppingCart,
+  Users,
+  Wallet
+} from 'lucide-react';
 import './styles/App.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './componentes/auth/Login';
@@ -83,14 +95,14 @@ function DashboardContent() {
             className={`nav-item ${paginaActual === 'dashboard' ? 'active' : ''}`}
             onClick={() => cambiarPagina('dashboard')}
           >
-            📊 Dashboard
+            <span className="nav-item-content"><LayoutDashboard size={16} className="nav-icon" />Dashboard</span>
           </button>
 
           <button
             className={`nav-item ${paginaActual === 'punto-venta' ? 'active' : ''}`}
             onClick={() => cambiarPagina('punto-venta')}
           >
-            🛒 Punto de Venta
+            <span className="nav-item-content"><ShoppingCart size={16} className="nav-icon" />Punto de Venta</span>
           </button>
 
           {isJefe && (
@@ -99,35 +111,35 @@ function DashboardContent() {
                 className={`nav-item ${paginaActual === 'inventario' ? 'active' : ''}`}
                 onClick={() => cambiarPagina('inventario')}
               >
-                📦 Inventario
+                <span className="nav-item-content"><Package size={16} className="nav-icon" />Inventario</span>
               </button>
 
               <button
                 className={`nav-item ${paginaActual === 'fiado' ? 'active' : ''}`}
                 onClick={() => cambiarPagina('fiado')}
               >
-                💳 Sistema Fiado
+                <span className="nav-item-content"><Wallet size={16} className="nav-icon" />Sistema Fiado</span>
               </button>
 
               <button
                 className={`nav-item ${paginaActual === 'caja' ? 'active' : ''}`}
                 onClick={() => cambiarPagina('caja')}
               >
-                💵 Caja
+                <span className="nav-item-content"><BadgeDollarSign size={16} className="nav-icon" />Caja</span>
               </button>
 
               <button
                 className={`nav-item ${paginaActual === 'reportes' ? 'active' : ''}`}
                 onClick={() => cambiarPagina('reportes')}
               >
-                📑 Reportes
+                <span className="nav-item-content"><ReceiptText size={16} className="nav-icon" />Reportes</span>
               </button>
 
               <button
                 className={`nav-item ${paginaActual === 'empleados' ? 'active' : ''}`}
                 onClick={() => cambiarPagina('empleados')}
               >
-                👥 Empleados
+                <span className="nav-item-content"><Users size={16} className="nav-icon" />Empleados</span>
               </button>
             </>
           )}
@@ -140,11 +152,14 @@ function DashboardContent() {
             </div>
             <div className="user-details">
               <div className="user-name">{usuario?.nombre}</div>
-              <div className="user-role">{isJefe ? '👑 Administrador' : '👤 Empleado'}</div>
+              <div className="user-role">
+                {isJefe ? <Briefcase size={13} className="role-icon" /> : <CircleUserRound size={13} className="role-icon" />}
+                <span>{isJefe ? 'Administrador' : 'Empleado'}</span>
+              </div>
             </div>
           </div>
           <button className="logout-btn" onClick={logout}>
-            <span>🚪</span> Salir
+            <LogOut size={14} /> Salir
           </button>
         </div>
       </nav>
@@ -160,7 +175,7 @@ function DashboardContent() {
           className={`bottom-nav-item ${paginaActual === 'dashboard' ? 'active' : ''}`}
           onClick={() => cambiarPagina('dashboard')}
         >
-          <span className="bottom-nav-icon">📊</span>
+          <span className="bottom-nav-icon"><LayoutDashboard size={18} /></span>
           <span className="bottom-nav-label">Dashboard</span>
         </button>
 
@@ -168,7 +183,7 @@ function DashboardContent() {
           className={`bottom-nav-item ${paginaActual === 'punto-venta' ? 'active' : ''}`}
           onClick={() => cambiarPagina('punto-venta')}
         >
-          <span className="bottom-nav-icon">🛒</span>
+          <span className="bottom-nav-icon"><ShoppingCart size={18} /></span>
           <span className="bottom-nav-label">Venta</span>
         </button>
 
@@ -178,7 +193,7 @@ function DashboardContent() {
               className={`bottom-nav-item ${paginaActual === 'inventario' ? 'active' : ''}`}
               onClick={() => cambiarPagina('inventario')}
             >
-              <span className="bottom-nav-icon">📦</span>
+              <span className="bottom-nav-icon"><Package size={18} /></span>
               <span className="bottom-nav-label">Inventario</span>
             </button>
 
@@ -186,7 +201,7 @@ function DashboardContent() {
               className={`bottom-nav-item ${paginaActual === 'caja' ? 'active' : ''}`}
               onClick={() => cambiarPagina('caja')}
             >
-              <span className="bottom-nav-icon">💵</span>
+              <span className="bottom-nav-icon"><BadgeDollarSign size={18} /></span>
               <span className="bottom-nav-label">Caja</span>
             </button>
 
@@ -199,7 +214,11 @@ function DashboardContent() {
               }}
             >
               <span className="bottom-nav-icon">
-                {paginaActual === 'reportes' ? '📑' : paginaActual === 'empleados' ? '👥' : '💳'}
+                {paginaActual === 'reportes'
+                  ? <ReceiptText size={18} />
+                  : paginaActual === 'empleados'
+                    ? <Users size={18} />
+                    : <Wallet size={18} />}
               </span>
               <span className="bottom-nav-label">
                 {paginaActual === 'reportes' ? 'Reportes' : paginaActual === 'empleados' ? 'Equipo' : 'Fiado'}
