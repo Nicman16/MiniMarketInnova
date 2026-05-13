@@ -78,7 +78,9 @@ function Login() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <div className="login-logo">🏪</div>
+          <div className="login-logo" aria-label="Logo MiniMarket Innova">
+            <img src="/assets/branding/logo.png" alt="MiniMarket Innova" className="login-logo-img" />
+          </div>
           <h1>MiniMarket Innova</h1>
           <p>Sistema de Gestión Avanzado</p>
         </div>

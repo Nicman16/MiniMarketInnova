@@ -1,9 +1,16 @@
 /* src/styles/App.css */
+:root {
+  --mm-navy: #003366;
+  --mm-blue: #007bff;
+  --mm-light: #f4f7f6;
+  --mm-white: #ffffff;
+}
+
 .app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #1a1a2e 100%);
+  background: linear-gradient(135deg, #001f3f 0%, #003366 45%, #0b4d8a 100%);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   position: relative;
   overflow-x: hidden;
@@ -17,9 +24,9 @@
   right: 0;
   bottom: 0;
   background:
-    radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(120, 219, 226, 0.3) 0%, transparent 50%);
+    radial-gradient(circle at 20% 80%, rgba(0, 123, 255, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(244, 247, 246, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
   pointer-events: none;
   z-index: -1;
 }
@@ -31,7 +38,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+  background: linear-gradient(135deg, #001f3f 0%, #003366 100%);
   color: white;
   position: relative;
 }
@@ -51,18 +58,18 @@
   width: 80px;
   height: 80px;
   border: 4px solid rgba(255, 255, 255, 0.1);
-  border-top: 4px solid #00d4ff;
+  border-top: 4px solid var(--mm-blue);
   border-radius: 50%;
   animation: spin 1.2s linear infinite;
   margin-bottom: 2rem;
-  box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+  box-shadow: 0 0 30px rgba(0, 123, 255, 0.3);
 }
 
 .loading-text {
   font-size: 1.4rem;
   font-weight: 600;
   margin: 0;
-  background: linear-gradient(45deg, #00d4ff, #ff6b9d, #c77dff);
+  background: linear-gradient(45deg, var(--mm-white), #b8dcff, var(--mm-blue));
   background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -82,7 +89,7 @@
 
 /* ========= NAVBAR ========= */
 .navbar {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.06);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -108,7 +115,7 @@
 .app-logo {
   width: 50px;
   height: 50px;
-  background: linear-gradient(135deg, #00d4ff 0%, #ff6b9d 50%, #c77dff 100%);
+  background: linear-gradient(135deg, #0060c5 0%, #007bff 100%);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -116,17 +123,18 @@
   font-size: 1.8rem;
   font-weight: 900;
   color: white;
-  box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+  box-shadow: 0 8px 25px rgba(0, 123, 255, 0.35);
   position: relative;
   overflow: hidden;
+  padding: 6px;
 }
 
-.app-logo::before {
-  content: '🏪';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+.app-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+  position: relative;
   z-index: 1;
 }
 
@@ -159,7 +167,7 @@
 }
 
 .version-badge {
-  background: linear-gradient(135deg, #00d4ff, #ff6b9d);
+  background: linear-gradient(135deg, #0060c5, #007bff);
   color: white;
   padding: 0.4rem 0.8rem;
   border-radius: 20px;
@@ -168,7 +176,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-left: 0.5rem;
-  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.35);
 }
 
 /* ========= MENU NAVEGACIÓN ========= */
@@ -218,10 +226,10 @@
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #00d4ff 0%, #ff6b9d 100%);
+  background: linear-gradient(135deg, #0060c5 0%, #007bff 100%);
   color: white;
-  border-color: rgba(0, 212, 255, 0.5);
-  box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+  border-color: rgba(0, 123, 255, 0.55);
+  box-shadow: 0 8px 25px rgba(0, 123, 255, 0.35);
   transform: translateY(-2px);
 }
 
@@ -249,14 +257,14 @@
   width: 45px;
   height: 45px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0060c5 0%, #007bff 100%);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   font-size: 1.1rem;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.35);
   position: relative;
 }
 
@@ -268,7 +276,7 @@
   right: -2px;
   bottom: -2px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #00d4ff, #ff6b9d, #c77dff);
+  background: linear-gradient(135deg, #4aa3ff, #007bff, #005bb7);
   z-index: -1;
   opacity: 0.7;
 }

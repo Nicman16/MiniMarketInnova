@@ -69,7 +69,9 @@ function DashboardContent() {
       {/* NAVBAR */}
       <nav className="navbar">
         <div className="navbar-brand">
-          <div className="app-logo"></div>
+          <div className="app-logo" aria-label="Logo MiniMarket Innova">
+            <img src="/assets/branding/logo.png" alt="MiniMarket Innova" className="app-logo-img" />
+          </div>
           <div>
             <h1 className="app-title">MiniMarket Innova</h1>
             <span className="version-badge">v2.0</span>

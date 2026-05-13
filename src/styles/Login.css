@@ -1,7 +1,7 @@
 /* src/styles/Login.css */
 .login-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #1a1a2e 100%);
+  background: linear-gradient(135deg, #001f3f 0%, #003366 45%, #0b4d8a 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -19,9 +19,9 @@
   right: 0;
   bottom: 0;
   background:
-    radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(120, 219, 226, 0.3) 0%, transparent 50%);
+    radial-gradient(circle at 20% 80%, rgba(0, 123, 255, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 40% 40%, rgba(244, 247, 246, 0.08) 0%, transparent 50%);
   pointer-events: none;
   z-index: -1;
 }
@@ -46,7 +46,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #00d4ff, #ff6b9d, #c77dff);
+  background: linear-gradient(90deg, #005bb7, #007bff, #6fb5ff);
 }
 
 @keyframes loginSlideIn {
@@ -61,7 +61,7 @@
 }
 
 .login-header {
-  background: linear-gradient(135deg, #00d4ff 0%, #ff6b9d 50%, #c77dff 100%);
+  background: linear-gradient(135deg, #005bb7 0%, #007bff 60%, #6fb5ff 100%);
   color: white;
   padding: 3rem 2rem 2rem;
   text-align: center;
@@ -98,6 +98,14 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
   position: relative;
   z-index: 1;
+  padding: 8px;
+}
+
+.login-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
 }
 
 .login-header h1 {
@@ -207,7 +215,7 @@
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #00d4ff 0%, #ff6b9d 50%, #c77dff 100%);
+  background: linear-gradient(135deg, #005bb7 0%, #007bff 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -215,7 +223,7 @@
   font-size: 1.3rem;
   font-weight: 700;
   flex-shrink: 0;
-  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
   position: relative;
 }
 
