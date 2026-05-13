@@ -55,7 +55,20 @@ function Fiado({}: FiadoProps) {
     }
   };
 
+  // Limpiar localStorage corrupto y cargar deudas
   useEffect(() => {
+    // Limpiar posibles valores corruptos en localStorage
+    try {
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.includes('fiado') || key.includes('deuda') || key.includes('dGaSS')) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (e) {
+      // Ignorar errores de localStorage
+    }
+    
     cargarDeudas();
   }, []);
 
