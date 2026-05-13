@@ -38,12 +38,7 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
         // Cargar datos de ventas avanzadas
         const datosAvanzados = await statisticsService.obtenerEstadisticasAvanzadas(periodoSeleccionado);
         if (datosAvanzados && datosAvanzados.ventasData) {
-          // Normalizar datos: calcular productos como una proporción de ventas
-          const ventasConProductos = datosAvanzados.ventasData.map((d: any) => ({
-            ...d,
-            productos: Math.round(d.ventas * (2 + Math.random()))
-          }));
-          setVentasData(ventasConProductos);
+          setVentasData(datosAvanzados.ventasData);
         }
         
         // Cargar productos más vendidos
@@ -182,7 +177,7 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
           <div className="kpi-content">
             <div className="kpi-number">${stats.totalIngresos.toLocaleString()}</div>
             <div className="kpi-label">Ingresos Totales</div>
-            <div className="kpi-sublabel">Promedio: ${Math.round(stats.totalIngresos / ventasData.length).toLocaleString()}/día</div>
+            <div className="kpi-sublabel">Promedio: ${Math.round(stats.totalIngresos / Math.max(ventasData.length, 1)).toLocaleString()}/día</div>
           </div>
         </div>
 
@@ -191,7 +186,7 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
           <div className="kpi-content">
             <div className="kpi-number">{stats.totalProductos}</div>
             <div className="kpi-label">Productos Vendidos</div>
-            <div className="kpi-sublabel">Promedio: {Math.round(stats.totalProductos / ventasData.length)}/día</div>
+            <div className="kpi-sublabel">Promedio: {Math.round(stats.totalProductos / Math.max(ventasData.length, 1))}/día</div>
           </div>
         </div>
 

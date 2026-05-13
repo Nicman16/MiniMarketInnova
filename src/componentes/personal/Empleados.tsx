@@ -3,8 +3,10 @@ import React, { useState, useEffect } from 'react';
 import '../../styles/Empleados.css';
 import { authService } from '../../services/auth/authService';
 import { Empleado } from '../../types/pos.types';
+import { useAuth } from '../../context/AuthContext';
 
 function Empleados() {
+  const { usuario } = useAuth();
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
   const [nuevoEmpleado, setNuevoEmpleado] = useState({
     nombre: '',
@@ -15,27 +17,60 @@ function Empleados() {
   const [empleadoEditando, setEmpleadoEditando] = useState<Empleado | null>(null);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [empleadoActual, setEmpleadoActual] = useState<Empleado | null>(null);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     cargarEmpleados();
     cargarEmpleadoActual();
-  }, []);
+  }, [usuario]);
 
   const cargarEmpleados = async () => {
     try {
+      setCargando(true);
       const empleadosData = await authService.obtenerEmpleados();
       setEmpleados(empleadosData);
+      setError('');
     } catch (error) {
       console.error('Error cargando empleados:', error);
+      setError('No fue posible cargar empleados desde el servidor.');
+    } finally {
+      setCargando(false);
     }
   };
 
   const cargarEmpleadoActual = async () => {
     try {
       const empleado = await authService.obtenerEmpleadoActual();
-      setEmpleadoActual(empleado);
+      if (empleado) {
+        setEmpleadoActual(empleado);
+        return;
+      }
+
+      if (usuario) {
+        setEmpleadoActual({
+          id: String(usuario.id),
+          nombre: usuario.nombre,
+          email: usuario.email,
+          rol: usuario.rol,
+          activo: true,
+          emailVerificado: true,
+          pin: ''
+        });
+      }
     } catch (error) {
       console.error('Error cargando empleado actual:', error);
+      if (usuario) {
+        setEmpleadoActual({
+          id: String(usuario.id),
+          nombre: usuario.nombre,
+          email: usuario.email,
+          rol: usuario.rol,
+          activo: true,
+          emailVerificado: true,
+          pin: ''
+        });
+      }
     }
   };
 
@@ -147,6 +182,10 @@ function Empleados() {
           </button>
         )}
       </header>
+
+      {error && <div className="error-msg">{error}</div>}
+
+      {cargando && <div className="loading-state">Cargando empleados...</div>}
 
       <div className="empleados-stats">
         <div className="stat-card">

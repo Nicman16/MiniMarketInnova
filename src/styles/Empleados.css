@@ -22,6 +22,27 @@
   font-weight: 700;
 }
 
+.error-msg,
+.loading-state {
+  max-width: 1400px;
+  margin: 0.75rem auto;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.error-msg {
+  background: rgba(245, 101, 101, 0.18);
+  border: 1px solid rgba(245, 101, 101, 0.35);
+  color: #fff5f5;
+}
+
+.loading-state {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: #eef6ff;
+}
+
 .empleados-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

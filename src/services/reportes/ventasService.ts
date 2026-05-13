@@ -1,21 +1,12 @@
-import { getApiBase } from '../shared/apiConfig';
-
-const API_BASE = getApiBase();
+﻿import { fetchApiJson } from '../shared/httpClient';
 
 class VentasService {
   private async request<T>(url: string): Promise<T> {
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => null);
-      throw new Error(errorBody?.error || `Error al consultar ${url}`);
-    }
-
-    return response.json();
+    return fetchApiJson<T>(url);
   }
 
   async obtenerReporteVentas(fechaInicio: string, fechaFin: string): Promise<any> {
-    const ventasPorDia = await this.request<any[]>(`${API_BASE}/api/reportes/ventas?inicio=${fechaInicio}&fin=${fechaFin}`);
+    const ventasPorDia = await this.request<any[]>(`/api/reportes/ventas?inicio=${fechaInicio}&fin=${fechaFin}`);
 
     const totalVendido = ventasPorDia.reduce((sum, dia) => sum + dia.ingresos, 0);
     const cantidadVentas = ventasPorDia.reduce((sum, dia) => sum + dia.cantidad, 0);
@@ -41,7 +32,7 @@ class VentasService {
   }
 
   async obtenerReporteProductos(fechaInicio: string, fechaFin: string): Promise<any[]> {
-    const productos = await this.request<any[]>(`${API_BASE}/api/reportes/productos?inicio=${fechaInicio}&fin=${fechaFin}`);
+    const productos = await this.request<any[]>(`/api/reportes/productos?inicio=${fechaInicio}&fin=${fechaFin}`);
     const totalIngresos = productos.reduce((sum, producto) => sum + producto.ingresos, 0);
 
     return productos.map((producto, index) => ({
@@ -54,7 +45,7 @@ class VentasService {
   }
 
   async obtenerReporteEmpleados(fechaInicio: string, fechaFin: string): Promise<any[]> {
-    const empleados = await this.request<any[]>(`${API_BASE}/api/reportes/empleados?inicio=${fechaInicio}&fin=${fechaFin}`);
+    const empleados = await this.request<any[]>(`/api/reportes/empleados?inicio=${fechaInicio}&fin=${fechaFin}`);
     const maxVentas = Math.max(...empleados.map((empleado) => empleado.ingresos), 0);
 
     return empleados.map((empleado, index) => ({
@@ -68,7 +59,7 @@ class VentasService {
   }
 
   async obtenerStockBajo(): Promise<any[]> {
-    const productos = await this.request<any[]>(`${API_BASE}/api/reportes/stock-bajo`);
+    const productos = await this.request<any[]>('/api/reportes/stock-bajo');
 
     return productos.map((producto, index) => ({
       id: producto.id || `${producto.nombre}-${index}`,

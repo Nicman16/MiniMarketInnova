@@ -1,5 +1,14 @@
 // src/componentes/Reportes.tsx
 import React, { useState, useEffect } from 'react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from 'recharts';
 import '../../styles/Reportes.css';
 import { ventasService } from '../../services/reportes/ventasService';
 
@@ -41,6 +50,14 @@ function Reportes() {
     // Implementar exportación a PDF/Excel
     alert(`Exportando reporte de ${tipo}...`);
   };
+
+  const productosChart = reporteProductos
+    .slice(0, 8)
+    .map((producto) => ({
+      nombre: producto.nombre.length > 18 ? `${producto.nombre.slice(0, 18)}...` : producto.nombre,
+      vendidos: producto.cantidadVendida,
+      ingresos: producto.ingresos
+    }));
 
   return (
     <div className="reportes-container">
@@ -126,6 +143,21 @@ function Reportes() {
               <h3>🏆 Productos Más Vendidos</h3>
               <button onClick={() => exportarReporte('productos')}>📄 Exportar</button>
             </div>
+
+            {productosChart.length > 0 && (
+              <div className="chart-container">
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={productosChart}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="nombre" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={58} />
+                    <YAxis />
+                    <Tooltip formatter={(value: any) => Number(value || 0).toLocaleString('es-CO')} />
+                    <Bar dataKey="vendidos" fill="#007bff" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
             <div className="tabla-responsive">
               <table>
                 <thead>

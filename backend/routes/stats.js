@@ -1,61 +1,151 @@
-const express = require('express');
+﻿const express = require('express');
 const { getDb, firestoreDocs } = require('../config/firebase');
-const { getVentasEntreFechas, resumirVentas, buildDayRange } = require('../utils/ventasHelper');
+const { getVentasEntreFechas } = require('../utils/ventasHelper');
 const state = require('../state');
 
 const router = express.Router();
 
-// GET /api/stats
-router.get('/', (req, res) => {
-  res.json({ productos: state.productos.length, dispositivos: state.dispositivosConectados.length, estadisticas: state.estadisticas });
+const toDateKey = (value) => {
+  const date = value instanceof Date ? value : new Date(value);
+  return date.toISOString().split('T')[0];
+};
+
+const buildSalesSeries = async (dias) => {
+  const now = new Date();
+  const start = new Date(now);
+  start.setUTCDate(now.getUTCDate() - (dias - 1));
+  start.setUTCHours(0, 0, 0, 0);
+
+  const end = new Date(now);
+  end.setUTCHours(23, 59, 59, 999);
+
+  const ventas = await getVentasEntreFechas(start, end);
+  const byDay = new Map();
+
+  for (let i = 0; i < dias; i += 1) {
+    const day = new Date(start);
+    day.setUTCDate(start.getUTCDate() + i);
+    const key = toDateKey(day);
+    byDay.set(key, { fecha: key, ventas: 0, ingresos: 0, productos: 0 });
+  }
+
+  ventas.forEach((venta) => {
+    const key = toDateKey(venta.fecha || new Date());
+    const entry = byDay.get(key);
+    if (!entry) return;
+
+    const total = Number(venta.total || 0);
+    const cantidadProductos = (venta.items || []).reduce((sum, item) => sum + Number(item.cantidad || 0), 0);
+    entry.ventas += 1;
+    entry.ingresos += total;
+    entry.productos += cantidadProductos;
+  });
+
+  return Array.from(byDay.values());
+};
+
+const getProductos = async () => {
+  const db = getDb();
+  if (db) {
+    const snapshot = await db.collection('productos').get();
+    return firestoreDocs(snapshot);
+  }
+  return state.productos || [];
+};
+
+router.get('/', async (req, res) => {
+  try {
+    const productos = await getProductos();
+    res.json({
+      productos: productos.length,
+      dispositivos: state.dispositivosConectados.length,
+      estadisticas: state.estadisticas
+    });
+  } catch (error) {
+    console.error('Error /api/stats:', error);
+    res.status(500).json({ error: 'Error al obtener estadísticas generales' });
+  }
 });
 
-// GET /api/stats/advanced
-router.get('/advanced', (req, res) => {
+router.get('/advanced', async (req, res) => {
   try {
     const { periodo = '30d' } = req.query;
     const dias = periodo === '7d' ? 7 : periodo === '90d' ? 90 : 30;
 
-    const ventasData = [];
-    for (let i = dias - 1; i >= 0; i--) {
-      const fecha = new Date();
-      fecha.setDate(fecha.getDate() - i);
-      const esFindeSemana = fecha.getDay() === 0 || fecha.getDay() === 6;
-      const ventasBase = 15 * (esFindeSemana ? 1.3 : 1) * (0.7 + Math.random() * 0.6);
-      ventasData.push({ fecha: fecha.toISOString().split('T')[0], ventas: Math.round(ventasBase), ingresos: Math.round(ventasBase * 8000 + Math.random() * 8000) });
-    }
+    const ventasData = await buildSalesSeries(dias);
+    const totalVentas = ventasData.reduce((sum, day) => sum + day.ventas, 0);
+    const totalIngresos = ventasData.reduce((sum, day) => sum + day.ingresos, 0);
+    const totalProductos = ventasData.reduce((sum, day) => sum + day.productos, 0);
+    const promedioDiario = dias > 0 ? totalVentas / dias : 0;
 
-    const totalVentas = ventasData.reduce((sum, d) => sum + d.ventas, 0);
-    const totalIngresos = ventasData.reduce((sum, d) => sum + d.ingresos, 0);
-    const promedioDiario = totalVentas / ventasData.length;
-    const mitad = Math.floor(ventasData.length / 2);
-    const primeraMitad = ventasData.slice(0, mitad).reduce((sum, d) => sum + d.ventas, 0) / mitad;
-    const segundaMitad = ventasData.slice(mitad).reduce((sum, d) => sum + d.ventas, 0) / (ventasData.length - mitad);
-    const tendencia = ((segundaMitad - primeraMitad) / primeraMitad * 100).toFixed(2);
+    const mitad = Math.floor(dias / 2) || 1;
+    const primeraMitad = ventasData.slice(0, mitad);
+    const segundaMitad = ventasData.slice(mitad);
 
-    res.json({ periodo, ventasData, resumen: { totalVentas, totalIngresos, promedioDiario: promedioDiario.toFixed(2), tendencia: parseFloat(tendencia), periodoVentas: dias } });
+    const promedioPrimera = primeraMitad.length
+      ? primeraMitad.reduce((sum, d) => sum + d.ventas, 0) / primeraMitad.length
+      : 0;
+    const promedioSegunda = segundaMitad.length
+      ? segundaMitad.reduce((sum, d) => sum + d.ventas, 0) / segundaMitad.length
+      : 0;
+
+    const tendencia = promedioPrimera > 0
+      ? Number((((promedioSegunda - promedioPrimera) / promedioPrimera) * 100).toFixed(2))
+      : 0;
+
+    res.json({
+      periodo,
+      ventasData,
+      resumen: {
+        totalVentas,
+        totalIngresos,
+        totalProductos,
+        promedioDiario: Number(promedioDiario.toFixed(2)),
+        tendencia,
+        periodoVentas: dias
+      }
+    });
   } catch (error) {
     console.error('Error /api/stats/advanced:', error);
     res.status(500).json({ error: 'Error al obtener estadísticas avanzadas' });
   }
 });
 
-// GET /api/stats/productos-vendidos
-router.get('/productos-vendidos', (req, res) => {
+router.get('/productos-vendidos', async (req, res) => {
   try {
-    const { limite = 10 } = req.query;
-    const productosMasVendidos = [
-      { nombre: 'Arroz Diana Premium 500g', cantidad: 45, ingresos: 112500, categoria: 'Granos', margen: 30 },
-      { nombre: 'Aceite Gourmet 1L', cantidad: 32, ingresos: 144000, categoria: 'Aceites', margen: 35 },
-      { nombre: 'Azúcar Incauca 1kg', cantidad: 28, ingresos: 89600, categoria: 'Endulzantes', margen: 28 },
-      { nombre: 'Leche Alpina 1L', cantidad: 52, ingresos: 156000, categoria: 'Lácteos', margen: 25 },
-      { nombre: 'Pan Bimbo Integral', cantidad: 38, ingresos: 76000, categoria: 'Panadería', margen: 20 },
-      { nombre: 'Huevos AA x30', cantidad: 25, ingresos: 87500, categoria: 'Proteínas', margen: 22 },
-      { nombre: 'Pollo Pechuga kg', cantidad: 18, ingresos: 270000, categoria: 'Carnes', margen: 40 },
-      { nombre: 'Coca Cola 2L', cantidad: 41, ingresos: 164000, categoria: 'Bebidas', margen: 32 },
-      { nombre: 'Café Pasilla x500g', cantidad: 22, ingresos: 110000, categoria: 'Bebidas', margen: 38 },
-      { nombre: 'Atún lata 170g', cantidad: 35, ingresos: 70000, categoria: 'Conservas', margen: 29 }
-    ].slice(0, parseInt(limite));
+    const limite = Math.max(1, Number(req.query.limite || 10));
+
+    const end = new Date();
+    end.setUTCHours(23, 59, 59, 999);
+    const start = new Date(end);
+    start.setUTCDate(end.getUTCDate() - 30);
+    start.setUTCHours(0, 0, 0, 0);
+
+    const ventas = await getVentasEntreFechas(start, end);
+    const ranking = new Map();
+
+    ventas.forEach((venta) => {
+      (venta.items || []).forEach((item) => {
+        const key = String(item.productoId || item.nombre || 'producto');
+        const actual = ranking.get(key) || {
+          id: key,
+          nombre: item.nombre || 'Producto sin nombre',
+          cantidad: 0,
+          ingresos: 0,
+          categoria: item.categoria || 'Sin categoría',
+          margen: Number(item.margen || 0)
+        };
+
+        actual.cantidad += Number(item.cantidad || 0);
+        actual.ingresos += Number(item.subtotal || item.total || 0);
+        ranking.set(key, actual);
+      });
+    });
+
+    const productosMasVendidos = Array.from(ranking.values())
+      .sort((a, b) => b.cantidad - a.cantidad)
+      .slice(0, limite);
+
     res.json(productosMasVendidos);
   } catch (error) {
     console.error('Error /api/stats/productos-vendidos:', error);
@@ -63,51 +153,98 @@ router.get('/productos-vendidos', (req, res) => {
   }
 });
 
-// GET /api/stats/deudas
 router.get('/deudas', async (req, res) => {
   try {
     const db = getDb();
     if (db) {
       const snap = await db.collection('deudas').get();
       const deudas = firestoreDocs(snap);
-      const totalDeuda = deudas.reduce((sum, d) => sum + d.saldo, 0);
+      const totalDeuda = deudas.reduce((sum, d) => sum + Number(d.saldo || 0), 0);
       return res.json({
-        totalDeuda, totalRegistros: deudas.length,
+        totalDeuda,
+        totalRegistros: deudas.length,
         porTipo: {
-          clientes: deudas.filter((d) => d.tipo === 'cliente').reduce((sum, d) => sum + d.saldo, 0),
-          empleados: deudas.filter((d) => d.tipo === 'empleado').reduce((sum, d) => sum + d.saldo, 0)
+          clientes: deudas.filter((d) => d.tipo === 'cliente').reduce((sum, d) => sum + Number(d.saldo || 0), 0),
+          empleados: deudas.filter((d) => d.tipo === 'empleado').reduce((sum, d) => sum + Number(d.saldo || 0), 0)
         },
         porEstado: {
           pendiente: deudas.filter((d) => d.estado === 'pendiente').length,
           parcial: deudas.filter((d) => d.estado === 'parcial').length,
           pagada: deudas.filter((d) => d.estado === 'pagada').length
         },
-        deudas: deudas.slice(0, 5).map((d) => ({ nombrePersona: d.nombrePersona, monto: d.monto, saldo: d.saldo, estado: d.estado, tipo: d.tipo, fecha: d.fecha }))
+        deudas: deudas.slice(0, 5).map((d) => ({
+          nombrePersona: d.nombrePersona,
+          monto: Number(d.monto || 0),
+          saldo: Number(d.saldo || 0),
+          estado: d.estado,
+          tipo: d.tipo,
+          fecha: d.fecha
+        }))
       });
     }
-    res.json({ totalDeuda: 0, totalRegistros: 0, porTipo: { clientes: 0, empleados: 0 }, porEstado: { pendiente: 0, parcial: 0, pagada: 0 }, deudas: [] });
+
+    res.json({
+      totalDeuda: 0,
+      totalRegistros: 0,
+      porTipo: { clientes: 0, empleados: 0 },
+      porEstado: { pendiente: 0, parcial: 0, pagada: 0 },
+      deudas: []
+    });
   } catch (error) {
     console.error('Error /api/stats/deudas:', error);
     res.status(500).json({ error: 'Error al obtener estadísticas de deudas' });
   }
 });
 
-// GET /api/stats/margenes
-router.get('/margenes', (req, res) => {
-  res.json({
-    promedio: 30,
-    categorias: {
-      'Carnes': { margen: 40, ventas: 18 }, 'Bebidas': { margen: 32, ventas: 73 },
-      'Lácteos': { margen: 25, ventas: 52 }, 'Granos': { margen: 30, ventas: 45 },
-      'Aceites': { margen: 35, ventas: 32 }, 'Panadería': { margen: 20, ventas: 38 },
-      'Proteínas': { margen: 22, ventas: 25 }, 'Conservas': { margen: 29, ventas: 35 }
+router.get('/margenes', async (req, res) => {
+  try {
+    const productos = await getProductos();
+    if (!productos.length) {
+      return res.json({ promedio: 0, categorias: {} });
     }
-  });
+
+    const categorias = {};
+    let sumaMargen = 0;
+
+    productos.forEach((producto) => {
+      const categoria = producto.categoria || 'Sin categoría';
+      const precioCompra = Number(producto.precioCompra || producto.precio || 0);
+      const precioVenta = Number(producto.precioVenta || producto.precio || 0);
+      const margen = Number(producto.margen || (precioCompra > 0 ? ((precioVenta - precioCompra) / precioCompra) * 100 : 0));
+
+      if (!categorias[categoria]) {
+        categorias[categoria] = { margenTotal: 0, productos: 0 };
+      }
+
+      categorias[categoria].margenTotal += margen;
+      categorias[categoria].productos += 1;
+      sumaMargen += margen;
+    });
+
+    const categoriasFinal = Object.fromEntries(
+      Object.entries(categorias).map(([categoria, data]) => [
+        categoria,
+        {
+          margen: Number((data.margenTotal / data.productos).toFixed(2)),
+          ventas: data.productos
+        }
+      ])
+    );
+
+    res.json({
+      promedio: Number((sumaMargen / productos.length).toFixed(2)),
+      categorias: categoriasFinal
+    });
+  } catch (error) {
+    console.error('Error /api/stats/margenes:', error);
+    res.status(500).json({ error: 'Error al obtener márgenes' });
+  }
 });
 
-// GET /api/stats/resumen
 router.get('/resumen', async (req, res) => {
   try {
+    const productos = await getProductos();
+
     let deudaTotal = 0;
     let registrosDeuda = 0;
     const db = getDb();
@@ -117,12 +254,33 @@ router.get('/resumen', async (req, res) => {
       deudaTotal = deudas.reduce((sum, d) => sum + Number(d.saldo || 0), 0);
       registrosDeuda = snap.size;
     }
+
+    const ventasHoy = await buildSalesSeries(1);
+    const ventasSemana = await buildSalesSeries(7);
+    const totalSemana = ventasSemana.reduce((sum, d) => sum + d.ventas, 0);
+    const promedioSemana = ventasSemana.length ? totalSemana / ventasSemana.length : 0;
+
     res.json({
       fecha: new Date().toISOString(),
-      sistema: { productosTotal: state.productos.length, dispositivosConectados: state.dispositivosConectados.length, usuariosActivos: 2 },
-      ventas: { hoy: Math.round(15 * (0.7 + Math.random() * 0.6)), promedioDiario: 15, tendencia: (Math.random() * 40 - 20).toFixed(2) },
-      deudas: { totalPendiente: deudaTotal, registros: registrosDeuda, tasaPago: 85 },
-      salud: { stockBajo: Math.floor(Math.random() * 5), alertas: Math.floor(Math.random() * 3) }
+      sistema: {
+        productosTotal: productos.length,
+        dispositivosConectados: state.dispositivosConectados.length,
+        usuariosActivos: 1
+      },
+      ventas: {
+        hoy: ventasHoy[0]?.ventas || 0,
+        promedioDiario: Number(promedioSemana.toFixed(2)),
+        tendencia: 0
+      },
+      deudas: {
+        totalPendiente: deudaTotal,
+        registros: registrosDeuda,
+        tasaPago: 0
+      },
+      salud: {
+        stockBajo: productos.filter((p) => Number(p.cantidad || p.stock || 0) <= Number(p.stockMinimo || 0)).length,
+        alertas: 0
+      }
     });
   } catch (error) {
     console.error('Error /api/stats/resumen:', error);

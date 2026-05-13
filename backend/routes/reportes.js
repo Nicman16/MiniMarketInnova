@@ -1,4 +1,5 @@
 const express = require('express');
+const { getDb, firestoreDocs } = require('../config/firebase');
 const { getVentasEntreFechas } = require('../utils/ventasHelper');
 
 const router = express.Router();
@@ -90,16 +91,31 @@ router.get('/empleados', async (req, res) => {
 });
 
 // GET /api/reportes/stock-bajo
-router.get('/stock-bajo', (req, res) => {
-  res.json([
-    { nombre: 'Leche Alpina 1L', cantidad: 5, nivel_minimo: 20, dias_sin_stock: 0 },
-    { nombre: 'Pan Bimbo Integral', cantidad: 3, nivel_minimo: 15, dias_sin_stock: 2 },
-    { nombre: 'Huevos AA x30', cantidad: 8, nivel_minimo: 25, dias_sin_stock: 0 },
-    { nombre: 'Coca Cola 2L', cantidad: 6, nivel_minimo: 30, dias_sin_stock: 1 },
-    { nombre: 'Pollo Pechuga kg', cantidad: 2, nivel_minimo: 10, dias_sin_stock: 3 },
-    { nombre: 'Arroz Diana Premium 500g', cantidad: 4, nivel_minimo: 15, dias_sin_stock: 0 },
-    { nombre: 'Aceite Gourmet 1L', cantidad: 7, nivel_minimo: 20, dias_sin_stock: 1 }
-  ]);
+router.get('/stock-bajo', async (req, res) => {
+  try {
+    const db = getDb();
+    if (!db) return res.json([]);
+
+    const snapshot = await db.collection('productos').get();
+    const productos = firestoreDocs(snapshot);
+
+    const stockBajo = productos
+      .map((p) => ({
+        id: p.id,
+        nombre: p.nombre || 'Producto sin nombre',
+        codigoBarras: p.codigoBarras || 'N/D',
+        cantidad: Number(p.cantidad || p.stock || 0),
+        nivel_minimo: Number(p.stockMinimo || 0),
+        dias_sin_stock: Number(p.diasSinStock || 0)
+      }))
+      .filter((p) => p.cantidad <= p.nivel_minimo)
+      .sort((a, b) => a.cantidad - b.cantidad);
+
+    res.json(stockBajo);
+  } catch (error) {
+    console.error('Error /api/reportes/stock-bajo:', error);
+    res.status(500).json({ error: 'Error al obtener stock bajo' });
+  }
 });
 
 module.exports = router;

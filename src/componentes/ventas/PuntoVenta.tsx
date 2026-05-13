@@ -272,7 +272,11 @@ function PuntoVenta() {
           <div className="productos-lista">
             {productosFiltrados.length === 0 ? (
               <div className="productos-vacios">
-                No hay productos disponibles
+                {productos.length === 0 ? 'No hay productos en inventario. Agrega productos desde Inventario para empezar a vender.' : 'No hay resultados con esos filtros.'}
+                <div className="productos-vacios-actions">
+                  <button className="categoria-tab" onClick={() => setCategoriaSeleccionada('todos')}>Ver todos</button>
+                  <button className="scanner-toggle" onClick={() => setEscanerActivo((v) => !v)}>Escanear</button>
+                </div>
               </div>
             ) : (
               productosFiltrados.map(producto => (

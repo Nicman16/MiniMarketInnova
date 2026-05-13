@@ -174,28 +174,38 @@ function Inventario() {
   };
 
   useEffect(() => {
-    setProveedores([
-      {
-        id: 1,
-        nombre: 'Distribuidora Central',
-        contacto: 'Carlos Rodríguez',
-        telefono: '300-123-4567',
-        email: 'carlos@distribuidora.com',
-        direccion: 'Calle 45 #12-34, Bogotá',
-        productos: [1, 2, 3]
-      },
-      {
-        id: 2,
-        nombre: 'Alimentos del Valle',
-        contacto: 'María González',
-        telefono: '301-987-6543',
-        email: 'maria@alimentosvalle.com',
-        direccion: 'Carrera 15 #67-89, Cali',
-        productos: [4, 5]
-      }
-    ]);
     cargarProductosDelServidor();
   }, []);
+
+  useEffect(() => {
+    const proveedoresMap = new Map<string, Proveedor>();
+
+    productos.forEach((producto, index) => {
+      const nombreProveedor = (producto.proveedor || '').trim();
+      if (!nombreProveedor) return;
+
+      const productoId = Number(producto.id);
+      const normalizedProductoId = Number.isFinite(productoId) ? productoId : index + 1;
+
+      const existing = proveedoresMap.get(nombreProveedor);
+      if (existing) {
+        existing.productos.push(normalizedProductoId);
+        return;
+      }
+
+      proveedoresMap.set(nombreProveedor, {
+        id: index + 1,
+        nombre: nombreProveedor,
+        contacto: 'Sin contacto registrado',
+        telefono: 'Sin teléfono',
+        email: 'Sin correo',
+        direccion: 'Sin dirección',
+        productos: [normalizedProductoId]
+      });
+    });
+
+    setProveedores(Array.from(proveedoresMap.values()));
+  }, [productos]);
 
   // Filtrar productos
   const productosFiltrados = productos.filter(producto => {

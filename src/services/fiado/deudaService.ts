@@ -1,9 +1,5 @@
-// src/services/fiado/deudaService.ts
-import { Deuda, TransaccionDeuda } from '../../types/pos.types';
-
-// En Railway usamos mismo origen (frontend y backend en el mismo host).
-// Solo define REACT_APP_API_URL si separas frontend/backend en dominios distintos.
-const API_BASE = process.env.REACT_APP_API_URL || '';
+﻿import { Deuda, TransaccionDeuda } from '../../types/pos.types';
+import { fetchApiJson } from '../shared/httpClient';
 
 class DeudaService {
   private getHeaders(): HeadersInit {
@@ -14,7 +10,6 @@ class DeudaService {
     };
   }
 
-  // Crear nueva deuda
   async crearDeuda(datos: {
     tipo: 'cliente' | 'empleado';
     referencia: string;
@@ -22,119 +17,62 @@ class DeudaService {
     monto: number;
     razon: string;
   }): Promise<Deuda> {
-    const response = await fetch(`${API_BASE}/api/deuda/crear`, {
+    const payload = await fetchApiJson<{ deuda: Deuda }>('/api/deuda/crear', {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(datos)
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Error al crear deuda');
-    }
-
-    const { deuda } = await response.json();
-    return deuda;
+    return payload.deuda;
   }
 
-  // Obtener todas las deudas con filtro opcional
   async obtenerDeudas(tipo?: 'cliente' | 'empleado', estado?: string): Promise<Deuda[]> {
     const params = new URLSearchParams();
     if (tipo) params.append('tipo', tipo);
     if (estado) params.append('estado', estado);
 
-    const response = await fetch(
-      `${API_BASE}/api/deuda/lista${params.toString() ? '?' + params.toString() : ''}`,
-      {
-        method: 'GET',
-        headers: this.getHeaders()
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error('Error al obtener deudas');
-    }
-
-    return await response.json();
+    return fetchApiJson<Deuda[]>(`/api/deuda/lista${params.toString() ? `?${params.toString()}` : ''}`, {
+      method: 'GET',
+      headers: this.getHeaders()
+    });
   }
 
-  // Obtener deudas de un cliente/empleado específico
-  async obtenerDeudasPersona(referencia: string): Promise<{
-    deudas: Deuda[];
-    totalDeuda: number;
-  }> {
-    const response = await fetch(
-      `${API_BASE}/api/deuda/persona/${referencia}`,
-      {
-        method: 'GET',
-        headers: this.getHeaders()
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error('Error al obtener deudas de la persona');
-    }
-
-    return await response.json();
+  async obtenerDeudasPersona(referencia: string): Promise<{ deudas: Deuda[]; totalDeuda: number }> {
+    return fetchApiJson<{ deudas: Deuda[]; totalDeuda: number }>(`/api/deuda/persona/${referencia}`, {
+      method: 'GET',
+      headers: this.getHeaders()
+    });
   }
 
-  // Obtener transacciones de una deuda
   async obtenerTransacciones(deudaId: string): Promise<TransaccionDeuda[]> {
-    const response = await fetch(
-      `${API_BASE}/api/deuda/${deudaId}/transacciones`,
-      {
-        method: 'GET',
-        headers: this.getHeaders()
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error('Error al obtener transacciones');
-    }
-
-    return await response.json();
+    return fetchApiJson<TransaccionDeuda[]>(`/api/deuda/${deudaId}/transacciones`, {
+      method: 'GET',
+      headers: this.getHeaders()
+    });
   }
 
-  // Registrar una transacción (cargo o abono)
   async registrarTransaccion(transaccionData: {
     deudaId: string;
     tipo: 'cargo' | 'abono';
     monto: number;
     razon: string;
     empleadoRegistro?: string;
-  }): Promise<{
-    transaccion: TransaccionDeuda;
-    nuevoSaldo: number;
-    estado: string;
-  }> {
-    const response = await fetch(`${API_BASE}/api/deuda/transaccion`, {
+  }): Promise<{ transaccion: TransaccionDeuda; nuevoSaldo: number; estado: string }> {
+    return fetchApiJson<{ transaccion: TransaccionDeuda; nuevoSaldo: number; estado: string }>('/api/deuda/transaccion', {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(transaccionData)
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Error al registrar transacción');
-    }
-
-    return await response.json();
   }
 
-  // Actualizar estado de deuda
   async actualizarEstadoDeuda(deudaId: string, nuevoEstado: string): Promise<Deuda> {
-    const response = await fetch(`${API_BASE}/api/deuda/${deudaId}`, {
+    const payload = await fetchApiJson<{ deuda: Deuda }>(`/api/deuda/${deudaId}`, {
       method: 'PUT',
       headers: this.getHeaders(),
       body: JSON.stringify({ estado: nuevoEstado })
     });
 
-    if (!response.ok) {
-      throw new Error('Error al actualizar deuda');
-    }
-
-    const { deuda } = await response.json();
-    return deuda;
+    return payload.deuda;
   }
 }
 

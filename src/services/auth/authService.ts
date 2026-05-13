@@ -31,16 +31,26 @@ class AuthService {
       }
     });
 
+    const raw = await response.text();
+    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+
     if (!response.ok) {
-      const errorBody = await response.json().catch(() => null);
-      throw new Error(errorBody?.error || `Error en ${options.method || 'GET'} ${url}`);
+      if (contentType.includes('application/json') && raw) {
+        const errorBody = JSON.parse(raw);
+        throw new Error(errorBody?.error || `Error en ${options.method || 'GET'} ${url}`);
+      }
+      throw new Error(`Error en ${options.method || 'GET'} ${url}`);
     }
 
-    if (response.status === 204) {
+    if (response.status === 204 || !raw) {
       return undefined as T;
     }
 
-    return response.json();
+    if (contentType.includes('application/json') || raw.trim().startsWith('{') || raw.trim().startsWith('[')) {
+      return JSON.parse(raw) as T;
+    }
+
+    throw new Error(`Respuesta no JSON en ${url}`);
   }
 
   private toEmpleado(data: any): Empleado {

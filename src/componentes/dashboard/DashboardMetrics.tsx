@@ -14,18 +14,30 @@ interface StatsResponse {
   estadisticas: Estadisticas;
 }
 
+interface ResumenResponse {
+  ventas?: {
+    hoy?: number;
+    promedioDiario?: number;
+    tendencia?: number;
+  };
+  salud?: {
+    alertas?: number;
+  };
+}
+
 function DashboardMetrics() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
+  const [resumen, setResumen] = useState<ResumenResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const fallbackStats: StatsResponse = {
-    productos: 1247,
-    dispositivos: 8,
+    productos: 0,
+    dispositivos: 0,
     estadisticas: {
-      productosAgregados: 45,
-      productosActualizados: 23,
-      escaneos: 156,
+      productosAgregados: 0,
+      productosActualizados: 0,
+      escaneos: 0,
       inicioServidor: new Date().toISOString()
     }
   };
@@ -35,11 +47,16 @@ function DashboardMetrics() {
     setError('');
 
     try {
-      const data = await fetchApiJson<StatsResponse>('/api/stats');
+      const [data, resumenData] = await Promise.all([
+        fetchApiJson<StatsResponse>('/api/stats'),
+        fetchApiJson<ResumenResponse>('/api/stats/resumen')
+      ]);
       setStats(data);
+      setResumen(resumenData);
     } catch (err: any) {
       setError(err.message || 'Error al cargar métricas');
       setStats(fallbackStats);
+      setResumen(null);
     } finally {
       setLoading(false);
     }
@@ -77,6 +94,10 @@ function DashboardMetrics() {
   const formatNumber = (value: number) => {
     return new Intl.NumberFormat('es-ES').format(value);
   };
+
+  const ventasHoy = Number(resumen?.ventas?.hoy || 0);
+  const tendenciaVentas = Number(resumen?.ventas?.tendencia || 0);
+  const alertas = Number(resumen?.salud?.alertas || 0);
 
   return (
     <div className="dashboard-container">
@@ -131,10 +152,10 @@ function DashboardMetrics() {
               <p>Ingresos generados</p>
             </div>
           </div>
-          <div className="metric-value-large">$2,847</div>
-          <div className="metric-change positive">
-            <span className="change-icon">↗️</span>
-            <span>+18% vs ayer</span>
+          <div className="metric-value-large">{formatNumber(ventasHoy)}</div>
+          <div className={`metric-change ${tendenciaVentas >= 0 ? 'positive' : 'negative'}`}>
+            <span className="change-icon">{tendenciaVentas >= 0 ? '↗️' : '↘️'}</span>
+            <span>{Math.abs(tendenciaVentas).toFixed(1)}% vs periodo anterior</span>
           </div>
         </div>
 
@@ -203,8 +224,8 @@ function DashboardMetrics() {
             <div className="metric-icon">🔔</div>
             <div className="metric-content">
               <div className="metric-label">Alertas</div>
-              <div className="metric-value">2</div>
-              <div className="metric-trend warning">Activas</div>
+              <div className="metric-value">{formatNumber(alertas)}</div>
+              <div className={`metric-trend ${alertas > 0 ? 'warning' : 'positive'}`}>{alertas > 0 ? 'Activas' : 'Sin alertas'}</div>
             </div>
           </div>
         </div>
