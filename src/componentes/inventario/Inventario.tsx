@@ -42,6 +42,7 @@ function Inventario() {
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [modalActivo, setModalActivo] = useState<'agregar' | 'editar' | 'proveedor' | null>(null);
   const [productoForm, setProductoForm] = useState<Partial<Producto>>({});
+  const [errorCargaProductos, setErrorCargaProductos] = useState('');
 
   const abrirModalAgregar = () => {
     setProductoSeleccionado(null);
@@ -164,69 +165,11 @@ function Inventario() {
       if (!respuesta.ok) throw new Error('No se pudo cargar productos');
       const datos = await respuesta.json();
       setProductos(datos.map((p: any) => mapApiProductoToProducto(p)));
+      setErrorCargaProductos('');
     } catch (error) {
-      console.warn('Error al cargar productos desde API, conservando demo local:', error);
-      // Se mantiene el demo local con datos precargados (queda de respaldo)
-      setProductos([
-        {
-          id: 1,
-          nombre: 'Arroz Diana Premium 500g',
-          codigoBarras: '7702001001234',
-          categoria: 'Granos y Cereales',
-          stock: 45,
-          stockMinimo: 10,
-          precioCompra: 1800,
-          precioVenta: 2500,
-          margen: 38.9,
-          proveedor: 'Distribuidora Central',
-          proveedorId: 1,
-          ubicacion: 'Pasillo A - Estante 1',
-          imagen: 'https://via.placeholder.com/300x200/667eea/white?text=ARROZ',
-          descripcion: 'Arroz premium de grano largo, ideal para toda ocasión',
-          estado: 'activo',
-          fechaCreacion: new Date().toISOString(),
-          ultimaActualizacion: new Date().toISOString()
-        },
-        {
-          id: 2,
-          nombre: 'Aceite Gourmet Girasol 1L',
-          codigoBarras: '7702002001235',
-          categoria: 'Aceites y Vinagres',
-          stock: 28,
-          stockMinimo: 5,
-          precioCompra: 3200,
-          precioVenta: 4500,
-          margen: 40.6,
-          proveedor: 'Distribuidora Central',
-          proveedorId: 1,
-          ubicacion: 'Pasillo B - Estante 2',
-          imagen: 'https://via.placeholder.com/300x200/28a745/white?text=ACEITE',
-          descripcion: 'Aceite de girasol 100% puro, ideal para freír y cocinar',
-          estado: 'activo',
-          fechaCreacion: new Date().toISOString(),
-          ultimaActualizacion: new Date().toISOString()
-        },
-        {
-          id: 3,
-          nombre: 'Azúcar Incauca Refinada 1kg',
-          codigoBarras: '7702003001236',
-          categoria: 'Endulzantes',
-          stock: 8,
-          stockMinimo: 15,
-          precioCompra: 2100,
-          precioVenta: 3200,
-          margen: 52.4,
-          proveedor: 'Distribuidora Central',
-          proveedorId: 1,
-          fechaVencimiento: '2025-12-31',
-          ubicacion: 'Pasillo A - Estante 3',
-          imagen: 'https://via.placeholder.com/300x200/ffc107/white?text=AZUCAR',
-          descripcion: 'Azúcar refinada de alta calidad',
-          estado: 'agotado',
-          fechaCreacion: new Date().toISOString(),
-          ultimaActualizacion: new Date().toISOString()
-        }
-      ]);
+      console.warn('Error al cargar productos desde API/Firebase:', error);
+      setProductos([]);
+      setErrorCargaProductos('No fue posible cargar productos desde Firebase en este momento.');
     }
   };
 
@@ -481,7 +424,7 @@ function Inventario() {
             <div className="empty-state">
               <div className="empty-icon">📦</div>
               <h3>No se encontraron productos</h3>
-              <p>Ajusta los filtros o agrega nuevos productos</p>
+              <p>{errorCargaProductos || 'Ajusta los filtros o agrega nuevos productos'}</p>
             </div>
           )}
 

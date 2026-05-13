@@ -85,16 +85,6 @@ if (process.env.NODE_ENV === 'production') {
 const inicializarProductosBD = async () => {
   try {
     const db = getDb();
-    const snap = await db.collection('productos').get();
-    if (snap.empty) {
-      const semilla = [
-        { nombre: 'Arroz Diana 500g', cantidad: 50, precio: 2500, precioVenta: 2800, codigoBarras: '7702001001234', categoria: 'Granos', estado: 'activo' },
-        { nombre: 'Aceite Gourmet 1L', cantidad: 30, precio: 4500, precioVenta: 4900, codigoBarras: '7702002001235', categoria: 'Aceites', estado: 'activo' },
-        { nombre: 'Azúcar Incauca 1kg', cantidad: 25, precio: 3200, precioVenta: 3500, codigoBarras: '7702003001236', categoria: 'Dulces', estado: 'activo' }
-      ];
-      for (const p of semilla) await db.collection('productos').add(p);
-      console.log('✅ Semilla de productos insertada en Firestore');
-    }
     const todos = await db.collection('productos').get();
     state.productos = firestoreDocs(todos);
     console.log(`✅ Productos cargados desde Firestore: ${state.productos.length}`);
