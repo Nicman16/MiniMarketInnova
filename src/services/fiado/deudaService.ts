@@ -31,10 +31,33 @@ class DeudaService {
     if (tipo) params.append('tipo', tipo);
     if (estado) params.append('estado', estado);
 
-    return fetchApiJson<Deuda[]>(`/api/deuda/lista${params.toString() ? `?${params.toString()}` : ''}`, {
-      method: 'GET',
-      headers: this.getHeaders()
-    });
+    try {
+      const resultado = await fetchApiJson<Deuda[] | { error?: string; message?: string }>(`/api/deuda/lista${params.toString() ? `?${params.toString()}` : ''}`, {
+        method: 'GET',
+        headers: this.getHeaders()
+      });
+
+      // Validar que el resultado es un array
+      if (Array.isArray(resultado)) {
+        return resultado;
+      }
+
+      // Si es un objeto de error, lanzar excepción
+      if (typeof resultado === 'object' && resultado && ('error' in resultado || 'message' in resultado)) {
+        const errorMsg = (resultado as any).error || (resultado as any).message || 'Error desconocido';
+        throw new Error(errorMsg);
+      }
+
+      // Si no es ni array ni error conocido, retornar array vacío
+      return [];
+    } catch (error) {
+      // Si es error de autenticación, relanzar para que el componente lo maneje
+      if (error instanceof Error && error.message.includes('401')) {
+        throw new Error('No autenticado. Por favor inicie sesión nuevamente.');
+      }
+      // Para otros errores, retornar array vacío pero relanzar el error
+      throw error;
+    }
   }
 
   async obtenerDeudasPersona(referencia: string): Promise<{ deudas: Deuda[]; totalDeuda: number }> {

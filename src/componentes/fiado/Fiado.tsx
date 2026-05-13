@@ -154,7 +154,9 @@ function Fiado({}: FiadoProps) {
     }
   };
 
-  const total_Deuda = deudas.reduce((sum, d) => sum + d.saldo, 0);
+  // Validar que deudas es un array antes de usar reduce
+  const deudas_seguro = Array.isArray(deudas) ? deudas : [];
+  const total_Deuda = deudas_seguro.reduce((sum, d) => sum + (d?.saldo || 0), 0);
 
   return (
     <div className="fiado-container">
@@ -173,15 +175,15 @@ function Fiado({}: FiadoProps) {
         </div>
         <div className="stat-card">
           <h3>📊 Total Registros</h3>
-          <p className="stat-value">{deudas.length}</p>
+          <p className="stat-value">{deudas_seguro.length}</p>
         </div>
         <div className="stat-card">
           <h3>✅ Pagadas</h3>
-          <p className="stat-value">{deudas.filter(d => d.estado === 'pagada').length}</p>
+          <p className="stat-value">{deudas_seguro.filter(d => d.estado === 'pagada').length}</p>
         </div>
         <div className="stat-card">
           <h3>⚠️ Pendientes</h3>
-          <p className="stat-value">{deudas.filter(d => d.estado === 'pendiente').length}</p>
+          <p className="stat-value">{deudas_seguro.filter(d => d.estado === 'pendiente').length}</p>
         </div>
       </div>
 
@@ -225,7 +227,7 @@ function Fiado({}: FiadoProps) {
       <div className="deudas-container">
         {cargando ? (
           <div className="loading">⏳ Cargando deudas...</div>
-        ) : deudas.length === 0 ? (
+        ) : deudas_seguro.length === 0 ? (
           <div className="empty-state">
             <p>No hay deudas registradas</p>
             <button className="btn btn-primary" onClick={() => setModalCrearAbierto(true)}>
@@ -234,7 +236,7 @@ function Fiado({}: FiadoProps) {
           </div>
         ) : (
           <div className="deudas-grid">
-            {deudas.map((deuda) => (
+            {deudas_seguro.map((deuda) => (
               <div key={deuda.id} className="deuda-card">
                 <div className="deuda-header">
                   <div className="deuda-tipo-icon">
