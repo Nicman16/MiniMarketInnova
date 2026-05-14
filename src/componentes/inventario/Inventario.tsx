@@ -45,6 +45,7 @@ function Inventario() {
   const [productoForm, setProductoForm] = useState<Partial<Producto>>({});
   const [errorCargaProductos, setErrorCargaProductos] = useState('');
   const [mensajeGuardado, setMensajeGuardado] = useState<string | null>(null);
+  const [soloProximosVencer, setSoloProximosVencer] = useState(false);
 
   const abrirModalAgregar = () => {
     setProductoSeleccionado(null);
@@ -198,6 +199,20 @@ function Inventario() {
     setProveedores(Array.from(proveedoresMap.values()));
   }, [productos]);
 
+  const calcularDiasParaVencer = (fechaVencimiento?: string): number | null => {
+    if (!fechaVencimiento) return null;
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    const vencimiento = new Date(fechaVencimiento);
+    if (Number.isNaN(vencimiento.getTime())) return null;
+    vencimiento.setHours(0, 0, 0, 0);
+
+    const diffMs = vencimiento.getTime() - hoy.getTime();
+    return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  };
+
   // Filtrar productos
   const productosFiltrados = productos.filter(producto => {
     const coincideBusqueda = producto.nombre.toLowerCase().includes(filtros.busqueda.toLowerCase()) ||
@@ -205,8 +220,22 @@ function Inventario() {
     const coincideCategoria = !filtros.categoria || producto.categoria === filtros.categoria;
     const coincideProveedor = !filtros.proveedor || producto.proveedor === filtros.proveedor;
     const coincideEstado = filtros.estado === 'todos' || producto.estado === filtros.estado;
+    const coincideVencimiento = !soloProximosVencer || (() => {
+      const dias = calcularDiasParaVencer(producto.fechaVencimiento);
+      return dias !== null && dias >= 0 && dias <= 20;
+    })();
     
-    return coincideBusqueda && coincideCategoria && coincideProveedor && coincideEstado;
+    return coincideBusqueda && coincideCategoria && coincideProveedor && coincideEstado && coincideVencimiento;
+  });
+
+  const proximosVencerCount = productos.filter((producto) => {
+    const dias = calcularDiasParaVencer(producto.fechaVencimiento);
+    return dias !== null && dias >= 0 && dias <= 20;
+  }).length;
+
+  const productosConAlertaOperativa = productosFiltrados.filter((producto) => {
+    const dias = calcularDiasParaVencer(producto.fechaVencimiento);
+    return dias !== null && dias >= 6 && dias <= 20;
   });
 
   // Obtener categorías únicas
@@ -358,6 +387,12 @@ function Inventario() {
             </div>
 
             <div className="action-buttons">
+              <button
+                className={`btn-vencimiento ${soloProximosVencer ? 'active' : ''}`}
+                onClick={() => setSoloProximosVencer((v) => !v)}
+              >
+                <TriangleAlert size={16} /> {soloProximosVencer ? 'Ver todos' : `Solo próximos a vencer (${proximosVencerCount})`}
+              </button>
               <button 
                 className="btn-scanner"
                 onClick={() => setEscanerActivo(!escanerActivo)}
@@ -423,11 +458,18 @@ function Inventario() {
           </div>
 
           {/* Lista de productos */}
+          {productosConAlertaOperativa.length > 0 && (
+            <div className="inventario-alerta-operativa" role="status" aria-live="polite">
+              ⚠️ Por favor, organizar los productos en orden de fecha de vencimiento.
+            </div>
+          )}
+
           <div className="productos-grid">
             {productosFiltrados.map(producto => (
               <ProductCard 
                 key={producto.id} 
                 producto={producto}
+                diasParaVencer={calcularDiasParaVencer(producto.fechaVencimiento)}
                 onEdit={() => abrirModalEditar(producto)}
               />
             ))}
@@ -595,14 +637,16 @@ function Inventario() {
 }
 
 // Componente para tarjeta de producto
-const ProductCard: React.FC<{producto: Producto, onEdit: () => void}> = ({producto, onEdit}) => {
+const ProductCard: React.FC<{producto: Producto, onEdit: () => void, diasParaVencer?: number | null}> = ({producto, onEdit, diasParaVencer = null}) => {
   const stock = producto.stock ?? 0;
   const stockMinimo = producto.stockMinimo ?? 0;
   const stockStatus = stock <= stockMinimo ? 'danger' : 
                      stock <= stockMinimo * 2 ? 'warning' : 'good';
+  const vencimientoCritico = diasParaVencer !== null && diasParaVencer <= 5;
+  const vencimientoOperativo = diasParaVencer !== null && diasParaVencer >= 6 && diasParaVencer <= 20;
 
   return (
-    <div className={`product-card ${producto.estado} pointer-card`} onDoubleClick={onEdit}>
+    <div className={`product-card ${producto.estado} ${vencimientoCritico ? 'vencimiento-critico' : ''} ${vencimientoOperativo ? 'vencimiento-operativo' : ''} pointer-card`} onDoubleClick={onEdit}>
       <div className="product-image">
         {producto.imagen ? (
           <img src={producto.imagen} alt={producto.nombre} />
@@ -642,6 +686,16 @@ const ProductCard: React.FC<{producto: Producto, onEdit: () => void}> = ({produc
             <div className="detail-item">
               <span className="detail-icon">📅</span>
               <span>Vence: {new Date(producto.fechaVencimiento).toLocaleDateString()}</span>
+            </div>
+          )}
+          {vencimientoCritico && (
+            <div className="detail-item vencimiento-chip critico">
+              <span className="detail-icon">🔴</span>
+              <span>
+                {diasParaVencer !== null && diasParaVencer >= 0
+                  ? `Alerta crítica: ${diasParaVencer} día(s) para vencer`
+                  : 'Alerta crítica: producto vencido'}
+              </span>
             </div>
           )}
         </div>
