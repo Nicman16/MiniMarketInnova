@@ -1,5 +1,5 @@
 import { Empleado } from '../../types/pos.types';
-import { getApiBase } from '../shared/apiConfig';
+import { apiClient } from '../shared/apiConfig';
 
 type EmpleadoPayload = {
   nombre: string;
@@ -9,50 +9,6 @@ type EmpleadoPayload = {
 };
 
 class AuthService {
-  private getHeaders(): HeadersInit {
-    const token = localStorage.getItem('token');
-
-    return {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    };
-  }
-
-  private getUrl(path: string): string {
-    return `${getApiBase()}${path}`;
-  }
-
-  private async request<T>(url: string, options: RequestInit = {}): Promise<T> {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...this.getHeaders(),
-        ...(options.headers || {})
-      }
-    });
-
-    const raw = await response.text();
-    const contentType = (response.headers.get('content-type') || '').toLowerCase();
-
-    if (!response.ok) {
-      if (contentType.includes('application/json') && raw) {
-        const errorBody = JSON.parse(raw);
-        throw new Error(errorBody?.error || `Error en ${options.method || 'GET'} ${url}`);
-      }
-      throw new Error(`Error en ${options.method || 'GET'} ${url}`);
-    }
-
-    if (response.status === 204 || !raw) {
-      return undefined as T;
-    }
-
-    if (contentType.includes('application/json') || raw.trim().startsWith('{') || raw.trim().startsWith('[')) {
-      return JSON.parse(raw) as T;
-    }
-
-    throw new Error(`Respuesta no JSON en ${url}`);
-  }
-
   private toEmpleado(data: any): Empleado {
     return {
       id: String(data.id || data._id),
@@ -71,8 +27,12 @@ class AuthService {
     const token = localStorage.getItem('token');
     if (!token) return null;
 
-    const usuario = await this.request<any>(this.getUrl('/api/auth/me'));
-    return this.toEmpleado(usuario);
+    try {
+      const response = await apiClient.get<any>('/api/auth/me');
+      return this.toEmpleado(response.data);
+    } catch {
+      return null;
+    }
   }
 
   async estaAutenticado(): Promise<boolean> {
@@ -93,8 +53,8 @@ class AuthService {
   }
 
   async obtenerEmpleados(): Promise<Empleado[]> {
-    const empleados = await this.request<any[]>(this.getUrl('/api/empleados'));
-    return empleados.map((empleado) => this.toEmpleado(empleado));
+    const response = await apiClient.get<any[]>('/api/empleados');
+    return response.data.map((empleado) => this.toEmpleado(empleado));
   }
 
   async obtenerEmpleadosActivos(): Promise<Empleado[]> {
@@ -103,41 +63,28 @@ class AuthService {
   }
 
   async crearEmpleado(datos: EmpleadoPayload): Promise<Empleado> {
-    const empleado = await this.request<any>(this.getUrl('/api/empleados'), {
-      method: 'POST',
-      body: JSON.stringify(datos)
-    });
-
-    return this.toEmpleado(empleado);
+    const response = await apiClient.post<any>('/api/empleados', datos);
+    return this.toEmpleado(response.data);
   }
 
   async actualizarEmpleado(empleado: Empleado): Promise<Empleado> {
-    const empleadoActualizado = await this.request<any>(this.getUrl(`/api/empleados/${empleado.id}`), {
-      method: 'PUT',
-      body: JSON.stringify({
-        nombre: empleado.nombre,
-        email: empleado.email,
-        rol: empleado.rol,
-        pin: empleado.pin,
-        activo: empleado.activo
-      })
+    const response = await apiClient.put<any>(`/api/empleados/${empleado.id}`, {
+      nombre: empleado.nombre,
+      email: empleado.email,
+      rol: empleado.rol,
+      pin: empleado.pin,
+      activo: empleado.activo
     });
-
-    return this.toEmpleado(empleadoActualizado);
+    return this.toEmpleado(response.data);
   }
 
   async toggleEstadoEmpleado(empleadoId: string): Promise<Empleado> {
-    const empleado = await this.request<any>(this.getUrl(`/api/empleados/${empleadoId}/toggle-estado`), {
-      method: 'PATCH'
-    });
-
-    return this.toEmpleado(empleado);
+    const response = await apiClient.patch<any>(`/api/empleados/${empleadoId}/toggle-estado`);
+    return this.toEmpleado(response.data);
   }
 
   async eliminarEmpleado(empleadoId: string): Promise<void> {
-    await this.request<void>(this.getUrl(`/api/empleados/${empleadoId}`), {
-      method: 'DELETE'
-    });
+    await apiClient.delete(`/api/empleados/${empleadoId}`);
   }
 
   async cambiarPin(nuevoPin: string): Promise<void> {

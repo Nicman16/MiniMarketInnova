@@ -1,10 +1,11 @@
 ﻿import { Producto } from '../../types/pos.types';
-import { fetchApiJson } from '../shared/httpClient';
+import { apiClient } from '../shared/apiConfig';
 
 export const productoService = {
   async obtenerProductos(): Promise<Producto[]> {
     try {
-      return await fetchApiJson<Producto[]>('/api/tienda/productos');
+      const response = await apiClient.get<Producto[]>('/api/tienda/productos');
+      return response.data;
     } catch (error) {
       console.error('Error en obtenerProductos:', error);
       return [];
@@ -13,7 +14,10 @@ export const productoService = {
 
   async obtenerProductosPorCategoria(categoria: string): Promise<Producto[]> {
     try {
-      return await fetchApiJson<Producto[]>(`/api/tienda/productos?categoria=${encodeURIComponent(categoria)}`);
+      const response = await apiClient.get<Producto[]>('/api/tienda/productos', {
+        params: { categoria }
+      });
+      return response.data;
     } catch (error) {
       console.error('Error en obtenerProductosPorCategoria:', error);
       return [];
@@ -22,11 +26,8 @@ export const productoService = {
 
   async crearProducto(producto: Omit<Producto, 'id'>): Promise<Producto> {
     try {
-      return await fetchApiJson<Producto>('/api/tienda/productos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(producto)
-      });
+      const response = await apiClient.post<Producto>('/api/tienda/productos', producto);
+      return response.data;
     } catch (error) {
       console.error('Error en crearProducto:', error);
       throw error;
@@ -35,11 +36,8 @@ export const productoService = {
 
   async actualizarProducto(id: string | number, cambios: Partial<Producto>): Promise<Producto> {
     try {
-      return await fetchApiJson<Producto>(`/api/tienda/productos/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cambios)
-      });
+      const response = await apiClient.put<Producto>(`/api/tienda/productos/${id}`, cambios);
+      return response.data;
     } catch (error) {
       console.error('Error en actualizarProducto:', error);
       throw error;

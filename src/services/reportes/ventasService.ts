@@ -1,12 +1,11 @@
-﻿import { fetchApiJson } from '../shared/httpClient';
+﻿import { apiClient } from '../shared/apiConfig';
 
 class VentasService {
-  private async request<T>(url: string): Promise<T> {
-    return fetchApiJson<T>(url);
-  }
-
   async obtenerReporteVentas(fechaInicio: string, fechaFin: string): Promise<any> {
-    const ventasPorDia = await this.request<any[]>(`/api/reportes/ventas?inicio=${fechaInicio}&fin=${fechaFin}`);
+    const response = await apiClient.get<any[]>('/api/reportes/ventas', {
+      params: { inicio: fechaInicio, fin: fechaFin }
+    });
+    const ventasPorDia = response.data;
 
     const totalVendido = ventasPorDia.reduce((sum, dia) => sum + dia.ingresos, 0);
     const cantidadVentas = ventasPorDia.reduce((sum, dia) => sum + dia.cantidad, 0);
@@ -32,7 +31,10 @@ class VentasService {
   }
 
   async obtenerReporteProductos(fechaInicio: string, fechaFin: string): Promise<any[]> {
-    const productos = await this.request<any[]>(`/api/reportes/productos?inicio=${fechaInicio}&fin=${fechaFin}`);
+    const response = await apiClient.get<any[]>('/api/reportes/productos', {
+      params: { inicio: fechaInicio, fin: fechaFin }
+    });
+    const productos = response.data;
     const totalIngresos = productos.reduce((sum, producto) => sum + producto.ingresos, 0);
 
     return productos.map((producto, index) => ({
@@ -45,7 +47,10 @@ class VentasService {
   }
 
   async obtenerReporteEmpleados(fechaInicio: string, fechaFin: string): Promise<any[]> {
-    const empleados = await this.request<any[]>(`/api/reportes/empleados?inicio=${fechaInicio}&fin=${fechaFin}`);
+    const response = await apiClient.get<any[]>('/api/reportes/empleados', {
+      params: { inicio: fechaInicio, fin: fechaFin }
+    });
+    const empleados = response.data;
     const maxVentas = Math.max(...empleados.map((empleado) => empleado.ingresos), 0);
 
     return empleados.map((empleado, index) => ({
@@ -59,7 +64,8 @@ class VentasService {
   }
 
   async obtenerStockBajo(): Promise<any[]> {
-    const productos = await this.request<any[]>('/api/reportes/stock-bajo');
+    const response = await apiClient.get<any[]>('/api/reportes/stock-bajo');
+    const productos = response.data;
 
     return productos.map((producto, index) => ({
       id: producto.id || `${producto.nombre}-${index}`,

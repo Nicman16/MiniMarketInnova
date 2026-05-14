@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Usuario, LoginResponse } from '../types/pos.types';
-import { getApiBase } from '../services/shared/apiConfig';
-import { fetchApiJson } from '../services/shared/httpClient';
+import { apiClient } from '../services/shared/apiConfig';
 
 interface AuthContextType {
   usuario: Usuario | null;
@@ -42,11 +41,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!token) return;
 
       try {
-        await fetchApiJson('/api/auth/me', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
+        await apiClient.get('/api/auth/me');
       } catch {
         setUsuario(null);
         setToken(null);
@@ -60,36 +55,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (email: string, contraseña: string) => {
     try {
-      const base = getApiBase();
-      const payload = JSON.stringify({ email, contraseña });
-      const candidates = [
-        `${base}/api/auth/login`,
-        `${window.location.origin}/api/auth/login`
-      ].filter((u, i, arr) => u && arr.indexOf(u) === i);
+      const response = await apiClient.post<LoginResponse>('/api/auth/login', {
+        email,
+        contraseña
+      });
 
-      let response: Response | null = null;
-      for (const url of candidates) {
-        const attempt = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: payload
-        });
-
-        response = attempt;
-        if (attempt.status !== 404) break;
-      }
-
-      if (!response) {
-        throw new Error('No fue posible contactar el servicio de autenticación');
-      }
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Error desconocido' }));
-        console.error(`Status: ${response.status}, Error:`, error);
-        throw new Error(`Credenciales inválidas (${response.status}): ${error.error || 'Error desconocido'}`);
-      }
-
-      const data: LoginResponse = await response.json();
+      const data = response.data;
       setToken(data.token);
       setUsuario(data.usuario);
       
