@@ -22,7 +22,9 @@ import ControlCaja from './componentes/caja/ControlCaja';
 import Reportes from './componentes/ventas/Reportes';
 import Empleados from './componentes/personal/Empleados';
 import DashboardMetrics from './componentes/dashboard/DashboardMetrics';
+
 import './componentes/dashboard/DashboardMetrics.css';
+import Sidebar from './componentes/Sidebar';
 
 function DashboardContent() {
   const { usuario, logout, isJefe } = useAuth();
@@ -101,136 +103,30 @@ function DashboardContent() {
             <img src="/assets/branding/logo.png" alt="MiniMarket Innova" className="app-logo-img" />
           </div>
           <div>
-            <h1 className="app-title">MiniMarket Innova</h1>
-            <span className="version-badge">v2.0</span>
-          </div>
-        </div>
-
-        <div className="navbar-menu">
-          <button
-            className={`nav-item ${paginaActual === 'dashboard' ? 'active' : ''}`}
-            onClick={() => cambiarPagina('dashboard')}
-          >
-            <span className="nav-item-content"><LayoutDashboard size={16} className="nav-icon" />Dashboard</span>
-          </button>
-
-          <button
-            className={`nav-item ${paginaActual === 'punto-venta' ? 'active' : ''}`}
-            onClick={() => cambiarPagina('punto-venta')}
-          >
-            <span className="nav-item-content"><ShoppingCart size={16} className="nav-icon" />Punto de Venta</span>
-          </button>
-
-          {isJefe && (
-            <>
-              <button
-                className={`nav-item ${paginaActual === 'inventario' ? 'active' : ''}`}
-                onClick={() => cambiarPagina('inventario')}
-              >
-                <span className="nav-item-content"><Package size={16} className="nav-icon" />Inventario</span>
-              </button>
-
-              <button
-                className={`nav-item ${paginaActual === 'fiado' ? 'active' : ''}`}
-                onClick={() => cambiarPagina('fiado')}
-              >
-                <span className="nav-item-content"><Wallet size={16} className="nav-icon" />Sistema Fiado</span>
-              </button>
-
-              <button
-                className={`nav-item ${paginaActual === 'caja' ? 'active' : ''}`}
-                onClick={() => cambiarPagina('caja')}
-              >
-                <span className="nav-item-content"><BadgeDollarSign size={16} className="nav-icon" />Caja</span>
-              </button>
-
-              <button
-                className={`nav-item ${paginaActual === 'reportes' ? 'active' : ''}`}
-                onClick={() => cambiarPagina('reportes')}
-              >
-                <span className="nav-item-content"><ReceiptText size={16} className="nav-icon" />Reportes</span>
-              </button>
-
-              <button
-                className={`nav-item ${paginaActual === 'empleados' ? 'active' : ''}`}
-                onClick={() => cambiarPagina('empleados')}
-              >
-                <span className="nav-item-content"><Users size={16} className="nav-icon" />Empleados</span>
-              </button>
-            </>
-          )}
-        </div>
-
-        <div className="navbar-user">
-          <div className="user-info">
-            <div className="user-avatar">
-              {usuario?.nombre?.charAt(0).toUpperCase()}
-            </div>
-            <div className="user-details">
-              <div className="user-name">{usuario?.nombre}</div>
-              <div className="user-role">
-                {isJefe ? <Briefcase size={13} className="role-icon" /> : <CircleUserRound size={13} className="role-icon" />}
-                <span>{isJefe ? 'Administrador' : 'Empleado'}</span>
+            return (
+              <div className="app">
+                <Sidebar paginaActual={paginaActual} cambiarPagina={cambiarPagina} isJefe={isJefe} />
+                <div className="main-layout">
+                  {/* NAVBAR SOLO PARA BRANDING Y LOGOUT */}
+                  <nav className="navbar">
+                    <div className="navbar-brand">
+                      <div className="app-logo" aria-label="Logo MiniMarket Innova">
+                        <img src="/assets/branding/logo.png" alt="MiniMarket Innova" className="app-logo-img" />
+                      </div>
+                      <div>
+                        <h1 className="app-title">MiniMarket Innova</h1>
+                        <span className="version-badge">v2.0</span>
+                      </div>
+                    </div>
+                    <button className="logout-btn" onClick={logout}>
+                      <LogOut size={14} /> Salir
+                    </button>
+                  </nav>
+                  <main className="main-content">
+                    {renderPagina()}
+                  </main>
+                </div>
               </div>
-            </div>
-          </div>
-          <button className="logout-btn" onClick={logout}>
-            <LogOut size={14} /> Salir
-          </button>
-        </div>
-      </nav>
-
-      {/* CONTENIDO PRINCIPAL */}
-      <main className="main-content">
-        <section className="quick-access" aria-label="Accesos rápidos">
-          <div className="quick-access-actions">
-            {accesosRapidos.map((item) => (
-              <button
-                key={item.key}
-                className={`quick-access-btn ${paginaActual === item.key ? 'active' : ''}`}
-                onClick={() => cambiarPagina(item.key)}
-                aria-label={item.label}
-              >
-                <span className="quick-access-icon">{item.icon}</span>
-                <span className="quick-access-label">{item.label}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {renderPagina()}
-      </main>
-
-      {/* BOTTOM NAV — solo visible en móvil */}
-      <nav className="bottom-nav">
-        <button
-          className={`bottom-nav-item ${paginaActual === 'dashboard' ? 'active' : ''}`}
-          onClick={() => cambiarPagina('dashboard')}
-        >
-          <span className="bottom-nav-icon"><LayoutDashboard size={18} /></span>
-          <span className="bottom-nav-label">Dashboard</span>
-        </button>
-
-        <button
-          className={`bottom-nav-item ${paginaActual === 'punto-venta' ? 'active' : ''}`}
-          onClick={() => cambiarPagina('punto-venta')}
-        >
-          <span className="bottom-nav-icon"><ShoppingCart size={18} /></span>
-          <span className="bottom-nav-label">Venta</span>
-        </button>
-
-        {isJefe && (
-          <>
-            <button
-              className={`bottom-nav-item ${paginaActual === 'inventario' ? 'active' : ''}`}
-              onClick={() => cambiarPagina('inventario')}
-            >
-              <span className="bottom-nav-icon"><Package size={18} /></span>
-              <span className="bottom-nav-label">Inventario</span>
-            </button>
-
-            <button
-              className={`bottom-nav-item ${paginaActual === 'caja' ? 'active' : ''}`}
               onClick={() => cambiarPagina('caja')}
             >
               <span className="bottom-nav-icon"><BadgeDollarSign size={18} /></span>

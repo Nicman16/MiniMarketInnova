@@ -1,0 +1,110 @@
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 250px;
+  background: linear-gradient(135deg, #01234a 0%, #003366 100%);
+  box-shadow: 2px 0 18px rgba(0,0,0,0.13);
+  display: flex;
+  flex-direction: column;
+  z-index: 200;
+  padding: 2.2rem 1.2rem 1.2rem 1.2rem;
+  transition: width 0.2s;
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin-bottom: 2.5rem;
+}
+
+.sidebar-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 12px rgba(59,130,246,0.13);
+}
+
+.sidebar-user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sidebar-user-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+
+.sidebar-user-role {
+  font-size: 0.98rem;
+  color: #b8c2cc;
+  font-weight: 500;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebar-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: none;
+  border: none;
+  color: #eaf1fa;
+  font-size: 1.07rem;
+  font-weight: 500;
+  opacity: 0.85;
+  cursor: pointer;
+  transition: color 0.18s, opacity 0.18s, background 0.18s, transform 0.18s;
+  border-radius: 12px;
+  padding: 0.7rem 1.1rem;
+  min-width: 0;
+}
+
+.sidebar-btn.active,
+.sidebar-btn:hover {
+  color: #fff;
+  background: linear-gradient(90deg, rgba(0,123,255,0.13) 0%, rgba(0,123,255,0.07) 100%);
+  opacity: 1;
+  transform: translateX(2px) scale(1.04);
+  box-shadow: 0 2px 8px rgba(0,123,255,0.10);
+}
+
+.sidebar-icon {
+  display: flex;
+  align-items: center;
+  font-size: 1.2rem;
+}
+
+.sidebar-label {
+  font-size: 1.07rem;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    width: 60px;
+    padding: 1.2rem 0.3rem 1.2rem 0.3rem;
+  }
+  .sidebar-user-details, .sidebar-label {
+    display: none;
+  }
+  .sidebar-btn {
+    justify-content: center;
+    padding: 0.7rem 0.5rem;
+  }
+}
