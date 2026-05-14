@@ -16,7 +16,7 @@ router.post('/', verificarToken, async (req, res) => {
       return res.status(400).json({ error: 'La venta debe incluir al menos un producto' });
     }
 
-    if (!['efectivo', 'tarjeta', 'transferencia'].includes(metodoPago)) {
+    if (!['efectivo', 'nequi', 'datafono'].includes(metodoPago)) {
       return res.status(400).json({ error: 'Método de pago inválido' });
     }
 

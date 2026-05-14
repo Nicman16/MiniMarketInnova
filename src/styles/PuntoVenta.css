@@ -546,3 +546,210 @@
   font-size: 0.92rem;
   font-weight: 600;
 }
+
+/* ========= MODAL DE PAGO ========= */
+.modal-pago-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: overlayFadeIn 0.2s ease;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal-pago-card {
+  background: linear-gradient(145deg, #1e1b4b, #0f172a);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 24px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 212, 255, 0.1);
+  animation: cardSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes cardSlideUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
+.modal-pago-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-pago-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #00d4ff, #ff6b9d);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.modal-pago-close {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-pago-close:hover:not(:disabled) {
+  background: rgba(255, 107, 157, 0.2);
+  border-color: rgba(255, 107, 157, 0.4);
+  color: #ff6b9d;
+}
+
+/* Botones de método */
+.modal-metodos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.modal-metodo-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.85rem 0.5rem;
+  border-radius: 14px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.modal-metodo-btn:hover {
+  border-color: rgba(0, 212, 255, 0.4);
+  color: #ffffff;
+}
+
+.modal-metodo-btn.activo {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 153, 204, 0.15));
+  border-color: #00d4ff;
+  color: #00d4ff;
+  box-shadow: 0 0 16px rgba(0, 212, 255, 0.25);
+}
+
+/* Desglose de importes */
+.modal-pago-desglose {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.modal-pago-fila {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.modal-pago-fila.descuento { color: #22c55e; }
+.modal-pago-fila.recargo   { color: #f59e0b; }
+
+.modal-pago-fila.total {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 0.6rem;
+  margin-top: 0.25rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #00d4ff;
+}
+
+/* Panels específicos por método */
+.modal-pago-panel {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.modal-pago-panel p {
+  margin: 0 0 0.5rem 0;
+}
+
+.modal-pago-panel p:last-child {
+  margin-bottom: 0;
+}
+
+.modal-pago-panel.nequi {
+  border-color: rgba(124, 58, 237, 0.4);
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.modal-pago-panel.datafono {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.modal-pago-panel label {
+  display: block;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.5rem;
+}
+
+.modal-cambio {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 10px;
+  color: #86efac;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.modal-pago-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (max-width: 480px) {
+  .modal-pago-card {
+    padding: 1.25rem;
+    border-radius: 16px;
+  }
+  .modal-metodos {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+  .modal-metodo-btn {
+    font-size: 0.78rem;
+    padding: 0.75rem 0.25rem;
+  }
+}

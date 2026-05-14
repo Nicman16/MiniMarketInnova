@@ -7,7 +7,7 @@ interface RegistrarVentaPayload {
   iva: number;
   descuentos: number;
   total: number;
-  metodoPago: 'efectivo' | 'tarjeta' | 'transferencia';
+  metodoPago: 'efectivo' | 'nequi' | 'datafono';
 }
 
 class VentaService {

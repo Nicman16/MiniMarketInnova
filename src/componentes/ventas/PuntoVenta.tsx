@@ -7,8 +7,23 @@ import { useAuth } from '../../context/AuthContext';
 import EscanerZXing from '../inventario/EscanerZXing';
 import '../../styles/PuntoVenta.css';
 
+type MetodoPago = 'efectivo' | 'nequi' | 'datafono';
+
+const RECARGO_DATAFONO = 0.06; // 6%
+
+interface ModalPagoState {
+  abierto: boolean;
+  metodo: MetodoPago;
+  dineroRecibido: string;
+}
+
+const MODAL_INICIAL: ModalPagoState = {
+  abierto: false,
+  metodo: 'efectivo',
+  dineroRecibido: ''
+};
+
 function PuntoVenta() {
-  // Estados
   const { usuario } = useAuth();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [carrito, setCarrito] = useState<ItemVenta[]>([]);
@@ -19,8 +34,9 @@ function PuntoVenta() {
   const [error, setError] = useState('');
   const [alertaStock, setAlertaStock] = useState('');
   const [descuento, setDescuento] = useState(0);
-  const [metodoPago, setMetodoPago] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo');
+  const [modalPago, setModalPago] = useState<ModalPagoState>(MODAL_INICIAL);
   const [procesandoVenta, setProcesandoVenta] = useState(false);
+  const [ventaExitosa, setVentaExitosa] = useState<string | null>(null);
 
   const cargarProductos = useCallback(async () => {
     try {
@@ -44,13 +60,16 @@ function PuntoVenta() {
   // Oculta automáticamente la alerta de stock tras unos segundos
   useEffect(() => {
     if (!alertaStock) return;
-
-    const timer = window.setTimeout(() => {
-      setAlertaStock('');
-    }, 4500);
-
+    const timer = window.setTimeout(() => setAlertaStock(''), 4500);
     return () => window.clearTimeout(timer);
   }, [alertaStock]);
+
+  // Oculta el mensaje de éxito tras 4 segundos
+  useEffect(() => {
+    if (!ventaExitosa) return;
+    const timer = window.setTimeout(() => setVentaExitosa(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [ventaExitosa]);
 
   // Obtener categorías únicas
   const categorias = useMemo(() => {
@@ -132,22 +151,30 @@ function PuntoVenta() {
     );
   }, [removerDelCarrito]);
 
-  // Calcular totales
+  // Calcular totales — IVA 0%: precio de venta es el precio original del producto
   const calcularTotales = useMemo(() => {
     const subtotal = carrito.reduce((sum, item) => sum + item.subtotal, 0);
     const descuentoAplicado = subtotal * (descuento / 100);
-    const subtotalConDescuento = subtotal - descuentoAplicado;
-    const iva = subtotalConDescuento * 0.19;
-    const total = subtotalConDescuento + iva;
-    
-    return { subtotal, descuentoAplicado, subtotalConDescuento, iva, total };
+    const totalBase = subtotal - descuentoAplicado;
+    return { subtotal, descuentoAplicado, totalBase };
   }, [carrito, descuento]);
+
+  // Totales del modal según método de pago seleccionado
+  const totalesModal = useMemo(() => {
+    const recargo = modalPago.metodo === 'datafono'
+      ? calcularTotales.totalBase * RECARGO_DATAFONO
+      : 0;
+    const total = calcularTotales.totalBase + recargo;
+    const cambio = modalPago.metodo === 'efectivo'
+      ? Number(modalPago.dineroRecibido || 0) - total
+      : null;
+    return { recargo, total, cambio };
+  }, [modalPago.metodo, modalPago.dineroRecibido, calcularTotales.totalBase]);
 
   // Limpiar carrito
   const limpiarCarrito = useCallback(() => {
     setCarrito([]);
     setDescuento(0);
-    setMetodoPago('efectivo');
   }, []);
 
   // Manejar código escaneado
@@ -175,46 +202,64 @@ function PuntoVenta() {
     }
   }, [productos, agregarAlCarrito]);
 
-  // Procesar venta
-  const procesarVenta = useCallback(async () => {
+  // Abrir modal de pago (reemplaza la confirmación directa)
+  const abrirModalPago = useCallback(() => {
     if (carrito.length === 0) {
-      alert('El carrito está vacío');
+      setError('El carrito está vacío');
       return;
     }
-
     if (!usuario) {
-      alert('Debe iniciar sesión para registrar una venta');
+      setError('Debe iniciar sesión para registrar una venta');
       return;
     }
-    
-    const confirmacion = window.confirm(
-      `¿Confirmar venta por $${calcularTotales.total.toLocaleString('es-CO', { maximumFractionDigits: 0 })}?`
-    );
-    
-    if (confirmacion) {
-      try {
-        setProcesandoVenta(true);
+    setModalPago({ ...MODAL_INICIAL, abierto: true });
+  }, [carrito.length, usuario]);
 
-        await ventaService.registrarVenta({
-          items: carrito,
-          subtotal: calcularTotales.subtotal,
-          iva: calcularTotales.iva,
-          descuentos: calcularTotales.descuentoAplicado,
-          total: calcularTotales.total,
-          metodoPago
-        });
-
-        await cargarProductos();
-        alert('¡Venta procesada exitosamente!');
-        limpiarCarrito();
-      } catch (ventaError) {
-        alert(ventaError instanceof Error ? ventaError.message : 'No se pudo registrar la venta');
-        console.error(ventaError);
-      } finally {
-        setProcesandoVenta(false);
+  // Confirmar y registrar la venta desde el modal
+  const confirmarVenta = useCallback(async () => {
+    if (modalPago.metodo === 'efectivo') {
+      const recibido = Number(modalPago.dineroRecibido || 0);
+      if (recibido < totalesModal.total) {
+        setError('El dinero recibido es insuficiente para cubrir el total');
+        return;
       }
     }
-  }, [calcularTotales, carrito, cargarProductos, limpiarCarrito, metodoPago, usuario]);
+
+    try {
+      setProcesandoVenta(true);
+      setError('');
+
+      await ventaService.registrarVenta({
+        items: carrito,
+        subtotal: calcularTotales.subtotal,
+        iva: 0,
+        descuentos: calcularTotales.descuentoAplicado,
+        total: totalesModal.total,
+        metodoPago: modalPago.metodo
+      });
+
+      await cargarProductos();
+
+      const mensajeExito = modalPago.metodo === 'efectivo'
+        ? `✅ Venta registrada. Cambio: $${(totalesModal.cambio ?? 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`
+        : '✅ Venta registrada correctamente.';
+
+      setModalPago(MODAL_INICIAL);
+      limpiarCarrito();
+      setVentaExitosa(mensajeExito);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo registrar la venta');
+    } finally {
+      setProcesandoVenta(false);
+    }
+  }, [
+    modalPago,
+    totalesModal,
+    carrito,
+    calcularTotales,
+    cargarProductos,
+    limpiarCarrito
+  ]);
 
   if (cargando) {
     return (
@@ -242,6 +287,7 @@ function PuntoVenta() {
       </div>
 
       {error && <div className="error-msg">{error}</div>}
+      {ventaExitosa && <div className="success-msg">{ventaExitosa}</div>}
       {alertaStock && <div className="stock-warning-msg">{alertaStock}</div>}
 
       <div className="pos-layout">
@@ -359,14 +405,9 @@ function PuntoVenta() {
               </div>
             )}
 
-            <div className="resumen-fila impuesto">
-              <span>IVA (19%)</span>
-              <span className="resumen-valor">${calcularTotales.iva.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
-            </div>
-
             <div className="resumen-fila total">
               <span>TOTAL</span>
-              <span className="resumen-valor">${calcularTotales.total.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
+              <span className="resumen-valor">${calcularTotales.totalBase.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
             </div>
 
             {/* Descuento */}
@@ -379,28 +420,16 @@ function PuntoVenta() {
               onChange={(e) => setDescuento(Math.min(100, Math.max(0, Number(e.target.value))))}
               className="resumen-input"
             />
-
-            <select
-              value={metodoPago}
-              onChange={(e) => setMetodoPago(e.target.value as 'efectivo' | 'tarjeta' | 'transferencia')}
-              aria-label="Método de pago"
-              title="Método de pago"
-              className="resumen-input"
-            >
-              <option value="efectivo">Efectivo</option>
-              <option value="tarjeta">Tarjeta</option>
-              <option value="transferencia">Transferencia</option>
-            </select>
           </div>
 
           {/* Botones */}
           <div className="botones-accion">
             <button 
               className="btn-accion btn-procesar"
-              onClick={procesarVenta}
+              onClick={abrirModalPago}
               disabled={carrito.length === 0 || procesandoVenta}
             >
-              {procesandoVenta ? '⏳ Procesando...' : '✅ Procesar Venta'}
+              {procesandoVenta ? '⏳ Procesando...' : '💳 Pagar'}
             </button>
             <button 
               className="btn-accion btn-limpiar"
@@ -412,6 +441,119 @@ function PuntoVenta() {
           </div>
         </div>
       </div>
+
+      {/* ===== MODAL DE PAGO ===== */}
+      {modalPago.abierto && (
+        <div className="modal-pago-overlay" role="dialog" aria-modal="true" aria-label="Modal de pago">
+          <div className="modal-pago-card">
+            <div className="modal-pago-header">
+              <h2>💳 Seleccionar Método de Pago</h2>
+              <button
+                className="modal-pago-close"
+                onClick={() => setModalPago(MODAL_INICIAL)}
+                aria-label="Cerrar modal"
+                disabled={procesandoVenta}
+              >✕</button>
+            </div>
+
+            {/* Selector de método */}
+            <div className="modal-metodos">
+              {(['efectivo', 'nequi', 'datafono'] as MetodoPago[]).map((m) => (
+                <button
+                  key={m}
+                  className={`modal-metodo-btn ${modalPago.metodo === m ? 'activo' : ''}`}
+                  onClick={() => setModalPago(prev => ({ ...prev, metodo: m, dineroRecibido: '' }))}
+                >
+                  {m === 'efectivo' && '💵 Efectivo'}
+                  {m === 'nequi'    && '📲 Nequi'}
+                  {m === 'datafono' && '💳 Datáfono'}
+                </button>
+              ))}
+            </div>
+
+            {/* Desglose de pago */}
+            <div className="modal-pago-desglose">
+              <div className="modal-pago-fila">
+                <span>Subtotal</span>
+                <span>${calcularTotales.subtotal.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
+              </div>
+              {calcularTotales.descuentoAplicado > 0 && (
+                <div className="modal-pago-fila descuento">
+                  <span>Descuento ({descuento}%)</span>
+                  <span>-${calcularTotales.descuentoAplicado.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
+                </div>
+              )}
+              {modalPago.metodo === 'datafono' && (
+                <div className="modal-pago-fila recargo">
+                  <span>Recargo datáfono (6%)</span>
+                  <span>+${totalesModal.recargo.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
+                </div>
+              )}
+              <div className="modal-pago-fila total">
+                <span>TOTAL A PAGAR</span>
+                <span>${totalesModal.total.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
+              </div>
+            </div>
+
+            {/* Panel específico por método */}
+            {modalPago.metodo === 'efectivo' && (
+              <div className="modal-pago-panel">
+                <label htmlFor="dinero-recibido">Dinero recibido</label>
+                <input
+                  id="dinero-recibido"
+                  type="number"
+                  min="0"
+                  placeholder={`Mínimo $${totalesModal.total.toLocaleString('es-CO', { maximumFractionDigits: 0 })}`}
+                  value={modalPago.dineroRecibido}
+                  onChange={(e) => setModalPago(prev => ({ ...prev, dineroRecibido: e.target.value }))}
+                  className="resumen-input"
+                  autoFocus
+                />
+                {Number(modalPago.dineroRecibido || 0) >= totalesModal.total && (
+                  <div className="modal-cambio">
+                    💰 Cambio: <strong>${(totalesModal.cambio ?? 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</strong>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {modalPago.metodo === 'nequi' && (
+              <div className="modal-pago-panel nequi">
+                <p>📲 <strong>Pago por Nequi</strong></p>
+                <p>Confirma que el cliente ya realizó la transferencia de <strong>${totalesModal.total.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</strong> antes de continuar.</p>
+              </div>
+            )}
+
+            {modalPago.metodo === 'datafono' && (
+              <div className="modal-pago-panel datafono">
+                <p>💳 <strong>Pago con Datáfono</strong></p>
+                <p>Se aplica un recargo del 6% por uso de datáfono. Total a cobrar: <strong>${totalesModal.total.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</strong>.</p>
+              </div>
+            )}
+
+            {error && <div className="error-msg" style={{ marginTop: '0.75rem' }}>{error}</div>}
+
+            <div className="modal-pago-acciones">
+              <button
+                className="btn-accion btn-procesar"
+                onClick={confirmarVenta}
+                disabled={procesandoVenta || (
+                  modalPago.metodo === 'efectivo' && Number(modalPago.dineroRecibido || 0) < totalesModal.total
+                )}
+              >
+                {procesandoVenta ? '⏳ Registrando...' : '✅ Confirmar Venta'}
+              </button>
+              <button
+                className="btn-accion btn-limpiar"
+                onClick={() => { setModalPago(MODAL_INICIAL); setError(''); }}
+                disabled={procesandoVenta}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
