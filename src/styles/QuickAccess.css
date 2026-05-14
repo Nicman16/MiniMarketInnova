@@ -1,0 +1,56 @@
+
+.quick-access {
+  margin: 2.5rem 0 1.5rem 0;
+  padding: 0.5rem 2.5rem;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.10);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.10);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.quick-access-actions {
+  display: flex;
+  gap: 1.1rem;
+  width: 100%;
+}
+
+.quick-access-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: #eaf1fa;
+  font-size: 1rem;
+  font-weight: 500;
+  opacity: 0.85;
+  cursor: pointer;
+  transition: color 0.18s, opacity 0.18s, transform 0.18s, background 0.18s;
+  border-radius: 14px;
+  padding: 0.55rem 1.2rem;
+  min-width: 0;
+}
+
+.quick-access-btn.active,
+.quick-access-btn:hover {
+  color: #fff;
+  background: linear-gradient(90deg, rgba(0,123,255,0.13) 0%, rgba(0,123,255,0.07) 100%);
+  opacity: 1;
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 2px 8px rgba(0,123,255,0.10);
+}
+
+.quick-access-icon {
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.quick-access-label {
+  font-size: 1rem;
+  margin-left: 0.1rem;
+}

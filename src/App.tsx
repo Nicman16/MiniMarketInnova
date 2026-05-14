@@ -12,6 +12,7 @@ import {
   Wallet
 } from 'lucide-react';
 import './styles/App.css';
+import './styles/QuickAccess.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './componentes/auth/Login';
 import PuntoVenta from './componentes/ventas/PuntoVenta';
@@ -76,13 +77,17 @@ function DashboardContent() {
     );
   };
 
+  // Accesos rápidos organizados igual que el navbar
   const accesosRapidos = [
-    { key: 'punto-venta', label: 'Venta', icon: <ShoppingCart size={16} /> },
-    { key: 'dashboard', label: 'Panel', icon: <LayoutDashboard size={16} /> },
+    { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
+    { key: 'punto-venta', label: 'Punto de Venta', icon: <ShoppingCart size={16} /> },
     ...(isJefe
       ? [
           { key: 'inventario', label: 'Inventario', icon: <Package size={16} /> },
-          { key: 'caja', label: 'Caja', icon: <BadgeDollarSign size={16} /> }
+          { key: 'fiado', label: 'Sistema Fiado', icon: <Wallet size={16} /> },
+          { key: 'caja', label: 'Caja', icon: <BadgeDollarSign size={16} /> },
+          { key: 'reportes', label: 'Reportes', icon: <ReceiptText size={16} /> },
+          { key: 'empleados', label: 'Empleados', icon: <Users size={16} /> }
         ]
       : [])
   ];
@@ -178,16 +183,16 @@ function DashboardContent() {
       {/* CONTENIDO PRINCIPAL */}
       <main className="main-content">
         <section className="quick-access" aria-label="Accesos rápidos">
-          <span className="quick-access-title">Acceso rápido:</span>
           <div className="quick-access-actions">
             {accesosRapidos.map((item) => (
               <button
                 key={item.key}
                 className={`quick-access-btn ${paginaActual === item.key ? 'active' : ''}`}
                 onClick={() => cambiarPagina(item.key)}
+                aria-label={item.label}
               >
-                {item.icon}
-                <span>{item.label}</span>
+                <span className="quick-access-icon">{item.icon}</span>
+                <span className="quick-access-label">{item.label}</span>
               </button>
             ))}
           </div>
