@@ -10,6 +10,7 @@
 .app {
   --sidebar-width: 250px;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: row;
   background: linear-gradient(135deg, #001f3f 0%, #003366 45%, #0b4d8a 100%);
@@ -24,6 +25,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .app.sidebar-collapsed {
@@ -72,6 +74,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  min-height: 100dvh;
   background: linear-gradient(135deg, #001f3f 0%, #003366 100%);
   color: white;
   position: relative;
@@ -1278,6 +1281,7 @@
 .main-content {
   flex: 1;
   min-height: calc(100vh - 80px);
+  min-height: calc(100dvh - 80px);
   padding: 0.75rem 1rem 1.25rem;
 }
 
@@ -1407,25 +1411,29 @@
 
 
 /* ========= SIN PERMISOS ========= */
-.sin-permisos {
+.sin-permisos,
+.sin-permiso {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: calc(100vh - 80px);
+  min-height: calc(100dvh - 80px);
   text-align: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 3rem;
 }
 
-.sin-permisos-title {
+.sin-permisos-title,
+.sin-permiso-title {
   font-size: 2.5rem;
   margin-bottom: 1rem;
   font-weight: 700;
 }
 
-.sin-permisos-text {
+.sin-permisos-text,
+.sin-permiso-text {
   font-size: 1.2rem;
   opacity: 0.9;
   margin-bottom: 0.5rem;
@@ -1436,6 +1444,7 @@
 .page-container {
   width: 100%;
   min-height: calc(100vh - 120px);
+  min-height: calc(100dvh - 120px);
   position: relative;
 }
 
@@ -1646,6 +1655,10 @@
     padding: 0.5rem 0.75rem;
     font-size: 0.8rem;
   }
+
+  .main-content {
+    padding: 0.55rem 0.7rem 1rem;
+  }
 }
 
 /* ========================================================
@@ -1707,6 +1720,10 @@
 
   .main-content {
     padding-bottom: calc(var(--bottom-nav-height) + var(--safe-area-bottom));
+  }
+
+  .page-container {
+    min-height: calc(100dvh - 140px);
   }
 
   .page-container > :is(.inventario-container, .fiado-container, .caja-container, .reportes-container, .empleados-container) {

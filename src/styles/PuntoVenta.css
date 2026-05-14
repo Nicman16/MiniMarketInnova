@@ -1,6 +1,7 @@
 /* ========= PUNTO DE VENTA MODERNO ========= */
 .pos-container {
   min-height: 100vh;
+  min-height: 100dvh;
   background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #2d1b69 100%);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #ffffff;
@@ -54,6 +55,7 @@
   display: grid;
   grid-template-columns: 1fr 420px;
   height: calc(100vh - 100px);
+  height: calc(100dvh - 100px);
   gap: 1.5rem;
   padding: 1.5rem;
 }
@@ -68,6 +70,8 @@
   .pos-layout {
     grid-template-columns: 1fr;
     height: auto;
+    min-height: calc(100dvh - 140px);
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
