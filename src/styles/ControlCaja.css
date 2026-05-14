@@ -217,15 +217,7 @@
   border-radius: 12px;
   text-align: center;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  .stat-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 1.7rem 1.2rem;
-    border-radius: 18px;
-    text-align: center;
-    box-shadow: 0 4px 18px rgba(102,126,234,0.18);
-    border: 1.5px solid rgba(255,255,255,0.18);
-  }
+}
 
 .stat-card h4 {
   margin: 0 0 0.5rem 0;
@@ -259,17 +251,8 @@
   border-radius: 8px;
   margin-bottom: 0.5rem;
   border-left: 4px solid #e2e8f0;
-  .movimiento-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.85rem 1.1rem;
-    background: rgba(255,255,255,0.82);
-    border-radius: 12px;
-    margin-bottom: 0.5rem;
-    border-left: 4px solid #e2e8f0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  }
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
 .historial-entregas {
   margin-top: 1.5rem;
   background: rgba(255,255,255,0.18);
