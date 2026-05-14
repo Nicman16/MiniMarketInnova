@@ -17,6 +17,7 @@ function DashboardContent() {
   const { logout, isJefe } = useAuth();
   const [paginaActual, setPaginaActual] = React.useState<string>('dashboard');
   const [isTransitioning, setIsTransitioning] = React.useState<boolean>(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState<boolean>(false);
 
   const cambiarPagina = (nuevaPagina: string) => {
     if (nuevaPagina === paginaActual) {
@@ -67,8 +68,14 @@ function DashboardContent() {
   };
 
   return (
-    <div className="app">
-      <Sidebar paginaActual={paginaActual} cambiarPagina={cambiarPagina} isJefe={isJefe} />
+    <div className={`app ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+      <Sidebar
+        paginaActual={paginaActual}
+        cambiarPagina={cambiarPagina}
+        isJefe={isJefe}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
+      />
       <div className="main-layout">
         <nav className="navbar">
           <div className="navbar-brand">

@@ -1,5 +1,7 @@
 import React from 'react';
 import {
+  PanelLeftClose,
+  PanelLeftOpen,
   LayoutDashboard,
   ShoppingCart,
   Package,
@@ -15,6 +17,8 @@ interface SidebarProps {
   paginaActual: string;
   cambiarPagina: (nuevaPagina: string) => void;
   isJefe: boolean;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
 const sidebarItems = [
@@ -27,10 +31,22 @@ const sidebarItems = [
   { key: 'empleados', label: 'Empleados', icon: <Users size={18} /> },
 ];
 
-export default function Sidebar({ paginaActual, cambiarPagina, isJefe }: SidebarProps) {
+export default function Sidebar({ paginaActual, cambiarPagina, isJefe, collapsed, onToggleCollapse }: SidebarProps) {
   const { usuario } = useAuth();
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+      <div className="sidebar-top">
+        <button
+          type="button"
+          className="sidebar-toggle"
+          onClick={onToggleCollapse}
+          aria-label={collapsed ? 'Expandir menu lateral' : 'Colapsar menu lateral'}
+          title={collapsed ? 'Expandir menu' : 'Colapsar menu'}
+        >
+          {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+        </button>
+      </div>
+
       <div className="sidebar-user">
         <div className="sidebar-avatar">{usuario?.nombre?.charAt(0).toUpperCase()}</div>
         <div className="sidebar-user-details">
