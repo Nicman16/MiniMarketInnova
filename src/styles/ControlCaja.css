@@ -1,51 +1,31 @@
 /* src/styles/ControlCaja.css */
 .caja-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  .caja-container {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #232526 0%, #414345 100%);
-    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    padding-bottom: 2dvh;
-  }
+  background: linear-gradient(135deg, #232526 0%, #414345 100%);
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding-bottom: 2dvh;
+}
 
 .caja-header {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  padding: 1.5rem 2rem;
+  background: rgba(30, 41, 59, 0.85);
+  backdrop-filter: blur(12px);
+  padding: 2.2rem 2.5rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-  .caja-header {
-    background: rgba(30, 41, 59, 0.85);
-    backdrop-filter: blur(12px);
-    padding: 2.2rem 2.5rem 1.5rem 2.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-    border-radius: 0 0 32px 32px;
-    margin-bottom: 2.5rem;
-  }
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  border-radius: 0 0 32px 32px;
+  margin-bottom: 2rem;
+}
 
 .caja-header h1 {
   margin: 0;
-  color: #2d3748;
-  font-size: 1.8rem;
-  font-weight: 700;
-  .caja-header h1 {
-    margin: 0;
-    color: #fff;
-    font-size: 2.2rem;
-    font-weight: 800;
-    letter-spacing: -1px;
-    text-shadow: 0 2px 16px rgba(0,0,0,0.12);
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-  }
+  color: #ffffff;
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.12);
+}
 
 .estado-caja {
   display: flex;
@@ -62,74 +42,59 @@
 .status {
   padding: 0.5rem 1rem;
   border-radius: 20px;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.9rem;
 }
 
 .caja-abierta .status {
-  background: rgba(56, 161, 105, 0.1);
-  color: #2f855a;
+  background: rgba(56, 161, 105, 0.18);
+  color: #30c06f;
 }
 
 .estado-caja .status {
-  background: rgba(229, 62, 62, 0.1);
-  color: #c53030;
-  .estado-caja .status {
-    background: rgba(229, 62, 62, 0.18);
-    color: #ff4d4f;
-    box-shadow: 0 2px 8px rgba(229,62,62,0.08);
-  }
+  background: rgba(229, 62, 62, 0.18);
+  color: #ff4d4f;
+  box-shadow: 0 2px 8px rgba(229, 62, 62, 0.08);
+}
 
 .caja-abierta span:not(.status) {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   padding: 0.4rem 0.8rem;
   border-radius: 15px;
-  color: #4a5568;
+  color: #f3f7ff;
   font-weight: 500;
   font-size: 0.85rem;
 }
 
 .caja-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 1.5rem;
-  padding: 1.5rem;
-  max-width: 1400px;
+  grid-template-columns: repeat(auto-fit, minmax(370px, 1fr));
+  gap: 2rem;
+  padding: 0 2.5vw 1.5rem;
+  max-width: 1450px;
   margin: 0 auto;
-  .caja-layout {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(370px, 1fr));
-    gap: 2.5rem;
-    padding: 1.5rem 2.5vw;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
+}
 
 .card {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 15px;
-  padding: 1.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  .card {
-    background: rgba(255,255,255,0.18);
-    border-radius: 22px;
-    padding: 2.2rem 2rem 1.5rem 2rem;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 1.5px 8px rgba(102,126,234,0.08);
-    backdrop-filter: blur(18px);
-    border: 1.5px solid rgba(255,255,255,0.22);
-    transition: box-shadow 0.2s, border 0.2s;
-  }
-  .card:hover {
-    box-shadow: 0 12px 40px rgba(0,0,0,0.22), 0 2px 12px rgba(102,126,234,0.12);
-    border: 1.5px solid rgba(102,126,234,0.18);
-  }
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 22px;
+  padding: 2rem 1.8rem 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 1.5px 8px rgba(102, 126, 234, 0.08);
+  backdrop-filter: blur(18px);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  transition: box-shadow 0.2s ease, border 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22), 0 2px 12px rgba(102, 126, 234, 0.12);
+  border: 1.5px solid rgba(102, 126, 234, 0.2);
+}
 
 .card h3 {
-  margin: 0 0 1rem 0;
-  color: #2d3748;
+  margin: 0 0 1rem;
+  color: #f8fbff;
   font-size: 1.2rem;
-  font-weight: 600;
+  font-weight: 700;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -138,38 +103,53 @@
 .form-container {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  .form-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-  }
-  .form-container .input, .form-container select {
-    padding: 0.85rem 1.1rem;
-    border-radius: 12px;
-    border: none;
-    background: rgba(255,255,255,0.85);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    font-size: 1rem;
-    color: #232526;
-    outline: none;
-    transition: box-shadow 0.18s, border 0.18s;
-  }
-  .form-container .input:focus, .form-container select:focus {
-    box-shadow: 0 0 0 2px #667eea44, 0 2px 8px rgba(102,126,234,0.08);
-    border: 1.5px solid #667eea;
-  }
-
-.resumen-cierre {
-  background: #f7fafc;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
+  gap: 1.1rem;
 }
 
-.resumen-cierre p {
-  margin: 0.5rem 0;
-  color: #4a5568;
+.form-container .input,
+.form-container select {
+  padding: 0.85rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  font-size: 1rem;
+  color: #232526;
+  outline: none;
+  transition: box-shadow 0.18s ease, border 0.18s ease;
+}
+
+.form-container .input:focus,
+.form-container select:focus {
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.26), 0 2px 8px rgba(102, 126, 234, 0.1);
+  border-color: #667eea;
+}
+
+.button {
+  border-radius: 12px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 0.9rem 0;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button.success,
+.acciones-caja .button {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.12);
+}
+
+.button.success:hover,
+.acciones-caja .button:hover {
+  background: linear-gradient(90deg, #764ba2 0%, #667eea 100%);
+  box-shadow: 0 4px 18px rgba(102, 126, 234, 0.2);
 }
 
 .acciones-caja {
@@ -180,29 +160,28 @@
 
 .acciones-caja .button {
   flex: 1;
-  .acciones-caja .button {
-    flex: 1;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    padding: 0.9rem 0;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-    color: #fff;
-    border: none;
-    box-shadow: 0 2px 12px rgba(102,126,234,0.10);
-    transition: background 0.18s, box-shadow 0.18s;
-    cursor: pointer;
-  }
-  .acciones-caja .button:hover {
-    background: linear-gradient(90deg, #764ba2 0%, #667eea 100%);
-    box-shadow: 0 4px 18px rgba(102,126,234,0.18);
-  }
-  .acciones-caja .danger {
-    background: linear-gradient(90deg, #ff4d4f 0%, #764ba2 100%);
-  }
-  .acciones-caja .danger:hover {
-    background: linear-gradient(90deg, #764ba2 0%, #ff4d4f 100%);
-  }
+}
+
+.acciones-caja .danger {
+  background: linear-gradient(90deg, #ff4d4f 0%, #764ba2 100%);
+}
+
+.acciones-caja .danger:hover {
+  background: linear-gradient(90deg, #764ba2 0%, #ff4d4f 100%);
+}
+
+.resumen-cierre {
+  background: rgba(255, 255, 255, 0.16);
+  color: #f0f5ff;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.resumen-cierre p {
+  margin: 0.45rem 0;
+}
 
 .resumen-stats {
   display: grid;
@@ -212,33 +191,34 @@
 
 .stat-card {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 1.5rem;
-  border-radius: 12px;
+  color: #ffffff;
+  padding: 1.5rem 1.1rem;
+  border-radius: 18px;
   text-align: center;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 18px rgba(102, 126, 234, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .stat-card h4 {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.5rem;
   font-size: 0.9rem;
-  opacity: 0.9;
+  opacity: 0.92;
 }
 
 .stat-value {
   font-size: 1.8rem;
-  font-weight: 700;
+  font-weight: 800;
   margin: 0.5rem 0;
 }
 
 .stat-detail {
   font-size: 0.8rem;
-  opacity: 0.8;
+  opacity: 0.86;
   margin: 0;
 }
 
 .movimientos-lista {
-  max-height: 300px;
+  max-height: 340px;
   overflow-y: auto;
 }
 
@@ -246,41 +226,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem;
-  background: #f7fafc;
-  border-radius: 8px;
-  margin-bottom: 0.5rem;
+  padding: 0.85rem 1.05rem;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 12px;
+  margin-bottom: 0.55rem;
   border-left: 4px solid #e2e8f0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-.historial-entregas {
-  margin-top: 1.5rem;
-  background: rgba(255,255,255,0.18);
-  border-radius: 14px;
-  padding: 1.2rem 1rem 1rem 1rem;
-  box-shadow: 0 2px 12px rgba(102,126,234,0.10);
-  border: 1.5px solid rgba(102,126,234,0.10);
-}
-.historial-entregas h4 {
-  color: #764ba2;
-  margin-bottom: 0.7rem;
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-.historial-entregas ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.historial-entregas li {
-  font-size: 0.98rem;
-  color: #232526;
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.3rem;
-  border-bottom: 1px solid rgba(102,126,234,0.08);
-}
-.historial-entregas li:last-child {
-  border-bottom: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .movimiento-item.ingreso {
@@ -297,14 +248,14 @@
 
 .movimiento-concepto {
   display: block;
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 0.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.2rem;
 }
 
 .movimiento-empleado {
   font-size: 0.8rem;
-  color: #718096;
+  color: #64748b;
 }
 
 .movimiento-monto {
@@ -313,45 +264,100 @@
 
 .monto {
   display: block;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 1rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
 }
 
 .monto.ingreso {
-  color: #38a169;
+  color: #2f855a;
 }
 
 .monto.egreso {
-  color: #e53e3e;
+  color: #c53030;
 }
 
 .movimiento-fecha {
   font-size: 0.75rem;
-  color: #718096;
+  color: #64748b;
 }
 
-/* Responsive */
+.info-monto-cierre {
+  margin-top: 0.8rem;
+  color: #f0f5ff;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+}
+
+.historial-entregas {
+  margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.12);
+}
+
+.historial-entregas h4 {
+  color: #ffffff;
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.historial-entregas ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.historial-entregas li {
+  font-size: 0.92rem;
+  color: #f0f5ff;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.historial-entregas li:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .caja-header {
+    padding: 1.7rem 1.2rem 1.2rem;
+  }
+
+  .caja-header h1 {
+    font-size: 1.7rem;
+  }
+
+  .caja-layout {
+    grid-template-columns: 1fr;
+    gap: 1.3rem;
+    padding: 0 1rem 1rem;
+  }
+}
+
 @media (max-width: 768px) {
   .caja-header {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
+    border-radius: 0 0 24px 24px;
   }
-  
-  .caja-layout {
-    grid-template-columns: 1fr;
-    padding: 1rem;
-  }
-  
+
   .acciones-caja {
     flex-direction: column;
   }
-  
+
   .resumen-stats {
     grid-template-columns: 1fr;
   }
-  
+
   .movimiento-item {
     flex-direction: column;
     text-align: center;
