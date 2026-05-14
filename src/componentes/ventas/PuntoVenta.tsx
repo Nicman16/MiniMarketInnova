@@ -17,6 +17,7 @@ function PuntoVenta() {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('todos');
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
+  const [alertaStock, setAlertaStock] = useState('');
   const [descuento, setDescuento] = useState(0);
   const [metodoPago, setMetodoPago] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo');
   const [procesandoVenta, setProcesandoVenta] = useState(false);
@@ -39,6 +40,17 @@ function PuntoVenta() {
   useEffect(() => {
     cargarProductos();
   }, [cargarProductos]);
+
+  // Oculta automáticamente la alerta de stock tras unos segundos
+  useEffect(() => {
+    if (!alertaStock) return;
+
+    const timer = window.setTimeout(() => {
+      setAlertaStock('');
+    }, 4500);
+
+    return () => window.clearTimeout(timer);
+  }, [alertaStock]);
 
   // Obtener categorías únicas
   const categorias = useMemo(() => {
@@ -146,12 +158,20 @@ function PuntoVenta() {
     
     if (producto) {
       agregarAlCarrito(producto);
+
+      if ((producto.stock ?? 0) <= 0) {
+        setAlertaStock(`⚠️ ${producto.nombre} está sin stock, pero se agregó automáticamente al carrito.`);
+      } else {
+        setAlertaStock('');
+      }
+
       if ('vibrate' in navigator) {
         navigator.vibrate([100, 50, 100]);
       }
       setEscanerActivo(false);
     } else {
       console.log('❌ Producto no encontrado para código:', codigo);
+      setAlertaStock('⚠️ El producto escaneado no existe en inventario.');
     }
   }, [productos, agregarAlCarrito]);
 
@@ -222,6 +242,7 @@ function PuntoVenta() {
       </div>
 
       {error && <div className="error-msg">{error}</div>}
+      {alertaStock && <div className="stock-warning-msg">{alertaStock}</div>}
 
       <div className="pos-layout">
         {/* PANEL DE PRODUCTOS */}
@@ -247,7 +268,6 @@ function PuntoVenta() {
             <div className="scanner-wrapper">
               <EscanerZXing 
                 onScan={manejarCodigoEscaneado}
-                onProductoEncontrado={agregarAlCarrito}
                 onProductoNoEncontrado={(codigo) => manejarCodigoEscaneado(codigo)}
                 productos={productos}
                 isActive={escanerActivo}

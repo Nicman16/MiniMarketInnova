@@ -303,6 +303,30 @@
   box-shadow: var(--shadow-lg);
 }
 
+.btn-vencimiento {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: linear-gradient(135deg, #f6ad55, #ed8936);
+  color: white;
+  border: none;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius-lg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-vencimiento:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-vencimiento.active {
+  background: linear-gradient(135deg, #dd6b20, #c05621);
+}
+
 /* ========= ESCÁNER ========= */
 .scanner-container {
   background: linear-gradient(180deg, #243449 0%, #1f2d40 100%);
@@ -341,6 +365,16 @@
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
+}
+
+.inventario-alerta-operativa {
+  margin-bottom: var(--spacing-lg);
+  background: rgba(237, 137, 54, 0.14);
+  border: 1px solid rgba(237, 137, 54, 0.45);
+  color: #9c4221;
+  border-radius: var(--border-radius-lg);
+  padding: 0.85rem 1rem;
+  font-weight: 700;
 }
 
 .stat-card {
@@ -532,6 +566,21 @@
   opacity: 0.6;
   filter: grayscale(40%) sepia(20%);
   background: linear-gradient(135deg, rgba(160, 174, 192, 0.1), rgba(203, 213, 224, 0.1));
+}
+
+.product-card.vencimiento-critico {
+  border: 2px solid #e53e3e;
+  box-shadow:
+    0 0 0 2px rgba(229, 62, 62, 0.15),
+    0 12px 22px rgba(229, 62, 62, 0.16);
+}
+
+.product-card.vencimiento-critico::before {
+  background: linear-gradient(90deg, #e53e3e, #f56565);
+}
+
+.product-card.vencimiento-operativo::before {
+  background: linear-gradient(90deg, #dd6b20, #ed8936);
 }
 
 /* ========= IMAGEN PRODUCTO ========= */
@@ -726,6 +775,19 @@
 
 .detail-icon {
   font-size: 1rem;
+}
+
+.vencimiento-chip {
+  margin-top: 0.4rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: var(--border-radius-md);
+  font-weight: 700;
+}
+
+.vencimiento-chip.critico {
+  background: rgba(229, 62, 62, 0.1);
+  color: #9b2c2c;
+  border: 1px solid rgba(229, 62, 62, 0.35);
 }
 
 /* ========= ACCIONES PRODUCTO ========= */
@@ -1325,6 +1387,7 @@
 .nav-btn:focus-visible,
 .btn-scanner:focus-visible,
 .btn-add:focus-visible,
+.btn-vencimiento:focus-visible,
 .btn-edit:focus-visible,
 .btn-view:focus-visible,
 .btn-status:focus-visible,

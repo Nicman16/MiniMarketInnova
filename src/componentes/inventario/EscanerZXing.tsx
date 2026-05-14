@@ -4452,15 +4452,7 @@ function EscanerZXing({
         <div className="camera-view">
           <video
             ref={videoRef}
-            style={{
-              width: "100%",
-              maxWidth: "400px",
-              height: "300px",
-              border: "2px solid #667eea",
-              borderRadius: "8px",
-              backgroundColor: "#000",
-              objectFit: "cover",
-            }}
+            className="camera-video"
             playsInline
             muted
           />
