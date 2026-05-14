@@ -32,13 +32,27 @@ const looksLikeJson = (raw: string): boolean => {
   return text.startsWith('{') || text.startsWith('[');
 };
 
+const getAuthHeaders = (): Record<string, string> => {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export async function fetchApiJson<T = unknown>(pathOrUrl: string, init?: RequestInit): Promise<T> {
   const candidates = buildCandidates(pathOrUrl);
   const errors: string[] = [];
+  const authHeaders = getAuthHeaders();
 
   for (const candidate of candidates) {
     try {
-      const response = await fetch(candidate, { cache: 'no-store', ...init });
+      const response = await fetch(candidate, {
+        cache: 'no-store',
+        ...init,
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+          ...(init?.headers || {})
+        }
+      });
 
       if (!response.ok) {
         errors.push(`${candidate}: HTTP ${response.status}`);
