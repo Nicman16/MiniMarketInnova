@@ -1,46 +1,53 @@
 #!/usr/bin/env node
 
 /**
- * Seed Script for Demo Data
+ * Script de siembra de datos demo
  * 
- * This script creates demo users for development purposes only.
- * Run this ONLY in development environment.
+ * Crea usuarios de prueba en Firestore para entorno de desarrollo.
+ * Ejecutar únicamente en desarrollo.
  * 
- * Usage:
+ * Uso:
  *   npm run seed:demo
  * 
- * SECURITY WARNING:
- * - Never run this in production
- * - Only use for local development
- * - Change credentials before any real usage
+ * ADVERTENCIA DE SEGURIDAD:
+ * - No ejecutar en producción
+ * - Solo para desarrollo local
+ * - Cambiar credenciales antes de cualquier uso real
  */
 
 require('dotenv').config();
-const mongoose = require('mongoose');
+const path = require('path');
+const admin = require('firebase-admin');
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/minimarket';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Security check
+// Verificación de seguridad
 if (NODE_ENV === 'production' && process.env.FORCE_SEED !== 'true') {
-  console.error('❌ SECURITY ERROR: Cannot run seed script in production environment!');
-  console.error('If you need to seed production data, please do it manually with proper authorization.');
+  console.error('❌ ERROR DE SEGURIDAD: No se puede ejecutar el script de siembra en producción!');
+  console.error('Si es necesario sembrar datos en producción, hacerlo manualmente con la autorización adecuada.');
   process.exit(1);
 }
 
-// Define schemas
-const usuarioSchema = new mongoose.Schema({
-  nombre: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  contraseña: { type: String, required: true },
-  rol: { type: String, enum: ['jefe', 'empleado'], default: 'empleado' },
-  estado: { type: String, enum: ['activo', 'inactivo'], default: 'activo' },
-  fechaCreacion: { type: Date, default: Date.now },
-  ultimoAcceso: Date
-});
+// ── Cargar credencial de Firebase ──────────────────────────────────────────
+const cargarCredencial = () => {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+    return JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+  }
 
-const Usuario = mongoose.model('Usuario', usuarioSchema);
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    const json = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8');
+    return JSON.parse(json);
+  }
+
+  const keyPath = path.join(__dirname, '..', 'backend', 'serviceAccountKey.json');
+  if (fs.existsSync(keyPath)) {
+    return require(keyPath);
+  }
+
+  throw new Error('No se encontro credencial de Firebase. Define FIREBASE_SERVICE_ACCOUNT_JSON o FIREBASE_SERVICE_ACCOUNT_BASE64, o crea backend/serviceAccountKey.json');
+};
 
 const demoUsers = [
   {
@@ -48,6 +55,7 @@ const demoUsers = [
     email: 'jefe@demo.local',
     rol: 'jefe',
     estado: 'activo',
+    emailVerificado: true,
     temporalPassword: 'DemoJefe2024!'
   },
   {
@@ -55,6 +63,7 @@ const demoUsers = [
     email: 'empleado1@demo.local',
     rol: 'empleado',
     estado: 'activo',
+    emailVerificado: true,
     temporalPassword: 'DemoEmpleado2024!'
   },
   {
@@ -62,75 +71,99 @@ const demoUsers = [
     email: 'empleado2@demo.local',
     rol: 'empleado',
     estado: 'activo',
+    emailVerificado: true,
     temporalPassword: 'DemoEmpleado2024!'
   }
 ];
 
 async function seedDemo() {
   try {
-    console.log('🌱 Starting demo data seeding...');
-    console.log('📍 Environment:', NODE_ENV);
-    console.log('🔌 Connecting to MongoDB:', MONGO_URI.replace(/:\/\/.*@/, '://***:***@').split('?')[0]);
+    console.log('🌱 Sembrando datos demo...');
+    console.log('📍 Entorno:', NODE_ENV);
+    console.log('🔌 Conectando a Firestore...\n');
 
-    await mongoose.connect(MONGO_URI, {
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-      maxPoolSize: 10,
-    });
+    const serviceAccount = cargarCredencial();
 
-    console.log('✅ Connected to MongoDB');
+    if (!admin.apps.length) {
+      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    }
+    const db = admin.firestore();
 
-    // Check if demo users already exist
-    const existingCount = await Usuario.countDocuments({ 
-      email: { $in: demoUsers.map(u => u.email) } 
-    });
+    console.log(`✅ Conectado a Firestore (proyecto: ${serviceAccount.project_id})`);
 
-    if (existingCount > 0) {
-      console.warn('⚠️ Some demo users already exist. Skipping creation to avoid duplicates.');
-      console.log('To reset, run: npm run seed:clean-demo');
-      await mongoose.disconnect();
+    // Verificar si los usuarios demo ya existen
+    const emailsDemo = demoUsers.map(u => u.email);
+    const existingSnap = await db.collection('usuarios')
+      .where('email', 'in', emailsDemo)
+      .get();
+
+    if (!existingSnap.empty) {
+      console.warn('⚠️ Algunos usuarios demo ya existen. Omitiendo creación para evitar duplicados.');
+      console.log('Para resetear, elimina manualmente los usuarios de la colección "usuarios" en Firestore.');
       process.exit(0);
     }
 
-    // Create demo users with hashed passwords
+    // Crear usuarios demo con contraseñas hasheadas
     const salt = await bcrypt.genSalt(10);
-    const usuariosConHash = await Promise.all(
-      demoUsers.map(async (user) => ({
-        ...user,
-        contraseña: await bcrypt.hash(user.temporalPassword, salt)
-      }))
-    );
 
-    const createdUsers = await Usuario.insertMany(
-      usuariosConHash.map(({ temporalPassword, ...rest }) => rest)
-    );
+    for (const user of demoUsers) {
+      const contraseñaHash = await bcrypt.hash(user.temporalPassword, salt);
 
-    console.log('\n✅ Demo users created successfully!\n');
-    console.log('📋 Created users:');
-    demoUsers.forEach((user, index) => {
-      console.log(`   ${index + 1}. ${user.email}`);
-      console.log(`      Name: ${user.nombre}`);
-      console.log(`      Role: ${user.rol}`);
-      console.log(`      Status: ${user.estado}`);
-      console.log(`      Temporary Password: ${user.temporalPassword}`);
-      console.log('');
+      // Crear en Firebase Authentication (opcional, no bloqueante para el login)
+      let firebaseUid = null;
+      try {
+        const authUser = await admin.auth().createUser({
+          email: user.email,
+          password: user.temporalPassword,
+          displayName: user.nombre,
+          emailVerified: true,
+          disabled: false
+        });
+        firebaseUid = authUser.uid;
+      } catch (authErr) {
+        // Si falla (ej: usuario ya existe en Auth), se continúa igual
+        if (authErr.code !== 'auth/email-already-exists') {
+          console.warn(`⚠️ No se pudo crear en Firebase Auth: ${authErr.message}`);
+        }
+      }
+
+      // Crear documento en Firestore colección "usuarios"
+      await db.collection('usuarios').add({
+        nombre: user.nombre,
+        email: user.email,
+        contraseña: contraseñaHash,
+        rol: user.rol,
+        estado: user.estado,
+        emailVerificado: true,
+        pin: null,
+        firebaseUid: firebaseUid || null,
+        tokenVerificacionHash: null,
+        tokenVerificacionExpira: null,
+        fechaCreacion: new Date(),
+        ultimoAcceso: null
+      });
+
+      console.log(`   ✅ ${user.email} (${user.rol}) — Creado`);
+    }
+
+    console.log('\n✅ Usuarios demo creados exitosamente en Firestore!\n');
+    console.log('📋 Credenciales de prueba:');
+    demoUsers.forEach((user) => {
+      console.log(`   • ${user.email} — Contraseña: ${user.temporalPassword} (${user.rol})`);
     });
 
-    console.log('⚠️  IMPORTANT:');
-    console.log('   - These are temporary demo credentials for development only');
-    console.log('   - Change passwords on first login in production');
-    console.log('   - Never commit these credentials to version control');
-    console.log('   - To clean up demo users, run: npm run seed:clean-demo\n');
+    console.log('\n⚠️  IMPORTANTE:');
+    console.log('   - Son credenciales temporales solo para desarrollo');
+    console.log('   - En producción usa bootstrap-admin.js para crear el administrador');
+    console.log('   - Para limpiar, elimina los documentos de la colección "usuarios" en Firestore\n');
 
-    await mongoose.disconnect();
-    console.log('✨ Seeding completed successfully!');
     process.exit(0);
 
   } catch (error) {
-    console.error('❌ Error seeding demo data:', error.message);
+    console.error('❌ Error sembrando datos demo:', error.message);
     process.exit(1);
   }
 }
 
-// Run the seed
+// Ejecutar
 seedDemo();

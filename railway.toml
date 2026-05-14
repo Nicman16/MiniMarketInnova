@@ -21,10 +21,31 @@ value = "production"
 name = "NPM_CONFIG_PRODUCTION"
 value = "false"
 
-# IMPORTANTE: Configura estas variables en el dashboard de Railway
-# Variables requeridas:
-# JWT_SECRET=genera_una_clave_larga_y_segura_de_32+_caracteres
-# FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
-# (alternativa) FIREBASE_SERVICE_ACCOUNT_BASE64=base64_del_json
-# CORS_ORIGIN=https://minimarketinnova-production.up.railway.app,capacitor://localhost,ionic://localhost
-# APP_URL=https://minimarketinnova-production.up.railway.app
+# ============================================================
+# CONFIGURACIÓN REQUERIDA EN RAILWAY DASHBOARD
+# ============================================================
+# Ve a tu proyecto Railway → Settings → Variables y configura:
+#
+# 1. JWT_SECRET (obligatorio)
+#    Valor: genera una clave de 32+ caracteres
+#    Ej: openssl rand -hex 32
+#
+# 2. FIREBASE_SERVICE_ACCOUNT_JSON (obligatorio)
+#    Formato: pegar el JSON completo del service account de Firebase
+#    (desde Firebase Console > Configuración > Cuentas de servicio)
+#
+# 3. CORS_ORIGIN (recomendado)
+#    Valor: URL de tu app en Railway
+#    Ej: https://minimarketinnova-production.up.railway.app
+#
+# 4. APP_URL (recomendado)
+#    Valor: misma URL de Railway
+#    Ej: https://minimarketinnova-production.up.railway.app
+#
+# Opcionales:
+# - FIREBASE_SERVICE_ACCOUNT_BASE64 (alternativa a SERVICE_ACCOUNT_JSON)
+# - RESEND_API_KEY (para emails de activación)
+# - REACT_APP_FIREBASE_* (solo si usas Firebase Web SDK)
+#
+# ⚠️ NO necesitas MONGO_URI — tu backend usa Firebase Firestore
+# ============================================================

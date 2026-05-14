@@ -1,4 +1,5 @@
 const express = require('express');
+const { verificarToken } = require('../middleware/auth');
 const { getDb, firestoreDoc, firestoreDocs } = require('../config/firebase');
 const { normalizeProducto } = require('../utils/normalize');
 const { emit } = require('../socket/io');
@@ -7,7 +8,7 @@ const state = require('../state');
 const router = express.Router();
 
 // GET /api/productos
-router.get('/productos', async (req, res) => {
+router.get('/productos', verificarToken, async (req, res) => {
   try {
     const db = getDb();
     if (db) {
@@ -22,7 +23,7 @@ router.get('/productos', async (req, res) => {
 });
 
 // GET /api/tienda/productos
-router.get('/tienda/productos', async (req, res) => {
+router.get('/tienda/productos', verificarToken, async (req, res) => {
   try {
     const { categoria } = req.query;
     const db = getDb();
@@ -41,7 +42,7 @@ router.get('/tienda/productos', async (req, res) => {
 });
 
 // POST /api/tienda/productos
-router.post('/tienda/productos', async (req, res) => {
+router.post('/tienda/productos', verificarToken, async (req, res) => {
   try {
     const payload = req.body;
     if (!payload.nombre) return res.status(400).json({ error: 'El nombre es requerido' });
@@ -52,7 +53,7 @@ router.post('/tienda/productos', async (req, res) => {
       const fechaVencimiento = payload.fechaVencimiento ? new Date(payload.fechaVencimiento) : null;
       const data = {
         nombre: payload.nombre, cantidad: payload.cantidad || 0,
-        precio: payload.precio || 0, codigoBarras: payload.codigoBarras || '',
+        precio: payload.precio || 0, codigoBarras: codigoBarras,
         categoria: payload.categoria || '', imagen: payload.imagen || '',
         proveedor: payload.proveedor || '', stockMinimo: payload.stockMinimo || 0,
         precioCompra: payload.precioCompra || 0, precioVenta: payload.precioVenta || 0,
@@ -94,7 +95,7 @@ router.post('/tienda/productos', async (req, res) => {
 });
 
 // PUT /api/tienda/productos/:id
-router.put('/tienda/productos/:id', async (req, res) => {
+router.put('/tienda/productos/:id', verificarToken, async (req, res) => {
   try {
     const { id } = req.params;
     const cambios = req.body;
@@ -128,7 +129,7 @@ router.put('/tienda/productos/:id', async (req, res) => {
 });
 
 // DELETE /api/tienda/productos/:id
-router.delete('/tienda/productos/:id', async (req, res) => {
+router.delete('/tienda/productos/:id', verificarToken, async (req, res) => {
   try {
     const { id } = req.params;
     const db = getDb();

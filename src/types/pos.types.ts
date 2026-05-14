@@ -60,7 +60,7 @@ export interface Venta {
   iva: number;
   descuentos: number;
   total: number;
-  metodoPago: 'efectivo' | 'tarjeta' | 'transferencia' | 'mixto';
+  metodoPago: 'efectivo' | 'tarjeta' | 'transferencia' | 'mixto' | 'nequi' | 'datafono';
   cliente?: Cliente;
   vendedor: Empleado;
   estado: 'pendiente' | 'completada' | 'cancelada';

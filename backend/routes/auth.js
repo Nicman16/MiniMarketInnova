@@ -1,10 +1,10 @@
+
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { verificarToken } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/security');
 const { getDb } = require('../config/firebase');
-const { getSessionVersion } = require('../config/sessionVersion');
 const { hashVerificationToken, createVerificationToken, sendVerificationEmail } = require('../utils/email');
 const { updateAuthAfterActivation } = require('../utils/firebaseAuthSync');
 
@@ -51,7 +51,7 @@ router.post('/login', authLimiter, async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: usuario.id, email: usuario.email, rol: usuario.rol, sessionVersion: getSessionVersion() },
+      { id: usuario.id, email: usuario.email, rol: usuario.rol },
       process.env.JWT_SECRET || 'tu_clave_secreta_aqui',
       { expiresIn: '7d' }
     );

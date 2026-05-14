@@ -1,4 +1,5 @@
 ﻿const express = require('express');
+const { verificarToken } = require('../middleware/auth');
 const { getDb, firestoreDocs } = require('../config/firebase');
 const { getVentasEntreFechas } = require('../utils/ventasHelper');
 const state = require('../state');
@@ -53,7 +54,7 @@ const getProductos = async () => {
   return state.productos || [];
 };
 
-router.get('/', async (req, res) => {
+router.get('/', verificarToken, async (req, res) => {
   try {
     const productos = await getProductos();
     res.json({
@@ -67,7 +68,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/advanced', async (req, res) => {
+router.get('/advanced', verificarToken, async (req, res) => {
   try {
     const { periodo = '30d' } = req.query;
     const dias = periodo === '7d' ? 7 : periodo === '90d' ? 90 : 30;
@@ -111,7 +112,7 @@ router.get('/advanced', async (req, res) => {
   }
 });
 
-router.get('/productos-vendidos', async (req, res) => {
+router.get('/productos-vendidos', verificarToken, async (req, res) => {
   try {
     const limite = Math.max(1, Number(req.query.limite || 10));
 
@@ -153,7 +154,7 @@ router.get('/productos-vendidos', async (req, res) => {
   }
 });
 
-router.get('/deudas', async (req, res) => {
+router.get('/deudas', verificarToken, async (req, res) => {
   try {
     const db = getDb();
     if (db) {
@@ -196,7 +197,7 @@ router.get('/deudas', async (req, res) => {
   }
 });
 
-router.get('/margenes', async (req, res) => {
+router.get('/margenes', verificarToken, async (req, res) => {
   try {
     const productos = await getProductos();
     if (!productos.length) {
@@ -241,7 +242,7 @@ router.get('/margenes', async (req, res) => {
   }
 });
 
-router.get('/resumen', async (req, res) => {
+router.get('/resumen', verificarToken, async (req, res) => {
   try {
     const productos = await getProductos();
 

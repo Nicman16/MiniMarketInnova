@@ -47,8 +47,6 @@ const conectar = async (onConnected) => {
 const getDb = () => _db;
 const isReady = () => _ready;
 
-module.exports = { conectar, getDb, isReady };
-
 // Convierte un documento Firestore a objeto plano (Timestamps → ISO strings)
 const firestoreDoc = (doc) => {
   if (!doc.exists) return null;

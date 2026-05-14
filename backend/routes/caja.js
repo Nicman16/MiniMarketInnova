@@ -51,7 +51,7 @@ router.post('/abrir', verificarToken, requireJefe, async (req, res) => {
 
     await db.collection('movimientosCaja').add({
       sesionId: sesionRef.id, tipo: 'ingreso', monto: Number(montoApertura),
-      concepto: 'Apertura de caja', empleadoId: empleado._id,
+      concepto: 'Apertura de caja', empleadoId: empleado.id,
       empleadoNombre: empleado.nombre, empleadoEmail: empleado.email, empleadoRol: empleado.rol
     });
 
@@ -211,12 +211,15 @@ router.get('/resumen', verificarToken, requireJefe, async (req, res) => {
 // GET /api/caja/resumen-cierre
 router.get('/resumen-cierre', verificarToken, requireJefe, async (req, res) => {
   try {
-    const sesion = await SesionCaja.findOne({ estado: 'abierta' }).sort({ fechaApertura: -1 });
-    if (!sesion) return res.status(404).json({ error: 'No hay una sesión de caja abierta' });
+    const db = getDb();
+    const sesionSnap = await db.collection('sesionCaja').where('estado', '==', 'abierta').orderBy('fechaApertura', 'desc').limit(1).get();
+    if (sesionSnap.empty) return res.status(404).json({ error: 'No hay una sesión de caja abierta' });
+    const sesion = firestoreDoc(sesionSnap.docs[0]);
 
     const fecha = new Date(sesion.fechaApertura).toISOString().split('T')[0];
     const { inicio, fin } = buildDayRange(fecha);
-    const movimientos = await MovimientoCaja.find({ fecha: { $gte: inicio, $lte: fin } });
+    const movSnap = await db.collection('movimientosCaja').where('fecha', '>=', inicio).where('fecha', '<=', fin).get();
+    const movimientos = firestoreDocs(movSnap);
     const ventas = await getVentasEntreFechas(inicio, fin);
     const resumenVentas = resumirVentas(ventas);
 

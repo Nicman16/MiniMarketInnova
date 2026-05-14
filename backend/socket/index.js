@@ -100,11 +100,6 @@ const setupSocket = (io) => {
       state.dispositivosConectados = state.dispositivosConectados.filter((d) => d.id !== socket.id);
       console.log('📴 Dispositivo desconectado:', socket.id);
       io.emit('dispositivo-desconectado', state.dispositivosConectados.length);
-
-      if (process.env.NODE_ENV !== 'production' && state.dispositivosConectados.length === 0) {
-        console.log('😴 Sin conexiones activas. Cerrando servidor automáticamente.');
-        setTimeout(() => { if (state.dispositivosConectados.length === 0) process.exit(0); }, 1000);
-      }
     });
   });
 };
