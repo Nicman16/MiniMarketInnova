@@ -11,6 +11,12 @@ import {
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
+interface SidebarProps {
+  paginaActual: string;
+  cambiarPagina: (nuevaPagina: string) => void;
+  isJefe: boolean;
+}
+
 const sidebarItems = [
   { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
   { key: 'punto-venta', label: 'Punto de Venta', icon: <ShoppingCart size={18} /> },
@@ -21,7 +27,7 @@ const sidebarItems = [
   { key: 'empleados', label: 'Empleados', icon: <Users size={18} /> },
 ];
 
-export default function Sidebar({ paginaActual, cambiarPagina, isJefe }) {
+export default function Sidebar({ paginaActual, cambiarPagina, isJefe }: SidebarProps) {
   const { usuario } = useAuth();
   return (
     <aside className="sidebar">

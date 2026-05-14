@@ -1,5 +1,9 @@
 # SECURITY FIXES IMPLEMENTED
 
+> Estado: Historico.
+> Fuente canonica actual: `docs/reference/QUICK_REFERENCE.md`.
+> Este archivo puede contener contenido repetido o referencias de lineas antiguas.
+
 ## Overview
 This document describes the critical security and functionality fixes implemented in MiniMarket Innova to address hardcoded credentials and add proper security middleware.
 

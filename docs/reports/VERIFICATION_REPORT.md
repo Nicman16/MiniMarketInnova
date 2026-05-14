@@ -1,5 +1,9 @@
 # VERIFICATION REPORT - Security & Functionality Fixes
 
+> Estado: Historico.
+> Fuente canonica actual: `docs/reference/QUICK_REFERENCE.md`.
+> Este archivo puede contener contenido repetido o referencias de lineas antiguas.
+
 **Date:** 2024  
 **Project:** MiniMarket Innova  
 **Status:** ✅ COMPLETE

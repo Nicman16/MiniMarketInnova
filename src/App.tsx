@@ -1,7 +1,6 @@
 import React from 'react';
-import { LogOut } from 'lucide-react';
+import { BadgeDollarSign, LayoutDashboard, LogOut, ReceiptText, ShoppingCart, Users, Wallet } from 'lucide-react';
 import './styles/App.css';
-import './styles/QuickAccess.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './componentes/auth/Login';
 import PuntoVenta from './componentes/ventas/PuntoVenta';
@@ -15,9 +14,9 @@ import './componentes/dashboard/DashboardMetrics.css';
 import Sidebar from './componentes/Sidebar';
 
 function DashboardContent() {
-  const { usuario, logout, isJefe } = useAuth();
-  const [paginaActual, setPaginaActual] = React.useState('dashboard');
-  const [isTransitioning, setIsTransitioning] = React.useState(false);
+  const { logout, isJefe } = useAuth();
+  const [paginaActual, setPaginaActual] = React.useState<string>('dashboard');
+  const [isTransitioning, setIsTransitioning] = React.useState<boolean>(false);
 
   const cambiarPagina = (nuevaPagina: string) => {
     if (nuevaPagina === paginaActual) {
@@ -25,7 +24,6 @@ function DashboardContent() {
     }
 
     setIsTransitioning(true);
-
     setTimeout(() => {
       setPaginaActual(nuevaPagina);
       setIsTransitioning(false);
@@ -33,7 +31,8 @@ function DashboardContent() {
   };
 
   const renderPagina = () => {
-    let paginaComponent;
+    let paginaComponent: React.ReactNode;
+
     switch (paginaActual) {
       case 'dashboard':
         paginaComponent = <DashboardMetrics />;
@@ -42,19 +41,19 @@ function DashboardContent() {
         paginaComponent = <PuntoVenta />;
         break;
       case 'inventario':
-        paginaComponent = isJefe ? <Inventario /> : <div className="sin-permiso">❌ Solo administradores pueden acceder al inventario</div>;
+        paginaComponent = isJefe ? <Inventario /> : <div className="sin-permiso">Solo administradores pueden acceder al inventario</div>;
         break;
       case 'fiado':
-        paginaComponent = isJefe ? <Fiado /> : <div className="sin-permiso">❌ Solo administradores pueden acceder al sistema Fiado</div>;
+        paginaComponent = isJefe ? <Fiado /> : <div className="sin-permiso">Solo administradores pueden acceder al sistema Fiado</div>;
         break;
       case 'caja':
-        paginaComponent = isJefe ? <ControlCaja /> : <div className="sin-permiso">❌ Solo administradores pueden acceder al control de caja</div>;
+        paginaComponent = isJefe ? <ControlCaja /> : <div className="sin-permiso">Solo administradores pueden acceder al control de caja</div>;
         break;
       case 'reportes':
-        paginaComponent = isJefe ? <Reportes /> : <div className="sin-permiso">❌ Solo administradores pueden acceder a reportes</div>;
+        paginaComponent = isJefe ? <Reportes /> : <div className="sin-permiso">Solo administradores pueden acceder a reportes</div>;
         break;
       case 'empleados':
-        paginaComponent = isJefe ? <Empleados /> : <div className="sin-permiso">❌ Solo administradores pueden acceder a empleados</div>;
+        paginaComponent = isJefe ? <Empleados /> : <div className="sin-permiso">Solo administradores pueden acceder a empleados</div>;
         break;
       default:
         paginaComponent = <DashboardMetrics />;
@@ -89,18 +88,65 @@ function DashboardContent() {
           {renderPagina()}
         </main>
       </div>
+      <nav className="bottom-nav">
+        <button
+          className={`bottom-nav-item ${paginaActual === 'dashboard' ? 'active' : ''}`}
+          onClick={() => cambiarPagina('dashboard')}
+        >
+          <span className="bottom-nav-icon"><LayoutDashboard size={18} /></span>
+          <span className="bottom-nav-label">Dashboard</span>
+        </button>
+
+        <button
+          className={`bottom-nav-item ${paginaActual === 'punto-venta' ? 'active' : ''}`}
+          onClick={() => cambiarPagina('punto-venta')}
+        >
+          <span className="bottom-nav-icon"><ShoppingCart size={18} /></span>
+          <span className="bottom-nav-label">Venta</span>
+        </button>
+
+        {isJefe && (
+          <>
+            <button
+              className={`bottom-nav-item ${paginaActual === 'caja' ? 'active' : ''}`}
+              onClick={() => cambiarPagina('caja')}
+            >
+              <span className="bottom-nav-icon"><BadgeDollarSign size={18} /></span>
+              <span className="bottom-nav-label">Caja</span>
+            </button>
+
+            <button
+              className={`bottom-nav-item ${['fiado', 'reportes', 'empleados'].includes(paginaActual) ? 'active' : ''}`}
+              onClick={() => {
+                const siguiente = paginaActual === 'fiado'
+                  ? 'reportes'
+                  : paginaActual === 'reportes'
+                    ? 'empleados'
+                    : 'fiado';
+                cambiarPagina(siguiente);
+              }}
+            >
+              <span className="bottom-nav-icon">
+                {paginaActual === 'reportes'
+                  ? <ReceiptText size={18} />
+                  : paginaActual === 'empleados'
+                    ? <Users size={18} />
+                    : <Wallet size={18} />}
+              </span>
+              <span className="bottom-nav-label">
+                {paginaActual === 'reportes' ? 'Reportes' : paginaActual === 'empleados' ? 'Equipo' : 'Fiado'}
+              </span>
+            </button>
+          </>
+        )}
+      </nav>
     </div>
   );
 }
 
 function App() {
   const { isAuthenticated } = useAuth();
-
-  return (
-    <div>
-      {isAuthenticated ? <DashboardContent /> : <Login />}
-    </div>
-  );
+  return <div>{isAuthenticated ? <DashboardContent /> : <Login />}</div>;
 }
 
 export default function AppWithAuth() {
