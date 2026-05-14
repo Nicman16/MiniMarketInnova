@@ -18,7 +18,6 @@ import { Producto } from '../../types/pos.types';
 import EscanerZXing from './EscanerZXing';
 import EstadisticasAvanzadas from '../dashboard/EstadisticasAvanzadas';
 import { inventarioFirestoreService } from '../../services/inventario/inventarioFirestoreService';
-import { buscarProductoPorCodigo, ProductoConocido } from '../../data/productosConocidos';
 
 interface Proveedor {
   id: number;
@@ -42,7 +41,7 @@ interface ProductoRegistroForm {
 }
 
 interface ProductoDetectado {
-  conocido: ProductoConocido;
+  producto: Producto;
   codigo: string;
 }
 
@@ -74,7 +73,7 @@ function Inventario() {
   const [mensajeGuardado, setMensajeGuardado] = useState<string | null>(null);
   const [soloProximosVencer, setSoloProximosVencer] = useState(false);
 
-  const manejarCambioCodigoBarras = (codigo: string) => {
+  const manejarCambioCodigoBarras = async (codigo: string) => {
     const normalizado = codigo.trim();
     setProductoForm((prev) => ({ ...prev, codigoBarras: normalizado }));
 
@@ -83,16 +82,19 @@ function Inventario() {
       return;
     }
 
-    const encontrado = buscarProductoPorCodigo(normalizado);
-    if (encontrado) {
-      setProductoDetectado({ conocido: encontrado, codigo: normalizado });
-      setProductoForm((prev) => ({
-        ...prev,
-        codigoBarras: normalizado,
-        nombre: encontrado.nombre,
-        gramaje: encontrado.gramaje
-      }));
-    } else {
+    try {
+      const encontrado = await inventarioFirestoreService.existeProductoPorCodigo(normalizado);
+      if (encontrado) {
+        setProductoDetectado({ producto: encontrado, codigo: normalizado });
+        setProductoForm((prev) => ({
+          ...prev,
+          codigoBarras: normalizado,
+          nombre: encontrado.nombre
+        }));
+      } else {
+        setProductoDetectado(null);
+      }
+    } catch {
       setProductoDetectado(null);
     }
   };
@@ -107,20 +109,16 @@ function Inventario() {
 
   const abrirModalEditar = (producto: Producto) => {
     setProductoSeleccionado(producto);
-    setProductoDetectado(null);
+    setProductoDetectado(producto.imagen ? { producto, codigo: producto.codigoBarras } : null);
     setMensajeGuardado(null);
-    const conocido = buscarProductoPorCodigo(producto.codigoBarras);
     setProductoForm({
       nombre: producto.nombre,
       codigoBarras: producto.codigoBarras,
-      gramaje: conocido?.gramaje || '',
+      gramaje: '',
       stock: producto.stock !== undefined && producto.stock !== null ? String(producto.stock) : '',
       precioPorKilo: producto.precioCompra ? String(producto.precioCompra) : '',
       fechaVencimiento: producto.fechaVencimiento ? producto.fechaVencimiento.slice(0, 10) : ''
     });
-    if (conocido) {
-      setProductoDetectado({ conocido, codigo: producto.codigoBarras });
-    }
     setModalActivo('editar');
   };
 
@@ -494,12 +492,12 @@ function Inventario() {
                 <h2>{modalActivo === 'agregar' ? '➕ Agregar producto' : '✏️ Editar producto'}</h2>
 
                 {/* Vista previa del producto detectado */}
-                {productoDetectado && (
+                {productoDetectado && productoDetectado.producto.imagen && (
                   <div className="producto-detectado-preview">
                     <div className="detectado-thumbnail">
                       <img 
-                        src={productoDetectado.conocido.imagen} 
-                        alt={productoDetectado.conocido.nombre}
+                        src={productoDetectado.producto.imagen} 
+                        alt={productoDetectado.producto.nombre}
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = 'none';
                           (e.target as HTMLImageElement).parentElement!.classList.add('img-fallback');
@@ -507,9 +505,11 @@ function Inventario() {
                       />
                     </div>
                     <div className="detectado-info">
-                      <strong className="detectado-nombre">{productoDetectado.conocido.nombre}</strong>
-                      <span className="detectado-gramaje">📏 {productoDetectado.conocido.gramaje}</span>
-                      <span className="detectado-badge">✅ Producto reconocido automáticamente</span>
+                      <strong className="detectado-nombre">{productoDetectado.producto.nombre}</strong>
+                      {productoDetectado.producto.categoria && (
+                        <span className="detectado-gramaje">🏷️ {productoDetectado.producto.categoria}</span>
+                      )}
+                      <span className="detectado-badge">✅ Producto registrado en inventario</span>
                     </div>
                   </div>
                 )}
