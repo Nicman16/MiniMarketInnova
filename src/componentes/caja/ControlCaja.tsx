@@ -63,12 +63,21 @@ function ControlCaja() {
     }
   };
 
+  const [montoDejado, setMontoDejado] = useState('');
   const cerrarCaja = async () => {
     if (!sesionActual) return;
 
     try {
       const resumenFinal = await cajaService.obtenerResumenParaCierre();
-      
+
+      let montoDejadoInput = window.prompt(`\n💰 ¿Cuánto dinero dejarás en caja para el siguiente turno?\n(Si no dejas nada, pon 0)`, montoDejado || '0');
+      if (montoDejadoInput === null) return; // Cancelado
+      if (isNaN(Number(montoDejadoInput)) || Number(montoDejadoInput) < 0) {
+        alert('Monto inválido');
+        return;
+      }
+      setMontoDejado(montoDejadoInput);
+
       const confirmar = window.confirm(`
 🔒 CERRAR CAJA
 ━━━━━━━━━━━━━━━━━━━━
@@ -79,13 +88,15 @@ function ControlCaja() {
 📉 Egresos: $${resumenFinal.egresos.toLocaleString()}
 ━━━━━━━━━━━━━━━━━━━━
 💰 TOTAL ESPERADO: $${resumenFinal.totalEsperado.toLocaleString()}
+💰 Monto dejado en caja: $${Number(montoDejadoInput).toLocaleString()}
 
 ¿Confirmar cierre de caja?
       `);
 
       if (confirmar) {
-        await cajaService.cerrarCaja(sesionActual.id, resumenFinal.totalEsperado);
+        await cajaService.cerrarCaja(sesionActual.id, resumenFinal.totalEsperado, Number(montoDejadoInput));
         setSesionActual(null);
+        setMontoDejado('');
         cargarDatos();
         alert('✅ Caja cerrada correctamente');
       }
@@ -227,6 +238,25 @@ function ControlCaja() {
                 <button className="button danger" onClick={cerrarCaja}>
                   🔒 Cerrar Caja
                 </button>
+                {typeof sesionActual.montoDejado === 'number' && (
+                  <div className="info-monto-cierre">
+                    <strong>💰 Monto dejado en caja:</strong> ${sesionActual.montoDejado.toLocaleString()}
+                  </div>
+                )}
+                {Array.isArray(sesionActual.historialEntregas) && sesionActual.historialEntregas.length > 0 && (
+                  <div className="historial-entregas">
+                    <h4>🔄 Historial de entregas/recibos</h4>
+                    <ul>
+                      {sesionActual.historialEntregas.map((h, idx) => (
+                        <li key={idx}>
+                          <span>🕒 {new Date(h.fecha).toLocaleString()} — </span>
+                          <span>Entregado por: <b>{h.entregadoPor.nombre}</b> → Recibido por: <b>{h.recibidoPor.nombre}</b></span>
+                          <span> — 💰 ${h.montoDejado.toLocaleString()}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -77,11 +77,19 @@ export interface MovimientoCaja {
 
 export interface SesionCaja {
   id: string;
-  empleado: Empleado;
+  empleado: Empleado; // Quien abrió
   fechaApertura: string;
   fechaCierre?: string;
   montoApertura: number;
   montoCierre?: number;
+  montoDejado?: number; // Nuevo: cuánto se dejó para el siguiente turno
+  recibidoPor?: Empleado; // Nuevo: quién recibió la caja
+  historialEntregas?: Array<{
+    entregadoPor: Empleado;
+    recibidoPor: Empleado;
+    fecha: string;
+    montoDejado: number;
+  }>; // Nuevo: historial de entregas/recibos
   ventasEfectivo: number;
   ventasTarjeta: number;
   ventasTransferencia: number;

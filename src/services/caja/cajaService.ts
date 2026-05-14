@@ -90,10 +90,10 @@ class CajaService {
     return this.toSesionCaja(sesion);
   }
 
-  async cerrarCaja(sesionId: string, montoCierre: number): Promise<SesionCaja> {
+  async cerrarCaja(sesionId: string, montoCierre: number, montoDejado?: number): Promise<SesionCaja> {
     const sesion = await this.request<any>(this.getUrl(`/api/caja/${sesionId}/cerrar`), {
       method: 'POST',
-      body: JSON.stringify({ montoCierre })
+      body: JSON.stringify({ montoCierre, montoDejado })
     });
 
     return this.toSesionCaja(sesion);

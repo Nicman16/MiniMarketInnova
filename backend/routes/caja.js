@@ -68,7 +68,7 @@ router.post('/abrir', verificarToken, requireJefe, async (req, res) => {
 router.post('/:id/cerrar', verificarToken, requireJefe, async (req, res) => {
   try {
     const { id } = req.params;
-    const { montoCierre } = req.body;
+    const { montoCierre, montoDejado, recibidoPorId } = req.body;
 
     const db = getDb();
     const docRef = db.collection('sesionCaja').doc(id);
@@ -77,7 +77,46 @@ router.post('/:id/cerrar', verificarToken, requireJefe, async (req, res) => {
     const sesionData = firestoreDoc(docSnap);
     if (sesionData.estado === 'cerrada') return res.status(400).json({ error: 'La sesión ya está cerrada' });
 
-    const cambios = { fechaCierre: new Date(), montoCierre: Number(montoCierre || 0), estado: 'cerrada' };
+    let recibidoPor = null;
+    if (recibidoPorId) {
+      const empDoc = await db.collection('usuarios').doc(recibidoPorId).get();
+      if (empDoc.exists) {
+        const emp = firestoreDoc(empDoc);
+        recibidoPor = {
+          id: emp.id,
+          nombre: emp.nombre,
+          email: emp.email,
+          rol: emp.rol,
+          activo: emp.estado === 'activo'
+        };
+      }
+    }
+
+    // Historial de entregas
+    let historialEntregas = Array.isArray(sesionData.historialEntregas) ? sesionData.historialEntregas : [];
+    if (typeof montoDejado !== 'undefined' && recibidoPor) {
+      historialEntregas.push({
+        entregadoPor: {
+          id: sesionData.empleadoId,
+          nombre: sesionData.empleadoNombre,
+          email: sesionData.empleadoEmail,
+          rol: sesionData.empleadoRol,
+          activo: true
+        },
+        recibidoPor,
+        fecha: new Date(),
+        montoDejado: Number(montoDejado)
+      });
+    }
+
+    const cambios = {
+      fechaCierre: new Date(),
+      montoCierre: Number(montoCierre || 0),
+      montoDejado: typeof montoDejado !== 'undefined' ? Number(montoDejado) : undefined,
+      recibidoPor: recibidoPor || null,
+      historialEntregas,
+      estado: 'cerrada'
+    };
     await docRef.update(cambios);
     const sesion = { ...sesionData, ...cambios };
 
