@@ -177,6 +177,17 @@ function PuntoVenta() {
     setDescuento(0);
   }, []);
 
+  // Resetea todos los estados del formulario/carrito tras una venta o acción exitosa
+  const limpiarFormulario = useCallback(() => {
+    setCarrito([]);
+    setDescuento(0);
+    setBusqueda('');
+    setError('');
+    setAlertaStock('');
+    setModalPago(MODAL_INICIAL);
+    setCategoriaSeleccionada('todos');
+  }, []);
+
   // Manejar código escaneado
   const manejarCodigoEscaneado = useCallback((codigo: string) => {
     console.log('🔍 Código escaneado:', codigo);
@@ -244,9 +255,8 @@ function PuntoVenta() {
         ? `✅ Venta registrada. Cambio: $${(totalesModal.cambio ?? 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`
         : '✅ Venta registrada correctamente.';
 
-      setModalPago(MODAL_INICIAL);
-      limpiarCarrito();
       setVentaExitosa(mensajeExito);
+      limpiarFormulario();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo registrar la venta');
     } finally {
@@ -258,7 +268,7 @@ function PuntoVenta() {
     carrito,
     calcularTotales,
     cargarProductos,
-    limpiarCarrito
+    limpiarFormulario
   ]);
 
   if (cargando) {

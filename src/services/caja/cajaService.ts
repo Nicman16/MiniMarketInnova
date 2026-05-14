@@ -1,35 +1,23 @@
 import { SesionCaja, MovimientoCaja, Empleado } from '../../types/pos.types';
-import { getApiBase } from '../shared/apiConfig';
+import { apiClient } from '../shared/apiConfig';
 
 class CajaService {
-  private getHeaders(): HeadersInit {
-    const token = localStorage.getItem('token');
-
-    return {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    };
-  }
-
   private async request<T>(url: string, options: RequestInit = {}): Promise<T> {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...this.getHeaders(),
-        ...(options.headers || {})
-      }
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => null);
-      throw new Error(errorBody?.error || `Error en ${options.method || 'GET'} ${url}`);
+    const method = ((options.method ?? 'GET') as string).toUpperCase();
+    let data: unknown;
+    if (options.body && typeof options.body === 'string') {
+      try { data = JSON.parse(options.body); } catch { data = options.body; }
     }
-
-    return response.json();
+    const response = await apiClient.request<T>({
+      url,
+      method,
+      ...(data !== undefined ? { data } : {})
+    });
+    return response.data;
   }
 
   private getUrl(path: string): string {
-    return `${getApiBase()}${path}`;
+    return path;
   }
 
   private toEmpleado(data: any): Empleado {

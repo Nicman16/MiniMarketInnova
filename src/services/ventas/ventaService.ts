@@ -1,5 +1,5 @@
 import { ItemVenta, Venta } from '../../types/pos.types';
-import { getApiBase } from '../shared/apiConfig';
+import { apiClient } from '../shared/apiConfig';
 
 interface RegistrarVentaPayload {
   items: ItemVenta[];
@@ -11,50 +11,17 @@ interface RegistrarVentaPayload {
 }
 
 class VentaService {
-  private getHeaders(): HeadersInit {
-    const token = localStorage.getItem('token');
-
-    return {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    };
-  }
-
-  private async request<T>(url: string, options: RequestInit = {}): Promise<T> {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...this.getHeaders(),
-        ...(options.headers || {})
-      }
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => null);
-      const serverMsg = errorBody?.error || errorBody?.message || errorBody?.detail;
-      throw new Error(serverMsg || `Error ${response.status} al registrar venta`);
-    }
-
-    return response.json();
-  }
-
-  private getUrl(path: string): string {
-    return `${getApiBase()}${path}`;
-  }
-
   async registrarVenta(payload: RegistrarVentaPayload): Promise<Venta> {
-    return this.request<Venta>(this.getUrl('/api/ventas'), {
-      method: 'POST',
-      body: JSON.stringify({
-        ...payload,
-        items: payload.items.map((item) => ({
-          productoId: item.producto.id,
-          cantidad: item.cantidad,
-          precioUnitario: item.precioUnitario,
-          subtotal: item.subtotal
-        }))
-      })
+    const response = await apiClient.post<Venta>('/api/ventas', {
+      ...payload,
+      items: payload.items.map((item) => ({
+        productoId: item.producto.id,
+        cantidad: item.cantidad,
+        precioUnitario: item.precioUnitario,
+        subtotal: item.subtotal
+      }))
     });
+    return response.data;
   }
 }
 

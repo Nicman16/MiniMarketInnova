@@ -92,6 +92,13 @@ function Inventario() {
     setProductoForm(FORM_INICIAL);
   };
 
+  const limpiarFormulario = () => {
+    setProductoForm(FORM_INICIAL);
+    setMensajeGuardado(null);
+    setProductoSeleccionado(null);
+    setModalActivo(null);
+  };
+
   const guardarProducto = async () => {
     if (!productoForm.nombre || !productoForm.codigoBarras || !productoForm.fechaVencimiento) {
       setMensajeGuardado('Completa nombre, código de barras y fecha de vencimiento.');
@@ -118,10 +125,9 @@ function Inventario() {
       });
 
       // Reset inmediato del formulario antes del cierre visual
-      setProductoForm(FORM_INICIAL);
       setMensajeGuardado('✅ Producto guardado exitosamente.');
       setTimeout(() => {
-        cerrarModal();
+        limpiarFormulario();
       }, 1200);
     } catch (error) {
       console.error('Error guardando producto:', error);

@@ -1,14 +1,21 @@
-// URL base del backend.
-// En local usa el proxy; en produccion usa REACT_APP_API_URL.
-export const getApiBase = (): string => {
-  const rawInput = (process.env.REACT_APP_API_URL || '').trim();
-  const withoutQuotes = rawInput.replace(/^['\"]+|['\"]+$/g, '');
-  const raw = withoutQuotes.replace(/\/$/, '');
+import axios from 'axios';
 
-  // Evita rutas duplicadas como /api/api/auth/login cuando la variable ya termina en /api.
-  if (/\/api$/i.test(raw)) {
-    return raw.replace(/\/api$/i, '');
+const BASE_URL = 'https://minimarketinnova-production.up.railway.app';
+
+/** Instancia de Axios con baseURL fija y token automático en cada petición. */
+export const apiClient = axios.create({
+  baseURL: BASE_URL,
+  headers: { 'Content-Type': 'application/json' }
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+  if (token) {
+    config.headers = config.headers ?? {};
+    config.headers['Authorization'] = `Bearer ${token}`;
   }
+  return config;
+});
 
-  return raw;
-};
+/** Retrocompatibilidad: URL base sin barra final. */
+export const getApiBase = (): string => BASE_URL;
