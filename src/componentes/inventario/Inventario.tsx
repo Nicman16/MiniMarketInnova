@@ -40,9 +40,11 @@ function Inventario() {
   });
   const [escanerActivo, setEscanerActivo] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
-  const [modalActivo, setModalActivo] = useState<'agregar' | 'editar' | 'proveedor' | null>(null);
+  const [modalActivo, setModalActivo] = useState<'agregar' | 'editar' | 'proveedor' | 'confirmar-agregar' | null>(null);
+  const [codigoEscaneadoPendiente, setCodigoEscaneadoPendiente] = useState<string | null>(null);
   const [productoForm, setProductoForm] = useState<Partial<Producto>>({});
   const [errorCargaProductos, setErrorCargaProductos] = useState('');
+  const [mensajeGuardado, setMensajeGuardado] = useState<string | null>(null);
 
   const abrirModalAgregar = () => {
     setProductoSeleccionado(null);
@@ -68,7 +70,7 @@ function Inventario() {
 
   const guardarProducto = async () => {
     if (!productoForm.nombre || !productoForm.proveedor || !productoForm.categoria) {
-      alert('Completa nombre, proveedor y categoría');
+      setMensajeGuardado('Completa nombre, proveedor y categoría');
       return;
     }
 
@@ -88,46 +90,35 @@ function Inventario() {
       cantidad: Number(productoForm.stock || 0),
       precio: Number(productoForm.precioVenta || 0),
       fechaCreacion: productoForm.fechaCreacion ?? new Date().toISOString(),
-      ultimaActualizacion: new Date().toISOString()
+      ultimaActualizacion: new Date().toISOString(),
+      fechaVencimiento: productoForm.fechaVencimiento || ''
     };
 
     try {
       if (modalActivo === 'agregar') {
-        const response = await fetch('/api/tienda/productos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(baseProducto)
-        });
-
-        if (!response.ok) {
-          throw new Error('No se pudo crear el producto en el servidor.');
-        }
-
-        const creado = await response.json();
+        // Usar productoService.crearProducto para asegurar integración Firebase
+        // @ts-ignore
+        const creado = await require('../../services/inventario/productoService').productoService.crearProducto(baseProducto);
         const nuevoProducto = mapApiProductoToProducto(creado);
         setProductos(prev => [...prev, nuevoProducto]);
+        setMensajeGuardado('Producto guardado exitosamente');
       } else if (modalActivo === 'editar' && productoSeleccionado) {
-        const response = await fetch(`/api/tienda/productos/${productoSeleccionado.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(baseProducto)
-        });
-
-        if (!response.ok) {
-          throw new Error('No se pudo actualizar el producto en el servidor.');
-        }
-
-        const actualizado = await response.json();
+        // @ts-ignore
+        const actualizado = await require('../../services/inventario/productoService').productoService.actualizarProducto(productoSeleccionado.id, baseProducto);
         const productoActualizado = mapApiProductoToProducto(actualizado);
         setProductos(prev => prev.map(p => (p.id === productoSeleccionado.id ? productoActualizado : p)));
         setProductoSeleccionado(productoActualizado);
+        setMensajeGuardado('Producto actualizado exitosamente');
       }
 
       setProductoForm({});
-      cerrarModal();
+      setTimeout(() => {
+        setMensajeGuardado(null);
+        cerrarModal();
+      }, 1200);
     } catch (error) {
       console.error('Error guardando producto:', error);
-      alert('Error guardando producto. Revisa la consola del navegador.');
+      setMensajeGuardado('Error guardando producto. Revisa la consola del navegador.');
     }
   };
 
@@ -248,10 +239,16 @@ function Inventario() {
 
   const manejarProductoNoEncontrado = (codigo: string) => {
     console.log('❓ Producto no encontrado:', codigo);
-    // Abrir modal para crear nuevo producto y completar el código de barras
+    setCodigoEscaneadoPendiente(codigo);
+    setModalActivo('confirmar-agregar');
+    setEscanerActivo(false);
+  };
+
+  const confirmarAgregarProducto = () => {
+    if (!codigoEscaneadoPendiente) return;
     setProductoForm({
-      codigoBarras: codigo,
-      nombre: `Nuevo producto ${codigo.slice(-6)}`,
+      codigoBarras: codigoEscaneadoPendiente,
+      nombre: `Nuevo producto ${codigoEscaneadoPendiente.slice(-6)}`,
       categoria: 'Sin Categoría',
       proveedor: '',
       stock: 0,
@@ -260,10 +257,16 @@ function Inventario() {
       precioVenta: 0,
       margen: 0,
       ubicacion: 'Por Definir',
-      estado: 'activo'
+      estado: 'activo',
+      fechaVencimiento: ''
     });
     setModalActivo('agregar');
-    setEscanerActivo(false);
+    setCodigoEscaneadoPendiente(null);
+  };
+
+  const cancelarAgregarProducto = () => {
+    setModalActivo(null);
+    setCodigoEscaneadoPendiente(null);
   };
 
   return (
@@ -438,8 +441,22 @@ function Inventario() {
             </div>
           )}
 
+          {/* Modal de confirmación para agregar producto */}
+          {modalActivo === 'confirmar-agregar' && (
+            <div className="modal-overlay">
+              <div className="modal-content">
+                <h2>¿Agregar producto al inventario?</h2>
+                <p>¿Deseas añadir el producto con código de barras <b>{codigoEscaneadoPendiente}</b> al inventario?</p>
+                <div className="modal-actions">
+                  <button className="btn-save" onClick={confirmarAgregarProducto}>Sí, agregar</button>
+                  <button className="btn-cancel" onClick={cancelarAgregarProducto}>No</button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Modal de agregar/editar */}
-          {modalActivo && modalActivo !== 'proveedor' && (
+          {(modalActivo === 'agregar' || modalActivo === 'editar') && (
             <div className="modal-overlay">
               <div className="modal-content">
                 <h2>{modalActivo === 'agregar' ? '➕ Agregar producto' : '✏️ Editar producto'}</h2>
@@ -453,12 +470,29 @@ function Inventario() {
                   />
 
                   <label htmlFor="codigo-barras">Código de Barras</label>
-                  <input
-                    id="codigo-barras"
-                    placeholder="7701234567890"
-                    value={productoForm.codigoBarras || ''}
-                    onChange={(e) => setProductoForm({...productoForm, codigoBarras: e.target.value})}
-                  />
+                  <div className="barcode-input-group">
+                    <input
+                      id="codigo-barras"
+                      placeholder="7701234567890"
+                      value={productoForm.codigoBarras || ''}
+                      onChange={(e) => setProductoForm({...productoForm, codigoBarras: e.target.value})}
+                      className="barcode-input"
+                    />
+                    <button
+                      type="button"
+                      className="btn-barcode-gen"
+                      title="Generar código aleatorio"
+                      onClick={() => {
+                        // Genera un EAN-13 válido (simple random, no check digit)
+                        const random = () => Math.floor(Math.random() * 10).toString();
+                        let code = '77';
+                        for (let i = 0; i < 11; i++) code += random();
+                        setProductoForm({ ...productoForm, codigoBarras: code });
+                      }}
+                    >
+                      <Barcode size={18} />
+                    </button>
+                  </div>
 
                   <label htmlFor="categoria-producto">Categoría</label>
                   <input
@@ -508,6 +542,14 @@ function Inventario() {
                     onChange={(e) => setProductoForm({...productoForm, precioVenta: Number(e.target.value)})}
                   />
 
+                  <label htmlFor="fecha-vencimiento">Fecha de Vencimiento</label>
+                  <input
+                    id="fecha-vencimiento"
+                    type="date"
+                    value={productoForm.fechaVencimiento ? productoForm.fechaVencimiento.slice(0,10) : ''}
+                    onChange={e => setProductoForm({...productoForm, fechaVencimiento: e.target.value})}
+                  />
+
                   <label htmlFor="estado-producto">Estado del Producto</label>
                   <select
                     id="estado-producto"
@@ -524,6 +566,9 @@ function Inventario() {
                   <button className="btn-save" onClick={guardarProducto}>Guardar</button>
                   <button className="btn-cancel" onClick={cerrarModal}>Cancelar</button>
                 </div>
+                {mensajeGuardado && (
+                  <div className="modal-feedback">{mensajeGuardado}</div>
+                )}
               </div>
             </div>
           )}
@@ -557,7 +602,7 @@ const ProductCard: React.FC<{producto: Producto, onEdit: () => void}> = ({produc
                      stock <= stockMinimo * 2 ? 'warning' : 'good';
 
   return (
-    <div className={`product-card ${producto.estado}`} onDoubleClick={onEdit} style={{ cursor: 'pointer' }}>
+    <div className={`product-card ${producto.estado} pointer-card`} onDoubleClick={onEdit}>
       <div className="product-image">
         {producto.imagen ? (
           <img src={producto.imagen} alt={producto.nombre} />

@@ -1,3 +1,31 @@
+/* ====== GRUPO INPUT CÓDIGO DE BARRAS ====== */
+.barcode-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.barcode-input {
+  flex: 1;
+}
+.btn-barcode-gen {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  padding: 0.5rem 0.7rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background var(--transition-fast);
+}
+.btn-barcode-gen:hover {
+  background: var(--primary-dark);
+}
+
+/* ====== CARD PRODUCTO: CURSOR POINTER ====== */
+.pointer-card {
+  cursor: pointer;
+}
 /* src/styles/Inventario.css */
 
 /* ========= VARIABLES CSS ========= */
