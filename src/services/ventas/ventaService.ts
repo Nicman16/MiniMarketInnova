@@ -31,7 +31,8 @@ class VentaService {
 
     if (!response.ok) {
       const errorBody = await response.json().catch(() => null);
-      throw new Error(errorBody?.error || `Error en ${options.method || 'GET'} ${url}`);
+      const serverMsg = errorBody?.error || errorBody?.message || errorBody?.detail;
+      throw new Error(serverMsg || `Error ${response.status} al registrar venta`);
     }
 
     return response.json();

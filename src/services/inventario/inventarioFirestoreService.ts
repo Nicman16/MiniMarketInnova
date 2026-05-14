@@ -43,8 +43,12 @@ const toIsoDate = (value: unknown): string | undefined => {
 
 const parseDateInputToTimestamp = (dateInput: string): Timestamp => {
   const [year, month, day] = dateInput.split('-').map(Number);
-  const normalizedDate = new Date(year, month - 1, day, 0, 0, 0, 0);
-  return Timestamp.fromDate(normalizedDate);
+  // Usar setFullYear explícito para preservar años con menos de 4 dígitos.
+  // new Date(year, ...) interpreta años 0-99 como 1900+year, lo que corrompe fechas.
+  const d = new Date(0);
+  d.setFullYear(year, month - 1, day);
+  d.setHours(0, 0, 0, 0);
+  return Timestamp.fromDate(d);
 };
 
 const mapDocToProducto = (id: string, data: Record<string, unknown>): Producto => {

@@ -32,10 +32,20 @@ interface Proveedor {
 interface ProductoRegistroForm {
   nombre: string;
   codigoBarras: string;
-  stock: number;
-  precioPorKilo: number;
+  /** Se mantiene como string para permitir borrar el campo completamente */
+  stock: string;
+  /** Se mantiene como string para permitir borrar el campo completamente */
+  precioPorKilo: string;
   fechaVencimiento: string;
 }
+
+const FORM_INICIAL: ProductoRegistroForm = {
+  nombre: '',
+  codigoBarras: '',
+  stock: '',
+  precioPorKilo: '',
+  fechaVencimiento: ''
+};
 
 function Inventario() {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -50,36 +60,26 @@ function Inventario() {
   const [escanerActivo, setEscanerActivo] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [modalActivo, setModalActivo] = useState<'agregar' | 'editar' | 'proveedor' | null>(null);
-  const [productoForm, setProductoForm] = useState<ProductoRegistroForm>({
-    nombre: '',
-    codigoBarras: '',
-    stock: 0,
-    precioPorKilo: 0,
-    fechaVencimiento: ''
-  });
+  const [productoForm, setProductoForm] = useState<ProductoRegistroForm>(FORM_INICIAL);
   const [errorCargaProductos, setErrorCargaProductos] = useState('');
   const [mensajeGuardado, setMensajeGuardado] = useState<string | null>(null);
   const [soloProximosVencer, setSoloProximosVencer] = useState(false);
 
   const abrirModalAgregar = () => {
     setProductoSeleccionado(null);
-    setProductoForm({
-      nombre: '',
-      codigoBarras: '',
-      stock: 0,
-      precioPorKilo: 0,
-      fechaVencimiento: ''
-    });
+    setProductoForm(FORM_INICIAL);
+    setMensajeGuardado(null);
     setModalActivo('agregar');
   };
 
   const abrirModalEditar = (producto: Producto) => {
     setProductoSeleccionado(producto);
+    setMensajeGuardado(null);
     setProductoForm({
       nombre: producto.nombre,
       codigoBarras: producto.codigoBarras,
-      stock: Number(producto.stock ?? 0),
-      precioPorKilo: Number(producto.precioCompra ?? 0),
+      stock: producto.stock !== undefined && producto.stock !== null ? String(producto.stock) : '',
+      precioPorKilo: producto.precioCompra ? String(producto.precioCompra) : '',
       fechaVencimiento: producto.fechaVencimiento ? producto.fechaVencimiento.slice(0, 10) : ''
     });
     setModalActivo('editar');
@@ -88,13 +88,8 @@ function Inventario() {
   const cerrarModal = () => {
     setModalActivo(null);
     setProductoSeleccionado(null);
-    setProductoForm({
-      nombre: '',
-      codigoBarras: '',
-      stock: 0,
-      precioPorKilo: 0,
-      fechaVencimiento: ''
-    });
+    setMensajeGuardado(null);
+    setProductoForm(FORM_INICIAL);
   };
 
   const guardarProducto = async () => {
@@ -122,9 +117,10 @@ function Inventario() {
         return [...prev, guardado];
       });
 
-      setMensajeGuardado('Producto guardado exitosamente en Firestore.');
+      // Reset inmediato del formulario antes del cierre visual
+      setProductoForm(FORM_INICIAL);
+      setMensajeGuardado('✅ Producto guardado exitosamente.');
       setTimeout(() => {
-        setMensajeGuardado(null);
         cerrarModal();
       }, 1200);
     } catch (error) {
@@ -247,12 +243,10 @@ function Inventario() {
       } else {
         setProductoSeleccionado(null);
         setProductoForm({
-          nombre: '',
-          codigoBarras: codigoNormalizado,
-          stock: 0,
-          precioPorKilo: 0,
-          fechaVencimiento: ''
+          ...FORM_INICIAL,
+          codigoBarras: codigoNormalizado
         });
+        setMensajeGuardado(null);
         setModalActivo('agregar');
       }
     } catch (error) {
@@ -498,27 +492,29 @@ function Inventario() {
                   <input
                     id="stock-producto"
                     type="number"
-                    placeholder="0"
+                    placeholder="Ej: 10"
                     min="0"
                     value={productoForm.stock}
-                    onChange={(e) => setProductoForm({...productoForm, stock: Number(e.target.value)})}
+                    onChange={(e) => setProductoForm({...productoForm, stock: e.target.value})}
                   />
 
                   <label htmlFor="precio-kilo">Precio por Kilo</label>
                   <input
                     id="precio-kilo"
                     type="number"
-                    placeholder="0"
+                    placeholder="Ej: 1500"
                     min="0"
                     step="0.01"
                     value={productoForm.precioPorKilo}
-                    onChange={(e) => setProductoForm({...productoForm, precioPorKilo: Number(e.target.value)})}
+                    onChange={(e) => setProductoForm({...productoForm, precioPorKilo: e.target.value})}
                   />
 
                   <label htmlFor="fecha-vencimiento">Fecha de Vencimiento</label>
                   <input
                     id="fecha-vencimiento"
                     type="date"
+                    min="2020-01-01"
+                    max="2099-12-31"
                     value={productoForm.fechaVencimiento}
                     onChange={e => setProductoForm({...productoForm, fechaVencimiento: e.target.value})}
                   />
