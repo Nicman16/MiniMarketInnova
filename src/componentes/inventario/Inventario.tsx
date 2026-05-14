@@ -153,8 +153,8 @@ function Inventario() {
       nombre: producto.nombre,
       codigoBarras: producto.codigoBarras,
       gramaje: '',
-      stock: producto.stock !== undefined && producto.stock !== null ? String(producto.stock) : '',
-      precioPorKilo: producto.precioCompra ? String(producto.precioCompra) : '',
+      stock: Number(producto.stock ?? 0) > 0 ? String(producto.stock) : '',
+      precioPorKilo: Number(producto.precioCompra ?? 0) > 0 ? String(producto.precioCompra) : '',
       fechaVencimiento: producto.fechaVencimiento ? producto.fechaVencimiento.slice(0, 10) : ''
     });
     setModalActivo('editar');
@@ -591,6 +591,8 @@ function Inventario() {
                   <input
                     id="stock-producto"
                     type="number"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="Ej: 10"
                     min="0"
                     value={productoForm.stock}
@@ -601,6 +603,8 @@ function Inventario() {
                   <input
                     id="precio-kilo"
                     type="number"
+                    inputMode="decimal"
+                    pattern="[0-9]*[.,]?[0-9]*"
                     placeholder="Ej: 1500"
                     min="0"
                     step="0.01"

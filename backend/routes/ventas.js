@@ -22,7 +22,14 @@ router.post('/', verificarToken, async (req, res) => {
 
     const db = getDb();
 
-    console.log(`[POST /api/ventas] metodoPago=${metodoPago} items=${items.length} total=${total} usuarioId=${req.usuario && req.usuario.id}`);
+    const subtotalNum = Number(subtotal || 0);
+    const descuentosNum = Number(descuentos || 0);
+    const totalBase = Math.max(0, subtotalNum - descuentosNum);
+    const recargoDatafono = metodoPago === 'datafono' ? Number((totalBase * 0.06).toFixed(2)) : 0;
+    const ivaAplicado = 0;
+    const totalVenta = Number((totalBase + recargoDatafono).toFixed(2));
+
+    console.log(`[POST /api/ventas] metodoPago=${metodoPago} items=${items.length} total=${totalVenta} usuarioId=${req.usuario && req.usuario.id}`);
 
     if (!db) {
       // Fallback en memoria
@@ -39,7 +46,7 @@ router.post('/', verificarToken, async (req, res) => {
         itemsNormalizados.push({ productoId, nombre: producto.nombre, cantidad, precioUnitario, subtotal: Number(item.subtotal || cantidad * precioUnitario) });
         state.productos[index] = { ...producto, cantidad: producto.cantidad - cantidad };
       }
-      const ventaRegistrada = { id: Date.now().toString(), fecha: new Date(), items: itemsNormalizados, subtotal: Number(subtotal || 0), iva: Number(iva || 0), descuentos: Number(descuentos || 0), total: Number(total || 0), metodoPago, estado: 'completada' };
+      const ventaRegistrada = { id: Date.now().toString(), fecha: new Date(), items: itemsNormalizados, subtotal: subtotalNum, iva: ivaAplicado, recargoDatafono, descuentos: descuentosNum, total: totalVenta, metodoPago, estado: 'completada' };
       state.ventasRegistradas.unshift(ventaRegistrada);
       emit('venta-registrada', ventaRegistrada);
       return res.status(201).json(ventaRegistrada);
@@ -70,7 +77,6 @@ router.post('/', verificarToken, async (req, res) => {
       };
     }
 
-    const totalVenta = Number(total || 0);
     if (totalVenta <= 0) return res.status(400).json({ error: 'El total de la venta debe ser mayor a cero' });
 
     // Validar stock fuera de transaccion
@@ -106,8 +112,8 @@ router.post('/', verificarToken, async (req, res) => {
       ventaId = ventaRef.id;
       t.set(ventaRef, {
         fecha: new Date(), items: itemsNormalizados,
-        subtotal: Number(subtotal || 0), iva: Number(iva || 0),
-        descuentos: Number(descuentos || 0), total: totalVenta, metodoPago,
+        subtotal: subtotalNum, iva: ivaAplicado, recargoDatafono,
+        descuentos: descuentosNum, total: totalVenta, metodoPago,
         vendedorId: vendedor.id, vendedorNombre: vendedor.nombre,
         vendedorEmail: vendedor.email, vendedorRol: vendedor.rol, estado: 'completada'
       });
@@ -133,7 +139,7 @@ router.post('/', verificarToken, async (req, res) => {
       }
     }
 
-    const ventaRegistrada = { id: ventaId, fecha: new Date(), items: itemsNormalizados, subtotal: Number(subtotal || 0), iva: Number(iva || 0), descuentos: Number(descuentos || 0), total: totalVenta, metodoPago, vendedorId: vendedor.id, vendedorNombre: vendedor.nombre, estado: 'completada' };
+    const ventaRegistrada = { id: ventaId, fecha: new Date(), items: itemsNormalizados, subtotal: subtotalNum, iva: ivaAplicado, recargoDatafono, descuentos: descuentosNum, total: totalVenta, metodoPago, vendedorId: vendedor.id, vendedorNombre: vendedor.nombre, estado: 'completada' };
     emit('venta-registrada', ventaRegistrada);
     res.status(201).json(ventaRegistrada);
   } catch (error) {

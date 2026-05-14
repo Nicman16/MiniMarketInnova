@@ -29,8 +29,8 @@ const resumirVentas = (ventas) =>
     acc.cantidadVentas += 1;
     acc.productosVendidos += items;
     if (venta.metodoPago === 'efectivo') acc.ventasEfectivo += total;
-    else if (venta.metodoPago === 'tarjeta') acc.ventasTarjeta += total;
-    else if (venta.metodoPago === 'transferencia') acc.ventasTransferencia += total;
+    else if (venta.metodoPago === 'datafono' || venta.metodoPago === 'tarjeta') acc.ventasTarjeta += total;
+    else if (venta.metodoPago === 'nequi' || venta.metodoPago === 'transferencia') acc.ventasTransferencia += total;
     return acc;
   }, { totalVentas: 0, cantidadVentas: 0, productosVendidos: 0, ventasEfectivo: 0, ventasTarjeta: 0, ventasTransferencia: 0 });
 

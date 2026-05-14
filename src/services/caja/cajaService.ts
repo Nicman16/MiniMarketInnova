@@ -1,9 +1,9 @@
 import { SesionCaja, MovimientoCaja, Empleado } from '../../types/pos.types';
-import { getApiBase } from '../shared/apiConfig';
+import { buildApiUrl } from '../shared/apiConfig';
 
 class CajaService {
   private getHeaders(): HeadersInit {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
 
     return {
       'Content-Type': 'application/json',
@@ -29,7 +29,7 @@ class CajaService {
   }
 
   private getUrl(path: string): string {
-    return `${getApiBase()}${path}`;
+    return buildApiUrl(path);
   }
 
   private toEmpleado(data: any): Empleado {

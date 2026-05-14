@@ -1,30 +1,7 @@
-import { getApiBase } from './apiConfig';
-
-const isAbsoluteUrl = (value: string): boolean => /^https?:\/\//i.test(value);
-
-const normalizePath = (value: string): string => {
-  if (!value) return '/';
-  return value.startsWith('/') ? value : `/${value}`;
-};
+import { buildApiUrl } from './apiConfig';
 
 const buildCandidates = (pathOrUrl: string): string[] => {
-  if (isAbsoluteUrl(pathOrUrl)) return [pathOrUrl];
-
-  const path = normalizePath(pathOrUrl);
-  const base = getApiBase();
-  const candidates: string[] = [];
-
-  if (base) {
-    candidates.push(`${base}${path}`);
-  }
-
-  if (typeof window !== 'undefined' && window.location?.origin) {
-    candidates.push(`${window.location.origin}${path}`);
-  }
-
-  candidates.push(path);
-
-  return candidates.filter((candidate, index, arr) => arr.indexOf(candidate) === index);
+  return [buildApiUrl(pathOrUrl)];
 };
 
 const looksLikeJson = (raw: string): boolean => {
@@ -33,7 +10,7 @@ const looksLikeJson = (raw: string): boolean => {
 };
 
 const getAuthHeaders = (): Record<string, string> => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 

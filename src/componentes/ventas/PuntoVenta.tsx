@@ -398,6 +398,11 @@ function PuntoVenta() {
               <span className="resumen-valor">${calcularTotales.subtotal.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
             </div>
 
+            <div className="resumen-fila impuesto">
+              <span>IVA (0%)</span>
+              <span className="resumen-valor">$0</span>
+            </div>
+
             {descuento > 0 && (
               <div className="resumen-fila descuento">
                 <span>Descuento ({descuento}%)</span>
@@ -413,6 +418,8 @@ function PuntoVenta() {
             {/* Descuento */}
             <input
               type="number"
+              inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
               placeholder="Descuento %"
               min="0"
               max="100"
@@ -477,6 +484,10 @@ function PuntoVenta() {
                 <span>Subtotal</span>
                 <span>${calcularTotales.subtotal.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
               </div>
+              <div className="modal-pago-fila impuesto">
+                <span>IVA (0%)</span>
+                <span>$0</span>
+              </div>
               {calcularTotales.descuentoAplicado > 0 && (
                 <div className="modal-pago-fila descuento">
                   <span>Descuento ({descuento}%)</span>
@@ -502,6 +513,8 @@ function PuntoVenta() {
                 <input
                   id="dinero-recibido"
                   type="number"
+                  inputMode="decimal"
+                  pattern="[0-9]*[.,]?[0-9]*"
                   min="0"
                   placeholder={`Mínimo $${totalesModal.total.toLocaleString('es-CO', { maximumFractionDigits: 0 })}`}
                   value={modalPago.dineroRecibido}

@@ -1,11 +1,12 @@
 const express = require('express');
+const { verificarToken } = require('../middleware/auth');
 const { getDb, firestoreDocs } = require('../config/firebase');
 const { getVentasEntreFechas } = require('../utils/ventasHelper');
 
 const router = express.Router();
 
 // GET /api/reportes/ventas
-router.get('/ventas', async (req, res) => {
+router.get('/ventas', verificarToken, async (req, res) => {
   try {
     const { inicio, fin } = req.query;
     if (!inicio || !fin) return res.status(400).json({ error: 'Se requieren fechas inicio y fin' });
@@ -28,8 +29,8 @@ router.get('/ventas', async (req, res) => {
       actual.ingresos += Number(venta.total || 0);
       actual.productos_vendidos += (venta.items || []).reduce((sum, item) => sum + Number(item.cantidad || 0), 0);
       if (venta.metodoPago === 'efectivo') actual.efectivo += Number(venta.total || 0);
-      else if (venta.metodoPago === 'tarjeta') actual.tarjeta += Number(venta.total || 0);
-      else if (venta.metodoPago === 'transferencia') actual.transferencia += Number(venta.total || 0);
+      else if (venta.metodoPago === 'datafono' || venta.metodoPago === 'tarjeta') actual.tarjeta += Number(venta.total || 0);
+      else if (venta.metodoPago === 'nequi' || venta.metodoPago === 'transferencia') actual.transferencia += Number(venta.total || 0);
     });
 
     const reportes = Array.from(ventasPorDia.values()).map((dia) => ({ ...dia, ticket_promedio: dia.cantidad > 0 ? Math.round(dia.ingresos / dia.cantidad) : 0 }));
@@ -41,7 +42,7 @@ router.get('/ventas', async (req, res) => {
 });
 
 // GET /api/reportes/productos
-router.get('/productos', async (req, res) => {
+router.get('/productos', verificarToken, async (req, res) => {
   try {
     const { inicio, fin } = req.query;
     if (!inicio || !fin) return res.status(400).json({ error: 'Se requieren fechas inicio y fin' });
@@ -67,7 +68,7 @@ router.get('/productos', async (req, res) => {
 });
 
 // GET /api/reportes/empleados
-router.get('/empleados', async (req, res) => {
+router.get('/empleados', verificarToken, async (req, res) => {
   try {
     const { inicio, fin } = req.query;
     if (!inicio || !fin) return res.status(400).json({ error: 'Se requieren fechas inicio y fin' });
@@ -91,7 +92,7 @@ router.get('/empleados', async (req, res) => {
 });
 
 // GET /api/reportes/stock-bajo
-router.get('/stock-bajo', async (req, res) => {
+router.get('/stock-bajo', verificarToken, async (req, res) => {
   try {
     const db = getDb();
     if (!db) return res.json([]);

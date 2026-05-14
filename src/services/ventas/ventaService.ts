@@ -1,5 +1,5 @@
 import { ItemVenta, Venta } from '../../types/pos.types';
-import { getApiBase } from '../shared/apiConfig';
+import { buildApiUrl } from '../shared/apiConfig';
 
 interface RegistrarVentaPayload {
   items: ItemVenta[];
@@ -12,7 +12,7 @@ interface RegistrarVentaPayload {
 
 class VentaService {
   private getHeaders(): HeadersInit {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
 
     return {
       'Content-Type': 'application/json',
@@ -39,7 +39,7 @@ class VentaService {
   }
 
   private getUrl(path: string): string {
-    return `${getApiBase()}${path}`;
+    return buildApiUrl(path);
   }
 
   async registrarVenta(payload: RegistrarVentaPayload): Promise<Venta> {
