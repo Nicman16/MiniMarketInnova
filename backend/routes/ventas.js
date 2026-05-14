@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const { verificarToken } = require('../middleware/auth');
 const { getDb, firestoreDoc } = require('../config/firebase');
 const { normalizeVenta, normalizeProducto } = require('../utils/normalize');
@@ -17,18 +17,20 @@ router.post('/', verificarToken, async (req, res) => {
     }
 
     if (!['efectivo', 'nequi', 'datafono'].includes(metodoPago)) {
-      return res.status(400).json({ error: 'Método de pago inválido' });
+      return res.status(400).json({ error: 'Metodo de pago invalido' });
     }
 
     const db = getDb();
+
+    console.log(`[POST /api/ventas] metodoPago=${metodoPago} items=${items.length} total=${total} usuarioId=${req.usuario && req.usuario.id}`);
 
     if (!db) {
       // Fallback en memoria
       const itemsNormalizados = [];
       for (const item of items) {
-        const productoId = String(item.productoId || item.producto?.id || '');
+        const productoId = String(item.productoId || (item.producto && item.producto.id) || '');
         const cantidad = Number(item.cantidad || 0);
-        if (!productoId || cantidad <= 0) return res.status(400).json({ error: 'Hay productos inválidos en la venta' });
+        if (!productoId || cantidad <= 0) return res.status(400).json({ error: 'Hay productos invalidos en la venta' });
         const index = state.productos.findIndex((p) => `${p.id}` === productoId);
         if (index === -1) return res.status(404).json({ error: 'Uno de los productos ya no existe' });
         const producto = state.productos[index];
@@ -43,29 +45,52 @@ router.post('/', verificarToken, async (req, res) => {
       return res.status(201).json(ventaRegistrada);
     }
 
-    // Firestore: obtener vendedor
-    const vendedorDoc = await db.collection('usuarios').doc(req.usuario.id).get();
-    if (!vendedorDoc.exists) return res.status(404).json({ error: 'Empleado no encontrado' });
-    const vendedor = firestoreDoc(vendedorDoc);
+    // Firestore: obtener vendedor (no-fatal: usa JWT si el doc no existe)
+    let vendedor;
+    try {
+      const vendedorDoc = await db.collection('usuarios').doc(req.usuario.id).get();
+      if (vendedorDoc.exists) {
+        vendedor = firestoreDoc(vendedorDoc);
+      } else {
+        console.warn(`[POST /api/ventas] Vendedor doc no encontrado para id=${req.usuario.id}. Usando datos del JWT.`);
+        vendedor = {
+          id: req.usuario.id,
+          nombre: req.usuario.nombre || req.usuario.email || 'Vendedor',
+          email: req.usuario.email || '',
+          rol: req.usuario.rol || 'vendedor'
+        };
+      }
+    } catch (vendedorErr) {
+      console.warn(`[POST /api/ventas] Error obteniendo vendedor: ${vendedorErr.message}. Usando datos del JWT.`);
+      vendedor = {
+        id: req.usuario.id,
+        nombre: req.usuario.nombre || req.usuario.email || 'Vendedor',
+        email: req.usuario.email || '',
+        rol: req.usuario.rol || 'vendedor'
+      };
+    }
 
     const totalVenta = Number(total || 0);
     if (totalVenta <= 0) return res.status(400).json({ error: 'El total de la venta debe ser mayor a cero' });
 
-    // Validar stock fuera de transacción
+    // Validar stock fuera de transaccion
     const itemsNormalizados = [];
     for (const item of items) {
-      const productoId = String(item.productoId || item.producto?.id || '');
+      const productoId = String(item.productoId || (item.producto && item.producto.id) || '');
       const cantidad = Number(item.cantidad || 0);
-      if (!productoId || cantidad <= 0) return res.status(400).json({ error: 'Hay productos inválidos en la venta' });
+      if (!productoId || cantidad <= 0) return res.status(400).json({ error: 'Hay productos invalidos en la venta' });
       const prodDoc = await db.collection('productos').doc(productoId).get();
-      if (!prodDoc.exists) return res.status(404).json({ error: 'Uno de los productos ya no existe' });
+      if (!prodDoc.exists) {
+        console.error(`[POST /api/ventas] Producto no encontrado en Firestore: id="${productoId}"`);
+        return res.status(404).json({ error: `Producto no encontrado (id: ${productoId})` });
+      }
       const producto = firestoreDoc(prodDoc);
       if (Number(producto.cantidad || 0) < cantidad) return res.status(400).json({ error: `Stock insuficiente para ${producto.nombre}` });
       const precioUnitario = Number(item.precioUnitario || producto.precioVenta || producto.precio || 0);
       itemsNormalizados.push({ productoId, nombre: producto.nombre, codigoBarras: producto.codigoBarras || '', categoria: producto.categoria || '', cantidad, precioUnitario, subtotal: Number(item.subtotal || cantidad * precioUnitario) });
     }
 
-    // Ejecutar como transacción Firestore
+    // Ejecutar como transaccion Firestore
     let ventaId;
     await db.runTransaction(async (t) => {
       // Descontar stock
@@ -87,11 +112,13 @@ router.post('/', verificarToken, async (req, res) => {
         vendedorEmail: vendedor.email, vendedorRol: vendedor.rol, estado: 'completada'
       });
 
-      // Actualizar sesión de caja activa
+      // Actualizar sesion de caja activa
       const sesionSnap = await db.collection('sesionCaja').where('estado', '==', 'abierta').limit(1).get();
       if (!sesionSnap.empty) {
         const sesionRef = sesionSnap.docs[0].ref;
-        const campo = metodoPago === 'efectivo' ? 'ventasEfectivo' : metodoPago === 'tarjeta' ? 'ventasTarjeta' : 'ventasTransferencia';
+        const campo = metodoPago === 'efectivo' ? 'ventasEfectivo'
+                    : metodoPago === 'datafono' ? 'ventasTarjeta'
+                    : 'ventasTransferencia';
         const valorActual = Number(sesionSnap.docs[0].data()[campo] || 0);
         t.update(sesionRef, { [campo]: valorActual + totalVenta });
       }
@@ -110,7 +137,7 @@ router.post('/', verificarToken, async (req, res) => {
     emit('venta-registrada', ventaRegistrada);
     res.status(201).json(ventaRegistrada);
   } catch (error) {
-    console.error('Error POST /api/ventas:', error);
+    console.error('[POST /api/ventas] Error inesperado:', error.message, error.stack);
     res.status(500).json({ error: 'No se pudo registrar la venta' });
   }
 });
