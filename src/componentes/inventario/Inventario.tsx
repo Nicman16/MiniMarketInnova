@@ -18,6 +18,7 @@ import { Producto } from '../../types/pos.types';
 import EscanerZXing from './EscanerZXing';
 import EstadisticasAvanzadas from '../dashboard/EstadisticasAvanzadas';
 import { inventarioFirestoreService } from '../../services/inventario/inventarioFirestoreService';
+import { buscarProductoEnOpenFoodFacts, OpenFoodFactsProduct } from '../../services/inventario/openFoodFactsApi';
 
 interface Proveedor {
   id: number;
@@ -43,6 +44,14 @@ interface ProductoRegistroForm {
 interface ProductoDetectado {
   producto: Producto;
   codigo: string;
+  desdeAPI?: boolean;
+}
+
+interface DatosAPI {
+  nombre: string;
+  imagen: string;
+  peso: string;
+  marca: string;
 }
 
 const FORM_INICIAL: ProductoRegistroForm = {
@@ -69,19 +78,45 @@ function Inventario() {
   const [modalActivo, setModalActivo] = useState<'agregar' | 'editar' | 'proveedor' | null>(null);
   const [productoForm, setProductoForm] = useState<ProductoRegistroForm>(FORM_INICIAL);
   const [productoDetectado, setProductoDetectado] = useState<ProductoDetectado | null>(null);
+  const [datosAPI, setDatosAPI] = useState<DatosAPI | null>(null);
+  const [buscandoAPI, setBuscandoAPI] = useState(false);
   const [errorCargaProductos, setErrorCargaProductos] = useState('');
   const [mensajeGuardado, setMensajeGuardado] = useState<string | null>(null);
   const [soloProximosVencer, setSoloProximosVencer] = useState(false);
 
+  const consultarAPI = async (codigo: string) => {
+    setBuscandoAPI(true);
+    try {
+      const resultado = await buscarProductoEnOpenFoodFacts(codigo);
+      if (resultado) {
+        const nombre = resultado.product_name_es || resultado.product_name || '';
+        const imagen = resultado.image_url || resultado.image_small_url || '';
+        const peso = resultado.quantity || '';
+        const marca = resultado.brands || '';
+        setDatosAPI({ nombre, imagen, peso, marca });
+        setProductoForm((prev) => ({
+          ...prev,
+          nombre: nombre || prev.nombre
+        }));
+      }
+    } catch {
+      // Silencioso
+    } finally {
+      setBuscandoAPI(false);
+    }
+  };
+
   const manejarCambioCodigoBarras = async (codigo: string) => {
     const normalizado = codigo.trim();
     setProductoForm((prev) => ({ ...prev, codigoBarras: normalizado }));
+    setDatosAPI(null);
 
     if (!normalizado) {
       setProductoDetectado(null);
       return;
     }
 
+    // Primero buscar en Firestore
     try {
       const encontrado = await inventarioFirestoreService.existeProductoPorCodigo(normalizado);
       if (encontrado) {
@@ -91,12 +126,15 @@ function Inventario() {
           codigoBarras: normalizado,
           nombre: encontrado.nombre
         }));
-      } else {
-        setProductoDetectado(null);
+        return;
       }
     } catch {
-      setProductoDetectado(null);
+      // Si falla Firestore, continuar con API
     }
+
+    // Si no esta en Firestore, consultar Open Food Facts
+    setProductoDetectado(null);
+    consultarAPI(normalizado);
   };
 
   const abrirModalAgregar = () => {
