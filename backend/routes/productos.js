@@ -48,6 +48,8 @@ router.post('/tienda/productos', async (req, res) => {
 
     const db = getDb();
     if (db) {
+      const codigoBarras = (payload.codigoBarras || '').toString().trim();
+      const fechaVencimiento = payload.fechaVencimiento ? new Date(payload.fechaVencimiento) : null;
       const data = {
         nombre: payload.nombre, cantidad: payload.cantidad || 0,
         precio: payload.precio || 0, codigoBarras: payload.codigoBarras || '',
@@ -56,10 +58,21 @@ router.post('/tienda/productos', async (req, res) => {
         precioCompra: payload.precioCompra || 0, precioVenta: payload.precioVenta || 0,
         margen: payload.margen || 0, ubicacion: payload.ubicacion || '',
         descripcion: payload.descripcion || '', estado: payload.estado || 'activo',
-        fechaActualizacion: new Date()
+        fechaVencimiento,
+        fechaActualizacion: new Date(),
+        fechaCreacion: new Date()
       };
-      const docRef = await db.collection('productos').add(data);
-      const nuevo = { id: docRef.id, ...data };
+
+      let docRef;
+      if (codigoBarras) {
+        docRef = db.collection('productos').doc(codigoBarras);
+        await docRef.set(data, { merge: true });
+      } else {
+        docRef = await db.collection('productos').add(data);
+      }
+
+      const saved = await docRef.get();
+      const nuevo = firestoreDoc(saved);
       const snap = await db.collection('productos').get();
       state.productos = firestoreDocs(snap);
       const productoNormalizado = normalizeProducto(nuevo);

@@ -17,6 +17,7 @@ import '../../styles/Inventario.css';
 import { Producto } from '../../types/pos.types';
 import EscanerZXing from './EscanerZXing';
 import EstadisticasAvanzadas from '../dashboard/EstadisticasAvanzadas';
+import { inventarioFirestoreService } from '../../services/inventario/inventarioFirestoreService';
 
 interface Proveedor {
   id: number;
@@ -26,6 +27,14 @@ interface Proveedor {
   email: string;
   direccion: string;
   productos: number[];
+}
+
+interface ProductoRegistroForm {
+  nombre: string;
+  codigoBarras: string;
+  stock: number;
+  precioPorKilo: number;
+  fechaVencimiento: string;
 }
 
 function Inventario() {
@@ -40,9 +49,14 @@ function Inventario() {
   });
   const [escanerActivo, setEscanerActivo] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
-  const [modalActivo, setModalActivo] = useState<'agregar' | 'editar' | 'proveedor' | 'confirmar-agregar' | null>(null);
-  const [codigoEscaneadoPendiente, setCodigoEscaneadoPendiente] = useState<string | null>(null);
-  const [productoForm, setProductoForm] = useState<Partial<Producto>>({});
+  const [modalActivo, setModalActivo] = useState<'agregar' | 'editar' | 'proveedor' | null>(null);
+  const [productoForm, setProductoForm] = useState<ProductoRegistroForm>({
+    nombre: '',
+    codigoBarras: '',
+    stock: 0,
+    precioPorKilo: 0,
+    fechaVencimiento: ''
+  });
   const [errorCargaProductos, setErrorCargaProductos] = useState('');
   const [mensajeGuardado, setMensajeGuardado] = useState<string | null>(null);
   const [soloProximosVencer, setSoloProximosVencer] = useState(false);
@@ -50,118 +64,84 @@ function Inventario() {
   const abrirModalAgregar = () => {
     setProductoSeleccionado(null);
     setProductoForm({
-      nombre: '', codigoBarras: '', categoria: '', stock: 0, stockMinimo: 0,
-      precioCompra: 0, precioVenta: 0, margen: 0, proveedor: '', proveedorId: 0,
-      ubicacion: '', estado: 'activo', fechaCreacion: new Date().toISOString(), ultimaActualizacion: new Date().toISOString()
+      nombre: '',
+      codigoBarras: '',
+      stock: 0,
+      precioPorKilo: 0,
+      fechaVencimiento: ''
     });
     setModalActivo('agregar');
   };
 
   const abrirModalEditar = (producto: Producto) => {
     setProductoSeleccionado(producto);
-    setProductoForm(producto);
+    setProductoForm({
+      nombre: producto.nombre,
+      codigoBarras: producto.codigoBarras,
+      stock: Number(producto.stock ?? 0),
+      precioPorKilo: Number(producto.precioCompra ?? 0),
+      fechaVencimiento: producto.fechaVencimiento ? producto.fechaVencimiento.slice(0, 10) : ''
+    });
     setModalActivo('editar');
   };
 
   const cerrarModal = () => {
     setModalActivo(null);
     setProductoSeleccionado(null);
-    setProductoForm({});
+    setProductoForm({
+      nombre: '',
+      codigoBarras: '',
+      stock: 0,
+      precioPorKilo: 0,
+      fechaVencimiento: ''
+    });
   };
 
   const guardarProducto = async () => {
-    if (!productoForm.nombre || !productoForm.proveedor || !productoForm.categoria) {
-      setMensajeGuardado('Completa nombre, proveedor y categoría');
+    if (!productoForm.nombre || !productoForm.codigoBarras || !productoForm.fechaVencimiento) {
+      setMensajeGuardado('Completa nombre, código de barras y fecha de vencimiento.');
       return;
     }
 
-    const baseProducto = {
-      nombre: productoForm.nombre as string,
-      codigoBarras: productoForm.codigoBarras || '',
-      categoria: productoForm.categoria as string,
-      proveedor: productoForm.proveedor as string,
-      ubicacion: productoForm.ubicacion || '',
-      imagen: productoForm.imagen || '',
-      descripcion: productoForm.descripcion || '',
-      estado: productoForm.estado || 'activo',
-      stockMinimo: Number(productoForm.stockMinimo || 0),
-      precioCompra: Number(productoForm.precioCompra || 0),
-      precioVenta: Number(productoForm.precioVenta || 0),
-      margen: Number(productoForm.margen || 0),
-      cantidad: Number(productoForm.stock || 0),
-      precio: Number(productoForm.precioVenta || 0),
-      fechaCreacion: productoForm.fechaCreacion ?? new Date().toISOString(),
-      ultimaActualizacion: new Date().toISOString(),
-      fechaVencimiento: productoForm.fechaVencimiento || ''
-    };
-
     try {
-      if (modalActivo === 'agregar') {
-        // Usar productoService.crearProducto para asegurar integración Firebase
-        // @ts-ignore
-        const creado = await require('../../services/inventario/productoService').productoService.crearProducto(baseProducto);
-        const nuevoProducto = mapApiProductoToProducto(creado);
-        setProductos(prev => [...prev, nuevoProducto]);
-        setMensajeGuardado('Producto guardado exitosamente');
-      } else if (modalActivo === 'editar' && productoSeleccionado) {
-        // @ts-ignore
-        const actualizado = await require('../../services/inventario/productoService').productoService.actualizarProducto(productoSeleccionado.id, baseProducto);
-        const productoActualizado = mapApiProductoToProducto(actualizado);
-        setProductos(prev => prev.map(p => (p.id === productoSeleccionado.id ? productoActualizado : p)));
-        setProductoSeleccionado(productoActualizado);
-        setMensajeGuardado('Producto actualizado exitosamente');
-      }
+      const guardado = await inventarioFirestoreService.guardarProducto({
+        nombre: productoForm.nombre,
+        codigoBarras: productoForm.codigoBarras,
+        stock: Number(productoForm.stock || 0),
+        precioPorKilo: Number(productoForm.precioPorKilo || 0),
+        fechaVencimiento: productoForm.fechaVencimiento
+      });
 
-      setProductoForm({});
+      setProductos(prev => {
+        const existe = prev.some((producto) => producto.codigoBarras === guardado.codigoBarras);
+        if (existe) {
+          return prev.map((producto) =>
+            producto.codigoBarras === guardado.codigoBarras ? guardado : producto
+          );
+        }
+        return [...prev, guardado];
+      });
+
+      setMensajeGuardado('Producto guardado exitosamente en Firestore.');
       setTimeout(() => {
         setMensajeGuardado(null);
         cerrarModal();
       }, 1200);
     } catch (error) {
       console.error('Error guardando producto:', error);
-      setMensajeGuardado('Error guardando producto. Revisa la consola del navegador.');
+      setMensajeGuardado('Error guardando producto en Firestore.');
     }
-  };
-
-  // Utilitarios para mapear los datos de la API al modelo local
-  const mapApiProductoToProducto = (p: any): Producto => {
-    const stock = p.stock ?? p.cantidad ?? 0;
-    const precioVenta = p.precioVenta ?? p.precio ?? 0;
-    const precioCompra = p.precioCompra ?? p.precio ?? 0;
-
-    return {
-      id: p.id ?? p._id ?? Date.now(),
-      nombre: p.nombre ?? '',
-      codigoBarras: p.codigoBarras ?? '',
-      categoria: p.categoria ?? 'Sin Categoría',
-      stock: Number(stock),
-      stockMinimo: Number(p.stockMinimo ?? 5),
-      precioCompra: Number(precioCompra),
-      precioVenta: Number(precioVenta),
-      margen: Number(p.margen ?? ((precioVenta && precioCompra) ? ((precioVenta - precioCompra) / (precioCompra || 1) * 100) : 0)),
-      proveedor: p.proveedor ?? '',
-      proveedorId: Number(p.proveedorId ?? 0),
-      fechaVencimiento: p.fechaVencimiento ? new Date(p.fechaVencimiento).toISOString() : undefined,
-      ubicacion: p.ubicacion ?? 'Por Definir',
-      imagen: p.imagen ?? '',
-      descripcion: p.descripcion ?? '',
-      estado: p.estado ?? 'activo',
-      fechaCreacion: p.fechaCreacion ? new Date(p.fechaCreacion).toISOString() : new Date().toISOString(),
-      ultimaActualizacion: p.ultimaActualizacion ? new Date(p.ultimaActualizacion).toISOString() : new Date().toISOString()
-    };
   };
 
   const cargarProductosDelServidor = async () => {
     try {
-      const respuesta = await fetch('/api/tienda/productos');
-      if (!respuesta.ok) throw new Error('No se pudo cargar productos');
-      const datos = await respuesta.json();
-      setProductos(datos.map((p: any) => mapApiProductoToProducto(p)));
+      const datos = await inventarioFirestoreService.listarProductos();
+      setProductos(datos);
       setErrorCargaProductos('');
     } catch (error) {
-      console.warn('Error al cargar productos desde API/Firebase:', error);
+      console.warn('Error al cargar productos desde Firestore:', error);
       setProductos([]);
-      setErrorCargaProductos('No fue posible cargar productos desde Firebase en este momento.');
+      setErrorCargaProductos('No fue posible cargar productos desde Firestore en este momento.');
     }
   };
 
@@ -253,49 +233,42 @@ function Inventario() {
     margenPromedio: productos.length > 0 ? productos.reduce((total, p) => total + (p.margen ?? 0), 0) / productos.length : 0
   };
 
-  const manejarEscaneo = (codigo: string) => {
+  const manejarEscaneo = async (codigo: string) => {
     console.log('🔍 Código escaneado en inventario:', codigo);
-    // El escáner ya procesó el producto automáticamente
+    const codigoNormalizado = codigo.trim();
+    if (!codigoNormalizado) return;
+
+    try {
+      const producto = await inventarioFirestoreService.existeProductoPorCodigo(codigoNormalizado);
+
+      if (producto) {
+        setProductoSeleccionado(producto);
+        abrirModalEditar(producto);
+      } else {
+        setProductoSeleccionado(null);
+        setProductoForm({
+          nombre: '',
+          codigoBarras: codigoNormalizado,
+          stock: 0,
+          precioPorKilo: 0,
+          fechaVencimiento: ''
+        });
+        setModalActivo('agregar');
+      }
+    } catch (error) {
+      console.error('Error verificando producto en Firestore:', error);
+      setMensajeGuardado('No se pudo verificar el producto en Firestore.');
+    } finally {
+      setEscanerActivo(false);
+    }
   };
 
   const manejarProductoEncontrado = (producto: Producto) => {
-    console.log('✅ Producto procesado:', producto);
-    setProductoSeleccionado(producto);
-    setProductoForm(producto);
-    setModalActivo('editar');
-    setEscanerActivo(false);
+    console.log('✅ Producto detectado por escáner:', producto.nombre);
   };
 
   const manejarProductoNoEncontrado = (codigo: string) => {
-    console.log('❓ Producto no encontrado:', codigo);
-    setCodigoEscaneadoPendiente(codigo);
-    setModalActivo('confirmar-agregar');
-    setEscanerActivo(false);
-  };
-
-  const confirmarAgregarProducto = () => {
-    if (!codigoEscaneadoPendiente) return;
-    setProductoForm({
-      codigoBarras: codigoEscaneadoPendiente,
-      nombre: `Nuevo producto ${codigoEscaneadoPendiente.slice(-6)}`,
-      categoria: 'Sin Categoría',
-      proveedor: '',
-      stock: 0,
-      stockMinimo: 5,
-      precioCompra: 0,
-      precioVenta: 0,
-      margen: 0,
-      ubicacion: 'Por Definir',
-      estado: 'activo',
-      fechaVencimiento: ''
-    });
-    setModalActivo('agregar');
-    setCodigoEscaneadoPendiente(null);
-  };
-
-  const cancelarAgregarProducto = () => {
-    setModalActivo(null);
-    setCodigoEscaneadoPendiente(null);
+    console.log('❓ Producto no encontrado por escáner:', codigo);
   };
 
   return (
@@ -483,20 +456,6 @@ function Inventario() {
             </div>
           )}
 
-          {/* Modal de confirmación para agregar producto */}
-          {modalActivo === 'confirmar-agregar' && (
-            <div className="modal-overlay">
-              <div className="modal-content">
-                <h2>¿Agregar producto al inventario?</h2>
-                <p>¿Deseas añadir el producto con código de barras <b>{codigoEscaneadoPendiente}</b> al inventario?</p>
-                <div className="modal-actions">
-                  <button className="btn-save" onClick={confirmarAgregarProducto}>Sí, agregar</button>
-                  <button className="btn-cancel" onClick={cancelarAgregarProducto}>No</button>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Modal de agregar/editar */}
           {(modalActivo === 'agregar' || modalActivo === 'editar') && (
             <div className="modal-overlay">
@@ -506,8 +465,8 @@ function Inventario() {
                   <label htmlFor="nombre-producto">Nombre del Producto</label>
                   <input
                     id="nombre-producto"
-                    placeholder="Ej: Arroz Diana Premium 500g"
-                    value={productoForm.nombre || ''}
+                    placeholder="Ej: Arroz Premium"
+                    value={productoForm.nombre}
                     onChange={(e) => setProductoForm({...productoForm, nombre: e.target.value})}
                   />
 
@@ -516,7 +475,7 @@ function Inventario() {
                     <input
                       id="codigo-barras"
                       placeholder="7701234567890"
-                      value={productoForm.codigoBarras || ''}
+                      value={productoForm.codigoBarras}
                       onChange={(e) => setProductoForm({...productoForm, codigoBarras: e.target.value})}
                       className="barcode-input"
                     />
@@ -525,7 +484,6 @@ function Inventario() {
                       className="btn-barcode-gen"
                       title="Generar código aleatorio"
                       onClick={() => {
-                        // Genera un EAN-13 válido (simple random, no check digit)
                         const random = () => Math.floor(Math.random() * 10).toString();
                         let code = '77';
                         for (let i = 0; i < 11; i++) code += random();
@@ -536,72 +494,34 @@ function Inventario() {
                     </button>
                   </div>
 
-                  <label htmlFor="categoria-producto">Categoría</label>
-                  <input
-                    id="categoria-producto"
-                    placeholder="Ej: Granos, Lácteos, Bebidas..."
-                    value={productoForm.categoria || ''}
-                    onChange={(e) => setProductoForm({...productoForm, categoria: e.target.value})}
-                  />
-
-                  <label htmlFor="proveedor-producto">Proveedor</label>
-                  <input
-                    id="proveedor-producto"
-                    placeholder="Nombre del proveedor"
-                    value={productoForm.proveedor || ''}
-                    onChange={(e) => setProductoForm({...productoForm, proveedor: e.target.value})}
-                  />
-
                   <label htmlFor="stock-producto">Stock Actual</label>
                   <input
                     id="stock-producto"
                     type="number"
                     placeholder="0"
                     min="0"
-                    value={productoForm.stock ?? 0}
+                    value={productoForm.stock}
                     onChange={(e) => setProductoForm({...productoForm, stock: Number(e.target.value)})}
                   />
 
-                  <label htmlFor="precio-compra">Precio de Compra</label>
+                  <label htmlFor="precio-kilo">Precio por Kilo</label>
                   <input
-                    id="precio-compra"
+                    id="precio-kilo"
                     type="number"
                     placeholder="0"
                     min="0"
                     step="0.01"
-                    value={productoForm.precioCompra ?? 0}
-                    onChange={(e) => setProductoForm({...productoForm, precioCompra: Number(e.target.value)})}
-                  />
-
-                  <label htmlFor="precio-venta">Precio de Venta</label>
-                  <input
-                    id="precio-venta"
-                    type="number"
-                    placeholder="0"
-                    min="0"
-                    step="0.01"
-                    value={productoForm.precioVenta ?? 0}
-                    onChange={(e) => setProductoForm({...productoForm, precioVenta: Number(e.target.value)})}
+                    value={productoForm.precioPorKilo}
+                    onChange={(e) => setProductoForm({...productoForm, precioPorKilo: Number(e.target.value)})}
                   />
 
                   <label htmlFor="fecha-vencimiento">Fecha de Vencimiento</label>
                   <input
                     id="fecha-vencimiento"
                     type="date"
-                    value={productoForm.fechaVencimiento ? productoForm.fechaVencimiento.slice(0,10) : ''}
+                    value={productoForm.fechaVencimiento}
                     onChange={e => setProductoForm({...productoForm, fechaVencimiento: e.target.value})}
                   />
-
-                  <label htmlFor="estado-producto">Estado del Producto</label>
-                  <select
-                    id="estado-producto"
-                    value={productoForm.estado || 'activo'}
-                    onChange={(e) => setProductoForm({...productoForm, estado: e.target.value as Producto['estado']})}
-                  >
-                    <option value="activo">Activo</option>
-                    <option value="agotado">Agotado</option>
-                    <option value="descontinuado">Descontinuado</option>
-                  </select>
                 </div>
 
                 <div className="modal-actions">
