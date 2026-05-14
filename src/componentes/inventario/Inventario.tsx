@@ -18,6 +18,7 @@ import { Producto } from '../../types/pos.types';
 import EscanerZXing from './EscanerZXing';
 import EstadisticasAvanzadas from '../dashboard/EstadisticasAvanzadas';
 import { inventarioFirestoreService } from '../../services/inventario/inventarioFirestoreService';
+import { buscarProductoPorCodigo, ProductoConocido } from '../../data/productosConocidos';
 
 interface Proveedor {
   id: number;
@@ -32,6 +33,7 @@ interface Proveedor {
 interface ProductoRegistroForm {
   nombre: string;
   codigoBarras: string;
+  gramaje: string;
   /** Se mantiene como string para permitir borrar el campo completamente */
   stock: string;
   /** Se mantiene como string para permitir borrar el campo completamente */
@@ -39,9 +41,15 @@ interface ProductoRegistroForm {
   fechaVencimiento: string;
 }
 
+interface ProductoDetectado {
+  conocido: ProductoConocido;
+  codigo: string;
+}
+
 const FORM_INICIAL: ProductoRegistroForm = {
   nombre: '',
   codigoBarras: '',
+  gramaje: '',
   stock: '',
   precioPorKilo: '',
   fechaVencimiento: ''
@@ -61,12 +69,37 @@ function Inventario() {
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [modalActivo, setModalActivo] = useState<'agregar' | 'editar' | 'proveedor' | null>(null);
   const [productoForm, setProductoForm] = useState<ProductoRegistroForm>(FORM_INICIAL);
+  const [productoDetectado, setProductoDetectado] = useState<ProductoDetectado | null>(null);
   const [errorCargaProductos, setErrorCargaProductos] = useState('');
   const [mensajeGuardado, setMensajeGuardado] = useState<string | null>(null);
   const [soloProximosVencer, setSoloProximosVencer] = useState(false);
 
+  const manejarCambioCodigoBarras = (codigo: string) => {
+    const normalizado = codigo.trim();
+    setProductoForm((prev) => ({ ...prev, codigoBarras: normalizado }));
+
+    if (!normalizado) {
+      setProductoDetectado(null);
+      return;
+    }
+
+    const encontrado = buscarProductoPorCodigo(normalizado);
+    if (encontrado) {
+      setProductoDetectado({ conocido: encontrado, codigo: normalizado });
+      setProductoForm((prev) => ({
+        ...prev,
+        codigoBarras: normalizado,
+        nombre: encontrado.nombre,
+        gramaje: encontrado.gramaje
+      }));
+    } else {
+      setProductoDetectado(null);
+    }
+  };
+
   const abrirModalAgregar = () => {
     setProductoSeleccionado(null);
+    setProductoDetectado(null);
     setProductoForm(FORM_INICIAL);
     setMensajeGuardado(null);
     setModalActivo('agregar');
@@ -74,20 +107,27 @@ function Inventario() {
 
   const abrirModalEditar = (producto: Producto) => {
     setProductoSeleccionado(producto);
+    setProductoDetectado(null);
     setMensajeGuardado(null);
+    const conocido = buscarProductoPorCodigo(producto.codigoBarras);
     setProductoForm({
       nombre: producto.nombre,
       codigoBarras: producto.codigoBarras,
+      gramaje: conocido?.gramaje || '',
       stock: producto.stock !== undefined && producto.stock !== null ? String(producto.stock) : '',
       precioPorKilo: producto.precioCompra ? String(producto.precioCompra) : '',
       fechaVencimiento: producto.fechaVencimiento ? producto.fechaVencimiento.slice(0, 10) : ''
     });
+    if (conocido) {
+      setProductoDetectado({ conocido, codigo: producto.codigoBarras });
+    }
     setModalActivo('editar');
   };
 
   const cerrarModal = () => {
     setModalActivo(null);
     setProductoSeleccionado(null);
+    setProductoDetectado(null);
     setMensajeGuardado(null);
     setProductoForm(FORM_INICIAL);
   };
@@ -242,10 +282,7 @@ function Inventario() {
         abrirModalEditar(producto);
       } else {
         setProductoSeleccionado(null);
-        setProductoForm({
-          ...FORM_INICIAL,
-          codigoBarras: codigoNormalizado
-        });
+        manejarCambioCodigoBarras(codigoNormalizado);
         setMensajeGuardado(null);
         setModalActivo('agregar');
       }
@@ -455,6 +492,28 @@ function Inventario() {
             <div className="modal-overlay">
               <div className="modal-content">
                 <h2>{modalActivo === 'agregar' ? '➕ Agregar producto' : '✏️ Editar producto'}</h2>
+
+                {/* Vista previa del producto detectado */}
+                {productoDetectado && (
+                  <div className="producto-detectado-preview">
+                    <div className="detectado-thumbnail">
+                      <img 
+                        src={productoDetectado.conocido.imagen} 
+                        alt={productoDetectado.conocido.nombre}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          (e.target as HTMLImageElement).parentElement!.classList.add('img-fallback');
+                        }}
+                      />
+                    </div>
+                    <div className="detectado-info">
+                      <strong className="detectado-nombre">{productoDetectado.conocido.nombre}</strong>
+                      <span className="detectado-gramaje">📏 {productoDetectado.conocido.gramaje}</span>
+                      <span className="detectado-badge">✅ Producto reconocido automáticamente</span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="modal-form">
                   <label htmlFor="nombre-producto">Nombre del Producto</label>
                   <input
@@ -470,7 +529,9 @@ function Inventario() {
                       id="codigo-barras"
                       placeholder="7701234567890"
                       value={productoForm.codigoBarras}
-                      onChange={(e) => setProductoForm({...productoForm, codigoBarras: e.target.value})}
+                      onChange={(e) => {
+                        manejarCambioCodigoBarras(e.target.value);
+                      }}
                       className="barcode-input"
                     />
                     <button
