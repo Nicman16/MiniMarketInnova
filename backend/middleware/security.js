@@ -10,7 +10,7 @@ const helmetMiddleware = helmet({
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "blob:"],
-      connectSrc: ["'self'", "ws:", "wss:"],
+      connectSrc: ["'self'", "ws:", "wss:", "https://world.openfoodfacts.org"],
       workerSrc: ["'self'", "blob:"],
     },
   },
