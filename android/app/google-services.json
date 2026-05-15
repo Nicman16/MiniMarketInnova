@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "1021633535368",
+    "firebase_url": "https://minimarket-21bdb-default-rtdb.firebaseio.com",
+    "project_id": "minimarket-21bdb",
+    "storage_bucket": "minimarket-21bdb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1021633535368:android:e81da57b086fb2a815ae3d",
+        "android_client_info": {
+          "package_name": "com.minimarket.innova"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCVbOCU0IIV5Sa6KxBWXHctudghpRsWIKw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
