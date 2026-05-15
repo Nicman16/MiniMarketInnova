@@ -30,6 +30,21 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
   const [tipoGrafico, setTipoGrafico] = useState<'ventas' | 'ingresos' | 'productos'>('ventas');
   const [cargando, setCargando] = useState(true);
 
+  const normalizarVentaData = (input: any): VentaData => ({
+    fecha: String(input?.fecha || new Date().toISOString()),
+    ventas: Number(input?.ventas || 0),
+    productos: Number(input?.productos || 0),
+    ingresos: Number(input?.ingresos || 0)
+  });
+
+  const normalizarProductoVendido = (input: any): ProductoVendido => ({
+    nombre: String(input?.nombre || 'Producto sin nombre'),
+    cantidad: Number(input?.cantidad || 0),
+    ingresos: Number(input?.ingresos || 0),
+    categoria: String(input?.categoria || 'Sin categoría'),
+    margen: Number(input?.margen || 0)
+  });
+
   useEffect(() => {
     const cargarDatos = async () => {
       try {
@@ -37,15 +52,17 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
         
         // Cargar datos de ventas avanzadas
         const datosAvanzados = await statisticsService.obtenerEstadisticasAvanzadas(periodoSeleccionado);
-        if (datosAvanzados && datosAvanzados.ventasData) {
-          setVentasData(datosAvanzados.ventasData);
-        }
+        const ventas = Array.isArray(datosAvanzados?.ventasData)
+          ? datosAvanzados.ventasData.map(normalizarVentaData)
+          : [];
+        setVentasData(ventas);
         
         // Cargar productos más vendidos
         const productosTop = await statisticsService.obtenerProductosMasVendidos(10);
-        if (productosTop && Array.isArray(productosTop)) {
-          setProductosVendidos(productosTop);
-        }
+        const top = Array.isArray(productosTop)
+          ? productosTop.map(normalizarProductoVendido)
+          : [];
+        setProductosVendidos(top);
       } catch (error) {
         console.error('Error cargando estadísticas avanzadas:', error);
         // En caso de error, usar datos por defecto
@@ -84,9 +101,15 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
     const primeraMitad = ventasData.slice(0, mitad);
     const segundaMitad = ventasData.slice(mitad);
     
-    const promedioPrimera = primeraMitad.reduce((sum, day) => sum + day.ventas, 0) / primeraMitad.length;
-    const promedioSegunda = segundaMitad.reduce((sum, day) => sum + day.ventas, 0) / segundaMitad.length;
-    const tendencia = ((promedioSegunda - promedioPrimera) / promedioPrimera) * 100;
+    const promedioPrimera = primeraMitad.length > 0
+      ? primeraMitad.reduce((sum, day) => sum + day.ventas, 0) / primeraMitad.length
+      : 0;
+    const promedioSegunda = segundaMitad.length > 0
+      ? segundaMitad.reduce((sum, day) => sum + day.ventas, 0) / segundaMitad.length
+      : 0;
+    const tendencia = promedioPrimera > 0
+      ? ((promedioSegunda - promedioPrimera) / promedioPrimera) * 100
+      : 0;
 
     return {
       totalVentas,
@@ -113,6 +136,10 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
   };
 
   const maxValue = getMaxValue();
+  const maxValueSafe = Number.isFinite(maxValue) && maxValue > 0 ? maxValue : 1;
+  const chartIndexDivisor = Math.max(ventasData.length - 1, 1);
+  const labelStep = Math.max(1, Math.ceil(ventasData.length / 8));
+  const topIngresos = Math.max(Number(productosVendidos[0]?.ingresos || 0), 1);
 
   if (cargando && ventasData.length === 0) {
     return (
@@ -219,10 +246,10 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
         
         <div className="grafico-chart">
           <div className="chart-y-axis">
-            <div className="y-label">{maxValue}</div>
-            <div className="y-label">{Math.round(maxValue * 0.75)}</div>
-            <div className="y-label">{Math.round(maxValue * 0.5)}</div>
-            <div className="y-label">{Math.round(maxValue * 0.25)}</div>
+            <div className="y-label">{maxValueSafe}</div>
+            <div className="y-label">{Math.round(maxValueSafe * 0.75)}</div>
+            <div className="y-label">{Math.round(maxValueSafe * 0.5)}</div>
+            <div className="y-label">{Math.round(maxValueSafe * 0.25)}</div>
             <div className="y-label">0</div>
           </div>
           
@@ -245,11 +272,11 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
                 strokeLinejoin="round"
                 points={
                   ventasData.map((data, index) => {
-                    const x = (index / (ventasData.length - 1)) * 780 + 10;
+                    const x = (index / chartIndexDivisor) * 780 + 10;
                     const value = tipoGrafico === 'ventas' ? data.ventas :
                                  tipoGrafico === 'ingresos' ? data.ingresos :
                                  (data.productos || 0);
-                    const y = 280 - (value / maxValue) * 260;
+                    const y = 280 - (value / maxValueSafe) * 260;
                     return `${x},${y}`;
                   }).join(' ')
                 }
@@ -257,11 +284,11 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
               
               {/* Data points */}
               {ventasData.map((data, index) => {
-                const x = (index / (ventasData.length - 1)) * 780 + 10;
+                const x = (index / chartIndexDivisor) * 780 + 10;
                 const value = tipoGrafico === 'ventas' ? data.ventas :
                              tipoGrafico === 'ingresos' ? data.ingresos :
                              (data.productos || 0);
-                const y = 280 - (value / maxValue) * 260;
+                const y = 280 - (value / maxValueSafe) * 260;
                 
                 return (
                   <circle
@@ -293,7 +320,7 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
             
             {/* X-axis labels */}
             <div className="chart-x-axis">
-              {ventasData.filter((_, index) => index % Math.ceil(ventasData.length / 8) === 0).map((data, index) => (
+              {ventasData.filter((_, index) => index % labelStep === 0).map((data, index) => (
                 <div key={index} className="x-label">
                   {new Date(data.fecha).toLocaleDateString('es-ES', { 
                     month: 'short', 
@@ -323,7 +350,7 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
                   </div>
                   <div className="stat success">
                     <span className="stat-icon">💰</span>
-                    <span>${producto.ingresos.toLocaleString()}</span>
+                    <span>${Number(producto.ingresos || 0).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -331,7 +358,7 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
                 <div 
                   className="progress-bar"
                   style={{ 
-                    width: `${(producto.ingresos / productosVendidos[0].ingresos) * 100}%` 
+                    width: `${(Number(producto.ingresos || 0) / topIngresos) * 100}%` 
                   }}
                 ></div>
               </div>
@@ -346,12 +373,13 @@ function EstadisticasAvanzadas({ productos, proveedores }: EstadisticasAvanzadas
         <div className="categorias-grid">
           {Object.entries(
             productosVendidos.reduce((acc, producto) => {
-              if (!acc[producto.categoria]) {
-                acc[producto.categoria] = { cantidad: 0, ingresos: 0, productos: 0 };
+              const categoria = String(producto.categoria || 'Sin categoría');
+              if (!acc[categoria]) {
+                acc[categoria] = { cantidad: 0, ingresos: 0, productos: 0 };
               }
-              acc[producto.categoria].cantidad += producto.cantidad;
-              acc[producto.categoria].ingresos += producto.ingresos;
-              acc[producto.categoria].productos += 1;
+              acc[categoria].cantidad += Number(producto.cantidad || 0);
+              acc[categoria].ingresos += Number(producto.ingresos || 0);
+              acc[categoria].productos += 1;
               return acc;
             }, {} as Record<string, {cantidad: number, ingresos: number, productos: number}>)
           ).map(([categoria, datos]) => (
