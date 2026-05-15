@@ -1,7 +1,8 @@
-import React from 'react';
-import { BadgeDollarSign, LayoutDashboard, LogOut, ReceiptText, ShoppingCart, Users, Wallet } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { BadgeDollarSign, Download, LayoutDashboard, LogOut, ReceiptText, ShoppingCart, Users, Wallet, X } from 'lucide-react';
 import './styles/App.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { APP_VERSION, checkUpdates, UpdateInfo } from './services/updateService';
 import Login from './componentes/auth/Login';
 import PuntoVenta from './componentes/ventas/PuntoVenta';
 import Inventario from './componentes/inventario/Inventario';
@@ -18,6 +19,17 @@ function DashboardContent() {
   const [paginaActual, setPaginaActual] = React.useState<string>('dashboard');
   const [isTransitioning, setIsTransitioning] = React.useState<boolean>(false);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState<boolean>(false);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+
+  useEffect(() => {
+    const verifyUpdates = async () => {
+      const update = await checkUpdates();
+      if (update) {
+        setUpdateInfo(update);
+      }
+    };
+    verifyUpdates();
+  }, []);
 
   const cambiarPagina = (nuevaPagina: string) => {
     if (nuevaPagina === paginaActual) {
@@ -77,6 +89,22 @@ function DashboardContent() {
         onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
       />
       <div className="main-layout">
+        {updateInfo && (
+          <div className="update-banner">
+            <div className="update-content">
+              <Download size={18} />
+              <span>Nueva versión {updateInfo.version} disponible</span>
+              <a href={updateInfo.url} target="_blank" rel="noopener noreferrer" className="update-link">
+                Actualizar ahora
+              </a>
+            </div>
+            {!updateInfo.force && (
+              <button className="close-update" onClick={() => setUpdateInfo(null)}>
+                <X size={16} />
+              </button>
+            )}
+          </div>
+        )}
         <nav className="navbar">
           <div className="navbar-brand">
             <div className="app-logo" aria-label="Logo MiniMarket Innova">
@@ -84,7 +112,7 @@ function DashboardContent() {
             </div>
             <div>
               <h1 className="app-title">MiniMarket Innova</h1>
-              <span className="version-badge">v2.0</span>
+              <span className="version-badge">v{APP_VERSION}</span>
             </div>
           </div>
           <button className="logout-btn" onClick={logout}>
